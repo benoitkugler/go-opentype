@@ -2,29 +2,29 @@ package tables
 
 //go:generate ../../binarygen/cmd/generator maxp.go
 
-// https://learn.microsoft.com/en-us/typography/opentype/spec/maxp
-type maxp struct {
-	version   maxpVersionKind
+// https://learn.microsoft.com/en-us/typography/opentype/spec/Maxp
+type Maxp struct {
+	version   maxpVersion
 	numGlyphs uint16
-	data      maxpVersion `kind-field:"version"`
+	data      maxpData `version-field:"version"`
 }
 
-type maxpVersionKind uint32
+type maxpVersion uint32
 
 const (
-	maxpVersionKind05 maxpVersionKind = 0x00005000
-	maxpVersionKind1  maxpVersionKind = 0x00010000
+	maxpVersion05 maxpVersion = 0x00005000
+	maxpVersion1  maxpVersion = 0x00010000
 )
 
-type maxpVersion interface {
+type maxpData interface {
 	isMaxpVersion()
 }
 
-func (maxpVersion05) isMaxpVersion() {}
-func (maxpVersion1) isMaxpVersion()  {}
+func (maxpData05) isMaxpVersion() {}
+func (maxpData1) isMaxpVersion()  {}
 
-type maxpVersion05 struct{}
+type maxpData05 struct{}
 
-type maxpVersion1 struct {
+type maxpData1 struct {
 	data [13]uint16
 }
