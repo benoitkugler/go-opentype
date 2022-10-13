@@ -26,5 +26,5 @@ func (maxpData1) isMaxpVersion()  {}
 type maxpData05 struct{}
 
 type maxpData1 struct {
-	data [13]uint16
+	rawData [13]uint16
 }

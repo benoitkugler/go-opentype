@@ -49,8 +49,8 @@ func parseMaxpData05([]byte) (maxpData05, int, error) {
 
 func (item *maxpData1) mustParse(src []byte) {
 	_ = src[25] // early bound checking
-	for i := range item.data {
-		item.data[i] = binary.BigEndian.Uint16(src[i*2:])
+	for i := range item.rawData {
+		item.rawData[i] = binary.BigEndian.Uint16(src[i*2:])
 	}
 }
 
