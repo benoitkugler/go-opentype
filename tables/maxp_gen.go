@@ -40,20 +40,17 @@ func ParseMaxp(src []byte) (Maxp, int, error) {
 	}
 	return item, n, nil
 }
-
 func parseMaxpData05([]byte) (maxpData05, int, error) {
 	var item maxpData05
 	n := 0
 	return item, n, nil
 }
-
 func (item *maxpData1) mustParse(src []byte) {
 	_ = src[25] // early bound checking
 	for i := range item.rawData {
 		item.rawData[i] = binary.BigEndian.Uint16(src[i*2:])
 	}
 }
-
 func parseMaxpData1(src []byte) (maxpData1, int, error) {
 	var item maxpData1
 	n := 0

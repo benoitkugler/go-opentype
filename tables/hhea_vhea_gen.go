@@ -27,7 +27,6 @@ func (item *Hhea) mustParse(src []byte) {
 	item.metricDataformat = int16(binary.BigEndian.Uint16(src[32:]))
 	item.NumOfLongMetrics = binary.BigEndian.Uint16(src[34:])
 }
-
 func ParseHhea(src []byte) (Hhea, int, error) {
 	var item Hhea
 	n := 0

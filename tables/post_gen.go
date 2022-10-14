@@ -48,13 +48,11 @@ func ParsePost(src []byte) (Post, int, error) {
 	}
 	return item, n, nil
 }
-
 func parsePostNames10([]byte) (postNames10, int, error) {
 	var item postNames10
 	n := 0
 	return item, n, nil
 }
-
 func parsePostNames20(src []byte) (postNames20, int, error) {
 	var item postNames20
 	n := 0
@@ -81,7 +79,6 @@ func parsePostNames20(src []byte) (postNames20, int, error) {
 
 	return item, n, nil
 }
-
 func parsePostNames30([]byte) (postNames30, int, error) {
 	var item postNames30
 	n := 0

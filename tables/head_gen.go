@@ -28,7 +28,6 @@ func (item *Head) mustParse(src []byte) {
 	item.IndexToLocFormat = int16(binary.BigEndian.Uint16(src[50:]))
 	item.glyphDataFormat = int16(binary.BigEndian.Uint16(src[52:]))
 }
-
 func ParseHead(src []byte) (Head, int, error) {
 	var item Head
 	n := 0

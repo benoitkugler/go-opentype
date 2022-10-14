@@ -28,7 +28,6 @@ func ParseMorx(src []byte) (Morx, int, error) {
 
 	return item, n, nil
 }
-
 func (item *aatFeature) mustParse(src []byte) {
 	_ = src[11] // early bound checking
 	item.featureType = binary.BigEndian.Uint16(src[0:])
@@ -36,7 +35,6 @@ func (item *aatFeature) mustParse(src []byte) {
 	item.enableFlags = binary.BigEndian.Uint32(src[4:])
 	item.disableFlags = binary.BigEndian.Uint32(src[8:])
 }
-
 func parseAatFeature(src []byte) (aatFeature, int, error) {
 	var item aatFeature
 	n := 0
@@ -48,7 +46,6 @@ func parseAatFeature(src []byte) (aatFeature, int, error) {
 	n += 12
 	return item, n, nil
 }
-
 func parseAatLookup(src []byte, valuesLength int) (aatLookup, int, error) {
 	var item aatLookup
 	n := 0
@@ -89,7 +86,6 @@ func parseAatLookup(src []byte, valuesLength int) (aatLookup, int, error) {
 	}
 	return item, n, nil
 }
-
 func parseAatLookupTable0(src []byte, valuesLength int) (aatLookupTable0, int, error) {
 	var item aatLookupTable0
 	n := 0
@@ -108,7 +104,6 @@ func parseAatLookupTable0(src []byte, valuesLength int) (aatLookupTable0, int, e
 	}
 	return item, n, nil
 }
-
 func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	var item aatLookupTable10
 	n := 0
@@ -144,7 +139,6 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	}
 	return item, n, nil
 }
-
 func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 	var item aatLookupTable2
 	n := 0
@@ -175,7 +169,6 @@ func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 	}
 	return item, n, nil
 }
-
 func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 	var item aatLookupTable4
 	n := 0
@@ -209,7 +202,6 @@ func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 
 	return item, n, nil
 }
-
 func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 	var item aatLookupTable6
 	n := 0
@@ -240,7 +232,6 @@ func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 	}
 	return item, n, nil
 }
-
 func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 	var item aatLookupTable8
 	n := 0
@@ -275,7 +266,6 @@ func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 	}
 	return item, n, nil
 }
-
 func (item *aatSTXHeader) mustParse(src []byte) {
 	_ = src[15] // early bound checking
 	item.stateSize = binary.BigEndian.Uint32(src[0:])
@@ -283,7 +273,6 @@ func (item *aatSTXHeader) mustParse(src []byte) {
 	item.stateArray = binary.BigEndian.Uint32(src[8:])
 	item.entryTable = binary.BigEndian.Uint32(src[12:])
 }
-
 func parseAatSTXHeader(src []byte) (aatSTXHeader, int, error) {
 	var item aatSTXHeader
 	n := 0
@@ -295,7 +284,6 @@ func parseAatSTXHeader(src []byte) (aatSTXHeader, int, error) {
 	n += 16
 	return item, n, nil
 }
-
 func (item *binSearchHeader) mustParse(src []byte) {
 	_ = src[9] // early bound checking
 	item.unitSize = binary.BigEndian.Uint16(src[0:])
@@ -304,7 +292,6 @@ func (item *binSearchHeader) mustParse(src []byte) {
 	item.entrySelector = binary.BigEndian.Uint16(src[6:])
 	item.rangeShift = binary.BigEndian.Uint16(src[8:])
 }
-
 func parseBinSearchHeader(src []byte) (binSearchHeader, int, error) {
 	var item binSearchHeader
 	n := 0
@@ -316,14 +303,12 @@ func parseBinSearchHeader(src []byte) (binSearchHeader, int, error) {
 	n += 10
 	return item, n, nil
 }
-
 func (item *lookupRecord2) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.lastGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
 	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
 	item.value = binary.BigEndian.Uint16(src[4:])
 }
-
 func parseLookupRecord2(src []byte) (lookupRecord2, int, error) {
 	var item lookupRecord2
 	n := 0
@@ -335,14 +320,12 @@ func parseLookupRecord2(src []byte) (lookupRecord2, int, error) {
 	n += 6
 	return item, n, nil
 }
-
 func (item *loopkupRecord4) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.lastGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
 	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
 	item.offsetToValues = binary.BigEndian.Uint16(src[4:])
 }
-
 func parseLoopkupRecord4(src []byte) (loopkupRecord4, int, error) {
 	var item loopkupRecord4
 	n := 0
@@ -354,13 +337,11 @@ func parseLoopkupRecord4(src []byte) (loopkupRecord4, int, error) {
 	n += 6
 	return item, n, nil
 }
-
 func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.glyph = glyphID(binary.BigEndian.Uint16(src[0:]))
 	item.value = binary.BigEndian.Uint16(src[2:])
 }
-
 func parseLoopkupRecord6(src []byte) (loopkupRecord6, int, error) {
 	var item loopkupRecord6
 	n := 0
@@ -372,7 +353,6 @@ func parseLoopkupRecord6(src []byte) (loopkupRecord6, int, error) {
 	n += 4
 	return item, n, nil
 }
-
 func parseMorxChain(src []byte) (morxChain, int, error) {
 	var item morxChain
 	n := 0
@@ -409,7 +389,6 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 
 	return item, n, nil
 }
-
 func parseMorxChainSubtable(src []byte, valuesLength int) (morxChainSubtable, int, error) {
 	var item morxChainSubtable
 	n := 0
@@ -454,7 +433,6 @@ func parseMorxChainSubtable(src []byte, valuesLength int) (morxChainSubtable, in
 	}
 	return item, n, nil
 }
-
 func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error) {
 	var item morxSubtableContextual
 	n := 0
@@ -475,7 +453,6 @@ func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error
 
 	return item, n, nil
 }
-
 func parseMorxSubtableInsertion(src []byte) (morxSubtableInsertion, int, error) {
 	var item morxSubtableInsertion
 	n := 0
@@ -496,7 +473,6 @@ func parseMorxSubtableInsertion(src []byte) (morxSubtableInsertion, int, error) 
 
 	return item, n, nil
 }
-
 func parseMorxSubtableLigature(src []byte) (morxSubtableLigature, int, error) {
 	var item morxSubtableLigature
 	n := 0
@@ -519,7 +495,6 @@ func parseMorxSubtableLigature(src []byte) (morxSubtableLigature, int, error) {
 
 	return item, n, nil
 }
-
 func parseMorxSubtableNonContextual(src []byte, valuesLength int) (morxSubtableNonContextual, int, error) {
 	var item morxSubtableNonContextual
 	n := 0
@@ -535,7 +510,6 @@ func parseMorxSubtableNonContextual(src []byte, valuesLength int) (morxSubtableN
 	}
 	return item, n, nil
 }
-
 func parseMorxSubtableRearrangement(src []byte) (morxSubtableRearrangement, int, error) {
 	var item morxSubtableRearrangement
 	n := 0

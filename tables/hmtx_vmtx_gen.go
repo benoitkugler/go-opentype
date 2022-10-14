@@ -38,13 +38,11 @@ func ParseHmtx(src []byte, hmetricsLength int, leftsidebearingsLength int) (Hmtx
 	}
 	return item, n, nil
 }
-
 func (item *longHorMetric) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.advanceWidth = int16(binary.BigEndian.Uint16(src[0:]))
 	item.lsb = int16(binary.BigEndian.Uint16(src[2:]))
 }
-
 func parseLongHorMetric(src []byte) (longHorMetric, int, error) {
 	var item longHorMetric
 	n := 0

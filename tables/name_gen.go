@@ -45,7 +45,6 @@ func ParseName(src []byte) (Name, int, error) {
 	}
 	return item, n, nil
 }
-
 func (item *nameRecord) mustParse(src []byte) {
 	_ = src[11] // early bound checking
 	item.platformID = PlatformID(binary.BigEndian.Uint16(src[0:]))
@@ -55,7 +54,6 @@ func (item *nameRecord) mustParse(src []byte) {
 	item.length = binary.BigEndian.Uint16(src[8:])
 	item.stringOffset = binary.BigEndian.Uint16(src[10:])
 }
-
 func parseNameRecord(src []byte) (nameRecord, int, error) {
 	var item nameRecord
 	n := 0
