@@ -3,8 +3,8 @@ package tables
 //go:generate ../../binarygen/cmd/generator head.go
 
 // TableHead contains critical information about the rest of the font.
-// https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6head.html
 // https://learn.microsoft.com/en-us/typography/opentype/spec/head
+// https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6head.html
 type Head struct {
 	majorVersion       uint16
 	minorVersion       uint16
