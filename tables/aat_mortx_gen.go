@@ -23,9 +23,61 @@ func ParseMorx(src []byte) (Morx, int, error) {
 		n += 8
 
 	}
-	item.rawData = src[n:]
-	n = len(src)
+	{
+		arrayLength := int(item.nChains)
+		for i := 0; i < arrayLength; i++ {
+			elem, read, err := parseMorxChain(src[n:])
+			if err != nil {
+				return Morx{}, 0, err
+			}
+			item.chains = append(item.chains, elem)
+			n += read
+		}
+	}
+	return item, n, nil
+}
+func ParseMorxChainSubtable(src []byte, valuesNum int) (MorxChainSubtable, int, error) {
+	var item MorxChainSubtable
+	n := 0
+	{
+		subSlice := src[n:]
+		if L := len(subSlice); L < 12 {
+			return MorxChainSubtable{}, 0, fmt.Errorf("EOF: expected length: 12, got %d", L)
+		}
 
+		_ = subSlice[11] // early bound checking
+		item.length = binary.BigEndian.Uint32(subSlice[0:])
+		item.coverage = subSlice[4]
+		for i := range item.ignored {
+			item.ignored[i] = subSlice[5+i]
+		}
+		item.version = morxSubtableVersion(subSlice[7])
+		item.subFeatureFlags = binary.BigEndian.Uint32(subSlice[8:])
+		n += 12
+
+	}
+	{
+		var read int
+		var err error
+		switch item.version {
+		case morxSubtableVersionContextual:
+			item.subtableContent, read, err = parseMorxSubtableContextual(src[n:])
+		case morxSubtableVersionInsertion:
+			item.subtableContent, read, err = parseMorxSubtableInsertion(src[n:])
+		case morxSubtableVersionLigature:
+			item.subtableContent, read, err = parseMorxSubtableLigature(src[n:])
+		case morxSubtableVersionNonContextual:
+			item.subtableContent, read, err = parseMorxSubtableNonContextual(src[n:], valuesNum)
+		case morxSubtableVersionRearrangement:
+			item.subtableContent, read, err = parseMorxSubtableRearrangement(src[n:])
+		default:
+			err = fmt.Errorf("unsupported morxSubtableVersion %d", item.version)
+		}
+		if err != nil {
+			return MorxChainSubtable{}, 0, err
+		}
+		n += read
+	}
 	return item, n, nil
 }
 func (item *aatFeature) mustParse(src []byte) {
@@ -35,18 +87,7 @@ func (item *aatFeature) mustParse(src []byte) {
 	item.enableFlags = binary.BigEndian.Uint32(src[4:])
 	item.disableFlags = binary.BigEndian.Uint32(src[8:])
 }
-func parseAatFeature(src []byte) (aatFeature, int, error) {
-	var item aatFeature
-	n := 0
-	if L := len(src); L < 12 {
-		return aatFeature{}, 0, fmt.Errorf("EOF: expected length: 12, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 12
-	return item, n, nil
-}
-func parseAatLookup(src []byte, valuesLength int) (aatLookup, int, error) {
+func parseAatLookup(src []byte, valuesNum int) (aatLookup, int, error) {
 	var item aatLookup
 	n := 0
 	{
@@ -65,7 +106,7 @@ func parseAatLookup(src []byte, valuesLength int) (aatLookup, int, error) {
 		var err error
 		switch item.version {
 		case aatLookupTableVersion0:
-			item.table, read, err = parseAatLookupTable0(src[n:], valuesLength)
+			item.table, read, err = parseAatLookupTable0(src[n:], valuesNum)
 		case aatLookupTableVersion10:
 			item.table, read, err = parseAatLookupTable10(src[n:])
 		case aatLookupTableVersion2:
@@ -86,21 +127,21 @@ func parseAatLookup(src []byte, valuesLength int) (aatLookup, int, error) {
 	}
 	return item, n, nil
 }
-func parseAatLookupTable0(src []byte, valuesLength int) (aatLookupTable0, int, error) {
+func parseAatLookupTable0(src []byte, valuesNum int) (aatLookupTable0, int, error) {
 	var item aatLookupTable0
 	n := 0
 	{
 		subSlice := src[n:]
-		if L := len(subSlice); L < +valuesLength*2 {
-			return aatLookupTable0{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", +valuesLength*2, L)
+		if L := len(subSlice); L < +valuesNum*2 {
+			return aatLookupTable0{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", +valuesNum*2, L)
 		}
 
-		item.values = make([]uint16, valuesLength) // allocation guarded by the previous check
+		item.values = make([]uint16, valuesNum) // allocation guarded by the previous check
 		for i := range item.values {
 			item.values[i] = binary.BigEndian.Uint16(subSlice[+i*2:])
 		}
 
-		n += valuesLength * 2
+		n += valuesNum * 2
 	}
 	return item, n, nil
 }
@@ -124,7 +165,6 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 		if L := len(subSlice); L < 2 {
 			return aatLookupTable10{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2, L)
 		}
-
 		arrayLength := int(binary.BigEndian.Uint16(subSlice[:]))
 		if L := len(subSlice); L < 2+arrayLength*2 {
 			return aatLookupTable10{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2+arrayLength*2, L)
@@ -232,57 +272,12 @@ func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 	}
 	return item, n, nil
 }
-func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
-	var item aatLookupTable8
-	n := 0
-	{
-		subSlice := src[n:]
-		if L := len(subSlice); L < 2 {
-			return aatLookupTable8{}, 0, fmt.Errorf("EOF: expected length: 2, got %d", L)
-		}
-
-		_ = subSlice[1] // early bound checking
-		item.firstGlyph = glyphID(binary.BigEndian.Uint16(subSlice[0:]))
-		n += 2
-
-	}
-	{
-		subSlice := src[n:]
-		if L := len(subSlice); L < 2 {
-			return aatLookupTable8{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2, L)
-		}
-
-		arrayLength := int(binary.BigEndian.Uint16(subSlice[:]))
-		if L := len(subSlice); L < 2+arrayLength*2 {
-			return aatLookupTable8{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2+arrayLength*2, L)
-		}
-
-		item.values = make([]uint16, arrayLength) // allocation guarded by the previous check
-		for i := range item.values {
-			item.values[i] = binary.BigEndian.Uint16(subSlice[2+i*2:])
-		}
-
-		n += 2 + arrayLength*2
-	}
-	return item, n, nil
-}
 func (item *aatSTXHeader) mustParse(src []byte) {
 	_ = src[15] // early bound checking
 	item.stateSize = binary.BigEndian.Uint32(src[0:])
 	item.classTable = binary.BigEndian.Uint32(src[4:])
 	item.stateArray = binary.BigEndian.Uint32(src[8:])
 	item.entryTable = binary.BigEndian.Uint32(src[12:])
-}
-func parseAatSTXHeader(src []byte) (aatSTXHeader, int, error) {
-	var item aatSTXHeader
-	n := 0
-	if L := len(src); L < 16 {
-		return aatSTXHeader{}, 0, fmt.Errorf("EOF: expected length: 16, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 16
-	return item, n, nil
 }
 func (item *binSearchHeader) mustParse(src []byte) {
 	_ = src[9] // early bound checking
@@ -292,33 +287,11 @@ func (item *binSearchHeader) mustParse(src []byte) {
 	item.entrySelector = binary.BigEndian.Uint16(src[6:])
 	item.rangeShift = binary.BigEndian.Uint16(src[8:])
 }
-func parseBinSearchHeader(src []byte) (binSearchHeader, int, error) {
-	var item binSearchHeader
-	n := 0
-	if L := len(src); L < 10 {
-		return binSearchHeader{}, 0, fmt.Errorf("EOF: expected length: 10, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 10
-	return item, n, nil
-}
 func (item *lookupRecord2) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.lastGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
 	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
 	item.value = binary.BigEndian.Uint16(src[4:])
-}
-func parseLookupRecord2(src []byte) (lookupRecord2, int, error) {
-	var item lookupRecord2
-	n := 0
-	if L := len(src); L < 6 {
-		return lookupRecord2{}, 0, fmt.Errorf("EOF: expected length: 6, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 6
-	return item, n, nil
 }
 func (item *loopkupRecord4) mustParse(src []byte) {
 	_ = src[5] // early bound checking
@@ -326,32 +299,10 @@ func (item *loopkupRecord4) mustParse(src []byte) {
 	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
 	item.offsetToValues = binary.BigEndian.Uint16(src[4:])
 }
-func parseLoopkupRecord4(src []byte) (loopkupRecord4, int, error) {
-	var item loopkupRecord4
-	n := 0
-	if L := len(src); L < 6 {
-		return loopkupRecord4{}, 0, fmt.Errorf("EOF: expected length: 6, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 6
-	return item, n, nil
-}
 func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.glyph = glyphID(binary.BigEndian.Uint16(src[0:]))
 	item.value = binary.BigEndian.Uint16(src[2:])
-}
-func parseLoopkupRecord6(src []byte) (loopkupRecord6, int, error) {
-	var item loopkupRecord6
-	n := 0
-	if L := len(src); L < 4 {
-		return loopkupRecord6{}, 0, fmt.Errorf("EOF: expected length: 4, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 4
-	return item, n, nil
 }
 func parseMorxChain(src []byte) (morxChain, int, error) {
 	var item morxChain
@@ -384,53 +335,14 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 
 		n += arrayLength * 12
 	}
-	item.subtablesData = src[n:]
-	n = len(src)
 
-	return item, n, nil
-}
-func parseMorxChainSubtable(src []byte, valuesLength int) (morxChainSubtable, int, error) {
-	var item morxChainSubtable
-	n := 0
-	{
-		subSlice := src[n:]
-		if L := len(subSlice); L < 12 {
-			return morxChainSubtable{}, 0, fmt.Errorf("EOF: expected length: 12, got %d", L)
-		}
-
-		_ = subSlice[11] // early bound checking
-		item.length = binary.BigEndian.Uint32(subSlice[0:])
-		item.coverage = subSlice[4]
-		for i := range item.ignored {
-			item.ignored[i] = subSlice[5+i]
-		}
-		item.version = morxSubtableVersion(subSlice[7])
-		item.subFeatureFlags = binary.BigEndian.Uint32(subSlice[8:])
-		n += 12
-
+	L := int(item.chainLength)
+	if len(src) < L {
+		return morxChain{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", L, len(src))
 	}
-	{
-		var read int
-		var err error
-		switch item.version {
-		case morxSubtableVersionContextual:
-			item.subtableContent, read, err = parseMorxSubtableContextual(src[n:])
-		case morxSubtableVersionInsertion:
-			item.subtableContent, read, err = parseMorxSubtableInsertion(src[n:])
-		case morxSubtableVersionLigature:
-			item.subtableContent, read, err = parseMorxSubtableLigature(src[n:])
-		case morxSubtableVersionNonContextual:
-			item.subtableContent, read, err = parseMorxSubtableNonContextual(src[n:], valuesLength)
-		case morxSubtableVersionRearrangement:
-			item.subtableContent, read, err = parseMorxSubtableRearrangement(src[n:])
-		default:
-			err = fmt.Errorf("unsupported morxSubtableVersion %d", item.version)
-		}
-		if err != nil {
-			return morxChainSubtable{}, 0, err
-		}
-		n += read
-	}
+	item.subtablesData = src[n:item.chainLength]
+	n = L
+
 	return item, n, nil
 }
 func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error) {
@@ -495,14 +407,14 @@ func parseMorxSubtableLigature(src []byte) (morxSubtableLigature, int, error) {
 
 	return item, n, nil
 }
-func parseMorxSubtableNonContextual(src []byte, valuesLength int) (morxSubtableNonContextual, int, error) {
+func parseMorxSubtableNonContextual(src []byte, valuesNum int) (morxSubtableNonContextual, int, error) {
 	var item morxSubtableNonContextual
 	n := 0
 
 	{
 		var read int
 		var err error
-		item.table, read, err = parseAatLookup(src[n:], valuesLength)
+		item.table, read, err = parseAatLookup(src[n:], valuesNum)
 		if err != nil {
 			return morxSubtableNonContextual{}, 0, err
 		}

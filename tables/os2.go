@@ -32,5 +32,5 @@ type Os2 struct {
 	sTypoLineGap        int16
 	usWinAscent         uint16
 	usWinDescent        uint16
-	higherVersionData   []byte `len:"_toEnd"`
+	higherVersionData   []byte `len:"__toEnd"`
 }

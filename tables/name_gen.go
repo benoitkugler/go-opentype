@@ -54,14 +54,3 @@ func (item *nameRecord) mustParse(src []byte) {
 	item.length = binary.BigEndian.Uint16(src[8:])
 	item.stringOffset = binary.BigEndian.Uint16(src[10:])
 }
-func parseNameRecord(src []byte) (nameRecord, int, error) {
-	var item nameRecord
-	n := 0
-	if L := len(src); L < 12 {
-		return nameRecord{}, 0, fmt.Errorf("EOF: expected length: 12, got %d", L)
-	}
-
-	item.mustParse(src)
-	n += 12
-	return item, n, nil
-}

@@ -39,7 +39,7 @@ type postNames10 struct{}
 
 type postNames20 struct {
 	glyphNameIndexes []uint16 `len:"_first16"` // size numGlyph
-	stringData       []byte   `len:"_toEnd"`
+	stringData       []byte   `len:"__toEnd"`
 }
 
 type postNames30 postNames10

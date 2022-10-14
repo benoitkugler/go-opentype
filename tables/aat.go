@@ -34,3 +34,18 @@ type aatStateEntry4 struct {
 	flags    uint16 // Table specific.
 	data     [4]byte
 }
+
+// Morx post processing
+
+func (chain morxChain) process(glyphNum int) (out []MorxChainSubtable, err error) {
+	currentOffset := 0
+	for i := 0; i < int(chain.nSubtable); i++ {
+		subtable, _, err := ParseMorxChainSubtable(chain.subtablesData[currentOffset:], glyphNum)
+		if err != nil {
+			return nil, err
+		}
+		currentOffset += int(subtable.length) // parseMorxChainSubtable is not aware of the length
+		out = append(out, subtable)
+	}
+	return out, nil
+}

@@ -57,7 +57,7 @@ type lookupRecord2 struct {
 type aatLookupTable4 struct {
 	binSearchHeader
 	records []loopkupRecord4 `len:"nUnits"`
-	rawData []byte           `len:"_toEnd"`
+	rawData []byte           `len:"__toEnd"`
 }
 
 type loopkupRecord4 struct {
@@ -129,7 +129,7 @@ type aatLookupTableExt4 struct {
 	binSearchHeader
 	// the values pointed by the record are uint32
 	records []loopkupRecord4 `len:"nUnits"`
-	rawData []byte           `len:"_toEnd"`
+	rawData []byte           `len:"__toEnd"`
 }
 
 type aatLookupTableExt6 struct {

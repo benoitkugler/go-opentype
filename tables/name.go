@@ -7,7 +7,7 @@ package tables
 type Name struct {
 	version     uint16
 	count       uint16
-	stringData  []byte       `offset-size:"16" len:"_toEnd"`
+	stringData  []byte       `offset-size:"16" len:"__toEnd"`
 	nameRecords []nameRecord `len:"count"`
 }
 

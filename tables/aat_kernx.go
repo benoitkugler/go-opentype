@@ -8,7 +8,7 @@ type Kerx struct {
 	version uint16 // The version number of the extended kerning table (currently 2, 3, or 4).
 	padding uint16 // Unused; set to zero.
 	nTables uint32 // The number of subtables included in the extended kerning table.
-	rawData []byte `len:"_toEnd"`
+	rawData []byte `len:"__toEnd"`
 }
 
 type kernSubtableW struct {
@@ -38,13 +38,13 @@ type kernSubtable0 struct {
 	entrySelector uint16         //	This is calculated as log2 of the largest power of two less than or equal to the value of nPairs. This value indicates how many iterations of the search loop have to be made. For example, in a list of eight items, there would be three iterations of the loop.
 	rangeShift    uint16         //	The value of nPairs minus the largest power of two less than or equal to nPairs. This is multiplied b
 	pairs         []kernx0Record `len:"nPairs"`
-	rawData       []byte         `len:"_toEnd"` // used for variable fonts
+	rawData       []byte         `len:"__toEnd"` // used for variable fonts
 }
 
 type kernSubtable1 struct {
 	aatSTHeader
 	valueTable uint16 // Offset in bytes from the beginning of the subtable to the beginning of the kerning table.
-	rawData    []byte `len:"_startToEnd"`
+	rawData    []byte `len:"__startToEnd"`
 }
 
 type kernSubtable2 struct {
@@ -52,7 +52,7 @@ type kernSubtable2 struct {
 	left               aatLookupTable8 `offset-size:"16"`
 	right              aatLookupTable8 `offset-size:"16"`
 	kerningArrayOffset uint16
-	rawData            []byte `len:"_startToEnd"` // used to resolve kerning pairs
+	rawData            []byte `len:"__startToEnd"` // used to resolve kerning pairs
 }
 
 // extended versions
@@ -88,7 +88,7 @@ type kerxSubtable0 struct {
 	entrySelector uint32
 	rangeShift    uint32
 	pairs         []kernx0Record `len:"nPairs"`
-	rawData       []byte         `len:"_toEnd"` // used for variable fonts
+	rawData       []byte         `len:"__toEnd"` // used for variable fonts
 }
 
 type kernx0Record struct {

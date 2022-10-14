@@ -61,7 +61,6 @@ func parsePostNames20(src []byte) (postNames20, int, error) {
 		if L := len(subSlice); L < 2 {
 			return postNames20{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2, L)
 		}
-
 		arrayLength := int(binary.BigEndian.Uint16(subSlice[:]))
 		if L := len(subSlice); L < 2+arrayLength*2 {
 			return postNames20{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", 2+arrayLength*2, L)
