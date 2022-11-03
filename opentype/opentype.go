@@ -1,5 +1,8 @@
 // Package opentype provides the low level routines
 // required to read Opentype font files, including collections.
+//
+// This package is designed to provide an efficient, lazy, reading API.
+//
 // For the parsing of the various tables, see package [tables].
 // For an higher level API, see the packages [XXX]
 // TODO:
@@ -24,4 +27,14 @@ func MustNewTag(str string) Tag {
 	}
 	_ = str[3]
 	return NewTag(str[0], str[1], str[2], str[3])
+}
+
+// String return the ASCII form of the tag.
+func (t Tag) String() string {
+	return string([]byte{
+		byte(t >> 24),
+		byte(t >> 16),
+		byte(t >> 8),
+		byte(t),
+	})
 }

@@ -46,10 +46,10 @@ func readOTFEntry(r io.Reader) (otfEntry, error) {
 }
 
 // parseOTF reads an OpenTyp (.otf) or TrueType (.ttf) file and returns a Font.
-// If parsing fails, then an error is returned and Font will be nil.
+// If the parsing fails, then an error is returned and Font will be nil.
 // `offset` is the beginning of the ressource in the file (non zero for collections)
-// `relativeOffset` is true when the table offset are expresed relatively ot the ressource
-// (that is, `offset`) rather than to the file
+// `relativeOffset` is true when the table offset are expresed relatively to the ressource start
+// (that is, `offset`) rather than to the file start.
 func parseOTF(file Resource, offset uint32, relativeOffset bool) (*Loader, error) {
 	_, err := file.Seek(int64(offset), io.SeekStart)
 	if err != nil {

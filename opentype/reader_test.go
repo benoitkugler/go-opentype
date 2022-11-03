@@ -78,3 +78,30 @@ func TestCollection(t *testing.T) {
 		}
 	}
 }
+
+func TestRawTable(t *testing.T) {
+	for _, filename := range filenames(t, "common") {
+		f, err := td.Files.ReadFile(filename)
+		if err != nil {
+			t.Fatal(err)
+		}
+		font, err := NewLoader(bytes.NewReader(f))
+		if err != nil {
+			t.Fatal(filename, err)
+		}
+
+		_, err = font.RawTable(MustNewTag("xxxx"))
+		if err == nil {
+			t.Fatal(filename, "expected error on unknown table tag")
+		}
+
+		_, err = font.RawTable(MustNewTag("head"))
+		if err != nil {
+			t.Fatal(filename, err)
+		}
+		_, err = font.RawTable(MustNewTag("OS/2"))
+		if err != nil {
+			t.Fatal(filename, err)
+		}
+	}
+}
