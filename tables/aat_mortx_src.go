@@ -72,7 +72,7 @@ type morxSubtableContextual struct {
 	// Byte offset from the beginning of the state subtable to the beginning of the substitution tables :
 	// each value of the array is itself an offet to a aatLookupTable, and the number of
 	// items is computed from the header
-	substitutionTableOffset uint32 `offsetSize:"Offset32"`
+	substitutionTableOffset uint32
 	rawData                 []byte `arrayCount:"ToEnd"`
 }
 
