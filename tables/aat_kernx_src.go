@@ -21,13 +21,17 @@ type kernSubtable interface {
 	isKernSubtable()
 }
 
+func (kernSubtable0) isKernSubtable() {}
+func (kernSubtable1) isKernSubtable() {}
+func (kernSubtable2) isKernSubtable() {}
+
 type kernSTVersion byte
 
 const (
 	kernSTVersion0 kernSTVersion = iota
 	kernSTVersion1
 	kernSTVersion2
-	kernSTVersion3
+	// kernSTVersion3 // TODO:
 )
 
 type kernSubtable0 struct {
@@ -80,6 +84,12 @@ type kerxSubtable interface {
 	isKerxSubtable()
 }
 
+func (kerxSubtable0) isKerxSubtable() {}
+func (kerxSubtable1) isKerxSubtable() {}
+func (kerxSubtable2) isKerxSubtable() {}
+func (kerxSubtable4) isKerxSubtable() {}
+func (kerxSubtable6) isKerxSubtable() {}
+
 type kerxSubtable0 struct {
 	nPairs        uint32
 	searchRange   uint32
@@ -93,3 +103,11 @@ type kernx0Record struct {
 	left, right glyphID
 	value       int16
 }
+
+type kerxSubtable1 struct{}
+
+type kerxSubtable2 struct{}
+
+type kerxSubtable4 struct{}
+
+type kerxSubtable6 struct{}
