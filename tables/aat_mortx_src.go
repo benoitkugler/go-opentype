@@ -1,14 +1,12 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator aat_mortx.go
-
 // Morx is the extended glyph metamorphosis table
 // See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6morx.html
 type Morx struct {
 	version uint16      // Version number of the extended glyph metamorphosis table (either 2 or 3)
 	unused  uint16      // Set to 0
 	nChains uint32      // Number of metamorphosis chains contained in this table.
-	chains  []morxChain `len:"nChains"`
+	chains  []morxChain `arrayCount:"ComputedField-nChains"`
 }
 
 // mortx chain : set of subtables
@@ -17,8 +15,8 @@ type morxChain struct {
 	chainLength     uint32
 	nFeatureEntries uint32
 	nSubtable       uint32
-	features        []aatFeature `len:"nFeatureEntries"`
-	subtablesData   []byte       `len:"__to_chainLength"`
+	features        []aatFeature `arrayCount:"ComputedField-nFeatureEntries"`
+	subtablesData   []byte       `arrayCount:"To-chainLength"`
 }
 
 type aatFeature struct {
@@ -38,7 +36,7 @@ type MorxChainSubtable struct {
 
 	subFeatureFlags uint32 // The 32-bit mask identifying which subtable this is (the subtable being executed if the AND of this value and the processed defaultFlags is nonzero)
 
-	subtableContent morxSubtable `version-field:"version"`
+	subtableContent morxSubtable `unionField:"version"`
 }
 
 // morxSubtableVersion indicates the kind of 'morx' subtable.
@@ -66,7 +64,7 @@ func (morxSubtableInsertion) isMorxSubtable()     {}
 
 type morxSubtableRearrangement struct {
 	aatSTXHeader
-	rawData []byte `len:"__toEnd"`
+	rawData []byte `arrayCount:"ToEnd"`
 }
 
 type morxSubtableContextual struct {
@@ -74,8 +72,8 @@ type morxSubtableContextual struct {
 	// Byte offset from the beginning of the state subtable to the beginning of the substitution tables :
 	// each value of the array is itself an offet to a aatLookupTable, and the number of
 	// items is computed from the header
-	substitutionTableOffset uint32 `offset-size:"uint32"`
-	rawData                 []byte `len:"__toEnd"`
+	substitutionTableOffset uint32 `offsetSize:"Offset32"`
+	rawData                 []byte `arrayCount:"ToEnd"`
 }
 
 type morxSubtableLigature struct {
@@ -83,7 +81,7 @@ type morxSubtableLigature struct {
 	ligActionOffset uint32 // Byte offset from stateHeader to the start of the ligature action table.
 	componentOffset uint32 // Byte offset from stateHeader to the start of the component table.
 	ligatureOffset  uint32 // Byte offset from stateHeader to the start of the actual ligature lists.
-	rawData         []byte `len:"__toEnd"`
+	rawData         []byte `arrayCount:"ToEnd"`
 }
 
 type morxSubtableNonContextual struct {
@@ -93,5 +91,5 @@ type morxSubtableNonContextual struct {
 type morxSubtableInsertion struct {
 	aatSTXHeader
 	insertionActionOffset uint32 //	Byte offset from stateHeader to the start of the insertion glyph table.
-	rawData               []byte `len:"__toEnd"`
+	rawData               []byte `arrayCount:"ToEnd"`
 }

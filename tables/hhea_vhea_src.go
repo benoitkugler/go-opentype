@@ -1,7 +1,5 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator hhea_vhea.go
-
 // https://learn.microsoft.com/en-us/typography/opentype/spec/hhea
 type Hhea struct {
 	majorVersion         uint16

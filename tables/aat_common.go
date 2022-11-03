@@ -2,8 +2,6 @@ package tables
 
 // AAT layout
 
-// go:generate ../../binarygen/cmd/generator aat_common.go
-
 type binSearchHeader struct {
 	unitSize      uint16
 	nUnits        uint16
@@ -14,7 +12,7 @@ type binSearchHeader struct {
 
 type aatLookup struct {
 	version aatLookupVersion
-	table   aatLookupTable `version-field:"version"`
+	table   aatLookupTable `unionField:"version"`
 }
 
 type aatLookupTable interface {
@@ -40,12 +38,12 @@ const (
 )
 
 type aatLookupTable0 struct {
-	values []uint16 `len:""`
+	values []uint16 `arrayCount:""`
 }
 
 type aatLookupTable2 struct {
 	binSearchHeader
-	records []lookupRecord2 `len:"nUnits"`
+	records []lookupRecord2 `arrayCount:"ComputedField-nUnits"`
 }
 
 type lookupRecord2 struct {
@@ -56,8 +54,8 @@ type lookupRecord2 struct {
 
 type aatLookupTable4 struct {
 	binSearchHeader
-	records []loopkupRecord4 `len:"nUnits"`
-	rawData []byte           `len:"__toEnd"`
+	records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
+	rawData []byte           `arrayCount:"ToEnd"`
 }
 
 type loopkupRecord4 struct {
@@ -69,7 +67,7 @@ type loopkupRecord4 struct {
 
 type aatLookupTable6 struct {
 	binSearchHeader
-	records []loopkupRecord6 `len:"nUnits"`
+	records []loopkupRecord6 `arrayCount:"ComputedField-nUnits"`
 }
 
 type loopkupRecord6 struct {
@@ -79,13 +77,13 @@ type loopkupRecord6 struct {
 
 type aatLookupTable8 struct {
 	firstGlyph glyphID
-	values     []uint16 `len:"_first16"`
+	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTable10 struct {
 	unitSize   uint16
 	firstGlyph glyphID
-	values     []uint16 `len:"_first16"`
+	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatExtendedLookupTable struct {
@@ -96,7 +94,7 @@ type aatExtendedLookupTable struct {
 
 type aatLookupExt struct {
 	version aatLookupVersion
-	table   aatLookupTableExt `version-field:"version"`
+	table   aatLookupTableExt `unionField:"version"`
 }
 
 type aatLookupTableExt interface {
@@ -111,12 +109,12 @@ func (aatLookupTableExt8) isAATLookupTableExt()  {}
 func (aatLookupTableExt10) isAATLookupTableExt() {}
 
 type aatLookupTableExt0 struct {
-	values []uint32 `len:""`
+	values []uint32 `arrayCount:""`
 }
 
 type aatLookupTableExt2 struct {
 	binSearchHeader
-	records []lookupRecordExt2 `len:"nUnits"`
+	records []lookupRecordExt2 `arrayCount:"ComputedField-nUnits"`
 }
 
 type lookupRecordExt2 struct {
@@ -128,13 +126,13 @@ type lookupRecordExt2 struct {
 type aatLookupTableExt4 struct {
 	binSearchHeader
 	// the values pointed by the record are uint32
-	records []loopkupRecord4 `len:"nUnits"`
-	rawData []byte           `len:"__toEnd"`
+	records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
+	rawData []byte           `arrayCount:"ToEnd"`
 }
 
 type aatLookupTableExt6 struct {
 	binSearchHeader
-	records []loopkupRecordExt6 `len:"nUnits"`
+	records []loopkupRecordExt6 `arrayCount:"ComputedField-nUnits"`
 }
 
 type loopkupRecordExt6 struct {
@@ -144,11 +142,11 @@ type loopkupRecordExt6 struct {
 
 type aatLookupTableExt8 struct {
 	firstGlyph glyphID
-	values     []uint16 `len:"_first16"`
+	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTableExt10 struct {
 	unitSize   uint16
 	firstGlyph glyphID
-	values     []uint32 `len:"_first16"`
+	values     []uint32 `arrayCount:"FirstUint16"`
 }

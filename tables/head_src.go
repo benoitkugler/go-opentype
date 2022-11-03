@@ -1,7 +1,5 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator head.go
-
 // TableHead contains critical information about the rest of the font.
 // https://learn.microsoft.com/en-us/typography/opentype/spec/head
 // https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6head.html

@@ -1,12 +1,10 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator maxp.go
-
 // https://learn.microsoft.com/en-us/typography/opentype/spec/Maxp
 type Maxp struct {
 	version   maxpVersion
 	numGlyphs uint16
-	data      maxpData `version-field:"version"`
+	data      maxpData `unionField:"version"`
 }
 
 type maxpVersion uint32

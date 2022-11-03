@@ -1,7 +1,5 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator os2.go
-
 // OS/2 and Windows Metrics Table
 // See https://learn.microsoft.com/en-us/typography/opentype/spec/os2
 type Os2 struct {
@@ -32,5 +30,5 @@ type Os2 struct {
 	sTypoLineGap        int16
 	usWinAscent         uint16
 	usWinDescent        uint16
-	higherVersionData   []byte `len:"__toEnd"`
+	higherVersionData   []byte `arrayCount:"ToEnd"`
 }

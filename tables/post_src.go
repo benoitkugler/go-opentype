@@ -1,7 +1,5 @@
 package tables
 
-//go:generate ../../binarygen/cmd/generator post.go
-
 // PostScript table
 // See https://learn.microsoft.com/en-us/typography/opentype/spec/post
 type Post struct {
@@ -16,7 +14,7 @@ type Post struct {
 	// (i.e. monospaced).
 	isFixedPitch uint32
 	memoryUsage  [4]uint32
-	names        postNames `version-field:"version"`
+	names        postNames `unionField:"version"`
 }
 
 type postNames interface {
@@ -38,8 +36,8 @@ const (
 type postNames10 struct{}
 
 type postNames20 struct {
-	glyphNameIndexes []uint16 `len:"_first16"` // size numGlyph
-	stringData       []byte   `len:"__toEnd"`
+	glyphNameIndexes []uint16 `arrayCount:"FirstUint16"` // size numGlyph
+	stringData       []byte   `arrayCount:"ToEnd"`
 }
 
 type postNames30 postNames10
