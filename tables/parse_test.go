@@ -2,6 +2,7 @@ package tables
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -104,4 +105,22 @@ func TestParseMorx(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestParseCmap(t *testing.T) {
+	// general parsing
+	for _, filename := range filenames(t, "common") {
+		fp := readFontFile(t, filename)
+		_, _, err := ParseCmap(readTable(t, fp, "cmap"))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// specialized tests
+	table, _, err := ParseCmap(readTable(t, readFontFile(t, "cmap/CMAP12.otf"), "cmap"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(table)
 }

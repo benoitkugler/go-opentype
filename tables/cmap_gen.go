@@ -34,8 +34,11 @@ func ParseCmap(src []byte) (Cmap, int, error) {
 	}
 	{
 
-		item.rawData = src[0:]
-		n = len(src)
+		read, err := item.subtables.customParse(src[:])
+		if err != nil {
+			return Cmap{}, 0, err
+		}
+		n = read
 	}
 	return item, n, nil
 }

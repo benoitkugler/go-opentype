@@ -6,7 +6,14 @@ type Cmap struct {
 	version   uint16           // Table version number (0).
 	numTables uint16           // Number of encoding tables that follow.
 	records   []encodingRecord `arrayCount:"ComputedField-numTables"`
-	rawData   []byte           `arrayCount:"ToEnd" subsliceStart:"AtStart"`
+	subtables cmapSubtables    `isOpaque:"" subsliceStart:"AtStart"`
+}
+
+type cmapSubtables [][]byte
+
+func (cs cmapSubtables) customParse(src []byte) (int, error) {
+	// TODO:
+	return 0, nil
 }
 
 type encodingRecord struct {
