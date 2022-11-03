@@ -27,7 +27,7 @@ type cmapSubtable2 struct {
 	rawData []byte `arrayCount:"ToEnd"`
 }
 
-type cmapSubtable4 struct {
+type CmapSubtable4 struct {
 	format         uint16 // Format number is set to 0.
 	length         uint16 // This is the length in bytes of the subtable.
 	language       uint16
@@ -40,7 +40,7 @@ type cmapSubtable4 struct {
 	startCode      []uint16 `arrayCount:"ComputedField-segCountX2 / 2"` // [segCount]uint16 Start character code for each segment.
 	idDelta        []int16  `arrayCount:"ComputedField-segCountX2 / 2"` // [segCount]int16 Delta for all character codes in segment.
 	idRangeOffsets []uint16 `arrayCount:"ComputedField-segCountX2 / 2"` // [segCount]uint16 Offsets into glyphIdArray or 0
-	rawData        []byte   `arrayCount:"ToEnd"`                        // glyphIdArray : uint16[] glyph index array (arbitrary length)
+	glyphIDArray   []byte   `arrayCount:"ToEnd"`                        // glyphIdArray : uint16[] glyph index array (arbitrary length)
 }
 
 type cmapSubtable6 struct {
@@ -80,15 +80,37 @@ type sequentialMapGroup struct {
 type cmapSubtable13 cmapSubtable12
 
 type cmapSubtable14 struct {
-	format                uint16              //	Subtable format. Set to 14.
-	length                uint32              //	Byte length of this subtable (including this header)
-	numVarSelectorRecords uint32              //	Number of variation Selector Records
-	varSelector           []variationSelector `arrayCount:"ComputedField-numVarSelectorRecords"` // [numVarSelectorRecords]	Array of VariationSelector records.
+	format                uint16              // Subtable format. Set to 14.
+	length                uint32              // Byte length of this subtable (including this header)
+	numVarSelectorRecords uint32              // Number of variation Selector Records
+	varSelectors          []variationSelector `arrayCount:"ComputedField-numVarSelectorRecords"` // [numVarSelectorRecords]	Array of VariationSelector records.
+	rawData               []byte              `arrayCount:"ToEnd" subsliceStart:"AtStart"`       // used to interpret [varSelectors]
 }
 
 type variationSelector struct {
-	varSelector         [3]byte //	uint24 Variation selector
-	defaultUVSOffset    uint32  //	Offset from the start of the format 14 subtable to Default UVS Table. May be 0.
-	nonDefaultUVSOffset uint32  //	Offset from the start of the format 14 subtable to Non-Default UVS Table. May be 0.
-	rawData             []byte  `arrayCount:"ToEnd" subsliceStart:"AtStart"`
+	varSelector         [3]byte // uint24 Variation selector
+	defaultUVSOffset    uint32  // Offset from the start of the format 14 subtable to Default UVS Table. May be 0.
+	nonDefaultUVSOffset uint32  // Offset from the start of the format 14 subtable to Non-Default UVS Table. May be 0.
+}
+
+// DefaultUVSTable is used in Cmap format 14
+// See https://learn.microsoft.com/en-us/typography/opentype/spec/cmap#default-uvs-table
+type DefaultUVSTable struct {
+	ranges []unicodeRange `arrayCount:"FirstUint32"`
+}
+
+type unicodeRange struct {
+	startUnicodeValue [3]byte // uint24 First value in this range
+	additionalCount   uint8   // Number of additional values in this range
+}
+
+// UVSMappingTable is used in Cmap format 14
+// See https://learn.microsoft.com/en-us/typography/opentype/spec/cmap#non-default-uvs-table
+type UVSMappingTable struct {
+	ranges []uvsMappingRecord `arrayCount:"FirstUint32"`
+}
+
+type uvsMappingRecord struct {
+	unicodeValue [3]byte // uint24 Base Unicode value of the UVS
+	glyphID      uint16  //	Glyph ID of the UVS
 }
