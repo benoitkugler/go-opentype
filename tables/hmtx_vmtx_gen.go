@@ -13,7 +13,7 @@ func ParseHmtx(src []byte, hMetricsCount int, leftSideBearingsCount int) (Hmtx, 
 	{
 
 		if L := len(src); L < hMetricsCount*4 {
-			return Hmtx{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", hMetricsCount*4, L)
+			return Hmtx{}, 0, fmt.Errorf("reading Hmtx: "+"EOF: expected length: %d, got %d", hMetricsCount*4, L)
 		}
 
 		item.hMetrics = make([]longHorMetric, hMetricsCount) // allocation guarded by the previous check
@@ -25,7 +25,7 @@ func ParseHmtx(src []byte, hMetricsCount int, leftSideBearingsCount int) (Hmtx, 
 	{
 
 		if L := len(src); L < n+leftSideBearingsCount*2 {
-			return Hmtx{}, 0, fmt.Errorf("EOF: expected length: %d, got %d", n+leftSideBearingsCount*2, L)
+			return Hmtx{}, 0, fmt.Errorf("reading Hmtx: "+"EOF: expected length: %d, got %d", n+leftSideBearingsCount*2, L)
 		}
 
 		item.leftSideBearings = make([]int16, leftSideBearingsCount) // allocation guarded by the previous check
