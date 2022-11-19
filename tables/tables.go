@@ -43,3 +43,9 @@ func parseUint24(b []byte) rune {
 	_ = b[2] // BCE
 	return rune(b[0])<<16 | rune(b[1])<<8 | rune(b[2])
 }
+
+// Offset16 is an offset into the input byte slice
+type Offset16 uint16
+
+// Offset32 is an offset into the input byte slice
+type Offset32 uint16

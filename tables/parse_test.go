@@ -140,9 +140,28 @@ func TestParseCmap(t *testing.T) {
 func TestParseOTLayout(t *testing.T) {
 	for _, filename := range td.WithOTLayout {
 		fp := readFontFile(t, filename)
-		_, _, err := ParseLayout(readTable(t, fp, "GSUB"))
+		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 		assertNoErr(t, err)
-		_, _, err = ParseLayout(readTable(t, fp, "GPOS"))
+		assert(t, len(gsub.lookupList.lookups) == len(gsub.lookupList.lookups))
+		assert(t, len(gsub.lookupList.lookups) > 0)
+
+		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 		assertNoErr(t, err)
+		assert(t, len(gpos.lookupList.lookups) == len(gpos.lookupList.lookups))
+		assert(t, len(gpos.lookupList.lookups) > 0)
+	}
+
+	for _, filename := range filenames(t, "toys/gsub") {
+		fp := readFontFile(t, filename)
+		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
+		assertNoErr(t, err)
+		assert(t, len(gsub.lookupList.lookups) == len(gsub.lookupList.lookups))
+		assert(t, len(gsub.lookupList.lookups) > 0)
+
+		for _, lookup := range gsub.lookupList.lookups {
+			assert(t, lookup.lookupType > 0)
+			_, err = lookup.AsGSUBLookups()
+			assertNoErr(t, err)
+		}
 	}
 }
