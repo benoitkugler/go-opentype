@@ -83,14 +83,12 @@ type SequenceLookupRecord struct {
 // binarygen: startOffset=2
 // Format identifier: format = 1
 type SequenceContextFormat1 struct {
-	Coverage          Coverage   `offsetSize:"Offset16"`    // Offset to Coverage table, from beginning of SequenceContextFormat1 table
-	seqRuleSetOffsets []Offset16 `arrayCount:"FirstUint16"` //[seqRuleSetCount]	Array of offsets to SequenceRuleSet tables, from beginning of SequenceContextFormat1 table (offsets may be NULL)
-	rawData           []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	Coverage   Coverage          `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of SequenceContextFormat1 table
+	seqRuleSet []SequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[seqRuleSetCount]	Array of offsets to SequenceRuleSet tables, from beginning of SequenceContextFormat1 table (offsets may be NULL)
 }
 
 type SequenceRuleSet struct {
-	seqRuleOffsets []Offset16 `arrayCount:"FirstUint16"` // Array of offsets to SequenceRule tables, from beginning of the SequenceRuleSet table
-	rawData        []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	seqRule []SequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to SequenceRule tables, from beginning of the SequenceRuleSet table
 }
 
 type SequenceRule struct {
@@ -103,15 +101,13 @@ type SequenceRule struct {
 // binarygen: startOffset=2
 // Format identifier: format = 2
 type SequenceContextFormat2 struct {
-	coverage               Coverage   `offsetSize:"Offset16"`    //	Offset to Coverage table, from beginning of SequenceContextFormat2 table
-	classDef               ClassDef   `offsetSize:"Offset16"`    //	Offset to ClassDef table, from beginning of SequenceContextFormat2 table
-	classSeqRuleSetOffsets []Offset16 `arrayCount:"FirstUint16"` //[classSeqRuleSetCount]	Array of offsets to ClassSequenceRuleSet tables, from beginning of SequenceContextFormat2 table (may be NULL)
-	rawData                []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	coverage        Coverage               `offsetSize:"Offset16"`                            //	Offset to Coverage table, from beginning of SequenceContextFormat2 table
+	classDef        ClassDef               `offsetSize:"Offset16"`                            //	Offset to ClassDef table, from beginning of SequenceContextFormat2 table
+	classSeqRuleSet []ClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[classSeqRuleSetCount]	Array of offsets to ClassSequenceRuleSet tables, from beginning of SequenceContextFormat2 table (may be NULL)
 }
 
 type ClassSequenceRuleSet struct {
-	classSeqRuleOffsets []Offset16 //	Array of offsets to ClassSequenceRule tables, from beginning of ClassSequenceRuleSet table
-	rawData             []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	classSeqRule []ClassSequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //	Array of offsets to ClassSequenceRule tables, from beginning of ClassSequenceRuleSet table
 }
 
 type ClassSequenceRule struct {
@@ -126,19 +122,19 @@ type ClassSequenceRule struct {
 type SequenceContextFormat3 struct {
 	glyphCount       uint16                 // Number of glyphs in the input sequence
 	seqLookupCount   uint16                 // Number of SequenceLookupRecords
-	coverageOffsets  []Offset16             `arrayCount:"ComputedField-glyphCount"`     //[glyphCount]	Array of offsets to Coverage tables, from beginning of SequenceContextFormat3 subtable
-	seqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"` //[seqLookupCount]	Array of SequenceLookupRecords
-	rawData          []byte                 `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	coverageOffsets  []Coverage             `arrayCount:"ComputedField-glyphCount" offsetsArray:"Offset16"` //[glyphCount]	Array of offsets to Coverage tables, from beginning of SequenceContextFormat3 subtable
+	seqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"`                     //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
 // Format identifier: format = 1
 type ChainedSequenceContextFormat1 struct {
-	coverageOffset           Coverage   `offsetSize:"Offset16"`    //	Offset to Coverage table, from beginning of ChainSequenceContextFormat1 table
-	chainedSeqRuleSetOffsets []Offset16 `arrayCount:"FirstUint16"` //[chainedSeqRuleSetCount]	Array of offsets to ChainedSeqRuleSet tables, from beginning of ChainedSequenceContextFormat1 table (may be NULL)
-	rawData                  []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	coverageOffset    Coverage                 `offsetSize:"Offset16"`                             //	Offset to Coverage table, from beginning of ChainSequenceContextFormat1 table
+	chainedSeqRuleSet []ChainedSequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[chainedSeqRuleSetCount]	Array of offsets to ChainedSeqRuleSet tables, from beginning of ChainedSequenceContextFormat1 table (may be NULL)
 }
 
-type ChainedSequenceRuleSet SequenceRuleSet
+type ChainedSequenceRuleSet struct {
+	chainedSeqRules []ChainedSequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to SequenceRule tables, from beginning of the SequenceRuleSet table
+}
 
 type ChainedSequenceRule struct {
 	backtrackSequence []glyphID              `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of backtrack glyph IDs
@@ -151,15 +147,16 @@ type ChainedSequenceRule struct {
 // binarygen: startOffset=2
 // Format identifier: format = 2
 type ChainedSequenceContextFormat2 struct {
-	coverage                      Coverage   `offsetSize:"Offset16"`    // Offset to Coverage table, from beginning of ChainedSequenceContextFormat2 table
-	backtrackClassDef             ClassDef   `offsetSize:"Offset16"`    // Offset to ClassDef table containing backtrack sequence context, from beginning of ChainedSequenceContextFormat2 table
-	inputClassDef                 ClassDef   `offsetSize:"Offset16"`    // Offset to ClassDef table containing input sequence context, from beginning of ChainedSequenceContextFormat2 table
-	lookaheadClassDef             ClassDef   `offsetSize:"Offset16"`    // Offset to ClassDef table containing lookahead sequence context, from beginning of ChainedSequenceContextFormat2 table
-	chainedClassSeqRuleSetOffsets []Offset16 `arrayCount:"FirstUint16"` //[chainedClassSeqRuleSetCount]	Array of offsets to ChainedClassSequenceRuleSet tables, from beginning of ChainedSequenceContextFormat2 table (may be NULL)
-	rawData                       []byte     `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	coverage               Coverage                      `offsetSize:"Offset16"`                            // Offset to Coverage table, from beginning of ChainedSequenceContextFormat2 table
+	backtrackClassDef      ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing backtrack sequence context, from beginning of ChainedSequenceContextFormat2 table
+	inputClassDef          ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing input sequence context, from beginning of ChainedSequenceContextFormat2 table
+	lookaheadClassDef      ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing lookahead sequence context, from beginning of ChainedSequenceContextFormat2 table
+	chainedClassSeqRuleSet []ChainedClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[chainedClassSeqRuleSetCount]	Array of offsets to ChainedClassSequenceRuleSet tables, from beginning of ChainedSequenceContextFormat2 table (may be NULL)
 }
 
-type ChainedClassSequenceRuleSet SequenceRuleSet
+type ChainedClassSequenceRuleSet struct {
+	chainedClassSeqRules []ChainedClassSequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to ChainedClassSequenceRule tables, from beginning of ChainedClassSequenceRuleSet
+}
 
 type ChainedClassSequenceRule struct {
 	backtrackSequence   []uint16               `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of backtrack-sequence classes
@@ -172,9 +169,8 @@ type ChainedClassSequenceRule struct {
 // binarygen: startOffset=2
 // Format identifier: format = 3
 type ChainedSequenceContextFormat3 struct {
-	backtrackCoverageOffsets []Offset16             `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of offsets to coverage tables for the backtrack sequence
-	inputCoverageOffsets     []Offset16             `arrayCount:"FirstUint16"` //[inputGlyphCount]	Array of offsets to coverage tables for the input sequence
-	lookaheadCoverageOffsets []Offset16             `arrayCount:"FirstUint16"` //[lookaheadGlyphCount]	Array of offsets to coverage tables for the lookahead sequence
-	seqLookupRecords         []SequenceLookupRecord `arrayCount:"FirstUint16"` //[seqLookupCount]	Array of SequenceLookupRecords
-	rawData                  []byte                 `sliceStart:"AtStart" arrayCount:"ToEnd"`
+	backtrackCoverageOffsets []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[backtrackGlyphCount]	Array of offsets to coverage tables for the backtrack sequence
+	inputCoverageOffsets     []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[inputGlyphCount]	Array of offsets to coverage tables for the input sequence
+	lookaheadCoverageOffsets []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[lookaheadGlyphCount]	Array of offsets to coverage tables for the lookahead sequence
+	seqLookupRecords         []SequenceLookupRecord `arrayCount:"FirstUint16"`                         //[seqLookupCount]	Array of SequenceLookupRecords
 }
