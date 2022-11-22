@@ -38,8 +38,8 @@ func (item *aatSTHeader) mustParse(src []byte) {
 
 func (item *kernx0Record) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.left = glyphID(binary.BigEndian.Uint16(src[0:]))
-	item.right = glyphID(binary.BigEndian.Uint16(src[2:]))
+	item.left = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.right = GlyphID(binary.BigEndian.Uint16(src[2:]))
 	item.value = int16(binary.BigEndian.Uint16(src[4:]))
 }
 
@@ -50,7 +50,7 @@ func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 		if L := len(src); L < 2 {
 			return aatLookupTable8{}, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 2, got %d", L)
 		}
-		item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
+		item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
 		n += 2
 	}
 	{

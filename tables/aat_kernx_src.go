@@ -100,7 +100,7 @@ type kerxSubtable0 struct {
 }
 
 type kernx0Record struct {
-	left, right glyphID
+	left, right GlyphID
 	value       int16
 }
 

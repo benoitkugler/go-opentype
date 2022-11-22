@@ -106,7 +106,7 @@ type CmapSubtable6 struct {
 	language     uint16
 	firstCode    uint16    // First character code of subrange.
 	entryCount   uint16    // Number of character codes in subrange.
-	glyphIdArray []glyphID `arrayCount:"ComputedField-entryCount"` // Array of glyph index values for character codes in the range.
+	glyphIdArray []GlyphID `arrayCount:"ComputedField-entryCount"` // Array of glyph index values for character codes in the range.
 }
 
 type CmapSubtable10 struct {
@@ -116,7 +116,7 @@ type CmapSubtable10 struct {
 	language      uint32
 	startCharCode uint32    // First character code covered
 	numChars      uint32    // Number of character codes covered
-	glyphIdArray  []glyphID `arrayCount:"ComputedField-numChars"` // Array of glyph indices for the character codes covered
+	glyphIdArray  []GlyphID `arrayCount:"ComputedField-numChars"` // Array of glyph indices for the character codes covered
 }
 
 type CmapSubtable12 struct {

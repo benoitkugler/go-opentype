@@ -107,21 +107,21 @@ func (item *binSearchHeader) mustParse(src []byte) {
 
 func (item *lookupRecord2) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.lastGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
-	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
+	item.lastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
 	item.value = binary.BigEndian.Uint16(src[4:])
 }
 
 func (item *loopkupRecord4) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.lastGlyph = glyphID(binary.BigEndian.Uint16(src[0:]))
-	item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
+	item.lastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
 	item.offsetToValues = binary.BigEndian.Uint16(src[4:])
 }
 
 func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
-	item.glyph = glyphID(binary.BigEndian.Uint16(src[0:]))
+	item.glyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	item.value = binary.BigEndian.Uint16(src[2:])
 }
 
@@ -191,7 +191,7 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 		}
 		_ = src[3] // early bound checking
 		item.unitSize = binary.BigEndian.Uint16(src[0:])
-		item.firstGlyph = glyphID(binary.BigEndian.Uint16(src[2:]))
+		item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
 		n += 4
 	}
 	{

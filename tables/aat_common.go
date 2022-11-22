@@ -47,8 +47,8 @@ type aatLookupTable2 struct {
 }
 
 type lookupRecord2 struct {
-	lastGlyph  glyphID
-	firstGlyph glyphID
+	lastGlyph  GlyphID
+	firstGlyph GlyphID
 	value      uint16
 }
 
@@ -59,8 +59,8 @@ type aatLookupTable4 struct {
 }
 
 type loopkupRecord4 struct {
-	lastGlyph  glyphID
-	firstGlyph glyphID
+	lastGlyph  GlyphID
+	firstGlyph GlyphID
 	// offset to an array of []uint16 (or []uint32 for extended) with length last - first + 1
 	offsetToValues uint16
 }
@@ -71,18 +71,18 @@ type aatLookupTable6 struct {
 }
 
 type loopkupRecord6 struct {
-	glyph glyphID
+	glyph GlyphID
 	value uint16
 }
 
 type aatLookupTable8 struct {
-	firstGlyph glyphID
+	firstGlyph GlyphID
 	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTable10 struct {
 	unitSize   uint16
-	firstGlyph glyphID
+	firstGlyph GlyphID
 	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
@@ -118,8 +118,8 @@ type aatLookupTableExt2 struct {
 }
 
 type lookupRecordExt2 struct {
-	lastGlyph  glyphID
-	firstGlyph glyphID
+	lastGlyph  GlyphID
+	firstGlyph GlyphID
 	value      uint32
 }
 
@@ -136,17 +136,17 @@ type aatLookupTableExt6 struct {
 }
 
 type loopkupRecordExt6 struct {
-	glyph glyphID
+	glyph GlyphID
 	value uint32
 }
 
 type aatLookupTableExt8 struct {
-	firstGlyph glyphID
+	firstGlyph GlyphID
 	values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTableExt10 struct {
 	unitSize   uint16
-	firstGlyph glyphID
+	firstGlyph GlyphID
 	values     []uint32 `arrayCount:"FirstUint16"`
 }

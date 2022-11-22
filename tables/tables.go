@@ -4,7 +4,7 @@ import "github.com/benoitkugler/go-opentype/opentype"
 
 //go:generate ../../binarygen/cmd/generator . _src.go
 
-type glyphID uint16
+type GlyphID uint16
 
 // NameID is the ID for entries in the font table.
 type NameID uint16

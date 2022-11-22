@@ -340,9 +340,9 @@ func ParseCmapSubtable10(src []byte) (CmapSubtable10, int, error) {
 			return CmapSubtable10{}, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: %d, got %d", 20+arrayLength*2, L)
 		}
 
-		item.glyphIdArray = make([]glyphID, arrayLength) // allocation guarded by the previous check
+		item.glyphIdArray = make([]GlyphID, arrayLength) // allocation guarded by the previous check
 		for i := range item.glyphIdArray {
-			item.glyphIdArray[i] = glyphID(binary.BigEndian.Uint16(src[20+i*2:]))
+			item.glyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[20+i*2:]))
 		}
 		n += arrayLength * 2
 	}
@@ -569,9 +569,9 @@ func ParseCmapSubtable6(src []byte) (CmapSubtable6, int, error) {
 			return CmapSubtable6{}, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: %d, got %d", 10+arrayLength*2, L)
 		}
 
-		item.glyphIdArray = make([]glyphID, arrayLength) // allocation guarded by the previous check
+		item.glyphIdArray = make([]GlyphID, arrayLength) // allocation guarded by the previous check
 		for i := range item.glyphIdArray {
-			item.glyphIdArray[i] = glyphID(binary.BigEndian.Uint16(src[10+i*2:]))
+			item.glyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[10+i*2:]))
 		}
 		n += arrayLength * 2
 	}

@@ -2,7 +2,7 @@ package tables
 
 type SingleSubstitution struct {
 	substFormat singleSubsVersion
-	data        SingleSubstData `unionField:"substFormat" subsliceStart:"AtStart"`
+	Data        SingleSubstData `unionField:"substFormat" subsliceStart:"AtStart"`
 }
 
 type singleSubsVersion uint16
@@ -21,41 +21,41 @@ func (SingleSubstData2) isSingleSubstData() {}
 
 // binarygen: startOffset=2
 type SingleSubstData1 struct {
-	coverage     Coverage `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
-	deltaGlyphID int16    // Add to original glyph ID to get substitute glyph ID
+	Coverage     Coverage `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
+	DeltaGlyphID int16    // Add to original glyph ID to get substitute glyph ID
 }
 
 // binarygen: startOffset=2
 type SingleSubstData2 struct {
-	coverage           Coverage  `offsetSize:"Offset16"`    // Offset to Coverage table, from beginning of substitution subtable
-	substituteGlyphIDs []glyphID `arrayCount:"FirstUint16"` //[glyphCount]	Array of substitute glyph IDs — ordered by Coverage index
+	Coverage           Coverage  `offsetSize:"Offset16"`    // Offset to Coverage table, from beginning of substitution subtable
+	SubstituteGlyphIDs []GlyphID `arrayCount:"FirstUint16"` //[glyphCount]	Array of substitute glyph IDs — ordered by Coverage index
 }
 
 type MultipleSubstitution struct {
 	substFormat    uint16     // Format identifier: format = 1
-	coverageOffset Coverage   `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
-	sequences      []Sequence `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
+	CoverageOffset Coverage   `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
+	Sequences      []Sequence `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
 	//[sequenceCount]	Array of offsets to Sequence tables. Offsets are from beginning of substitution subtable, ordered by Coverage index
 }
 
 type Sequence struct {
-	substituteGlyphIDs []glyphID `arrayCount:"FirstUint16"` // [glyphCount]	String of glyph IDs to substitute
+	SubstituteGlyphIDs []GlyphID `arrayCount:"FirstUint16"` // [glyphCount]	String of glyph IDs to substitute
 }
 
 type AlternateSubstitution struct {
 	substFormat    uint16         //	Format identifier: format = 1
-	coverageOffset Coverage       `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of substitution subtable
-	alternateSets  []AlternateSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
+	CoverageOffset Coverage       `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of substitution subtable
+	AlternateSets  []AlternateSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
 }
 
 type AlternateSet struct {
-	alternateGlyphIDs []glyphID `arrayCount:"FirstUint16"` // Array of alternate glyph IDs, in arbitrary order
+	AlternateGlyphIDs []GlyphID `arrayCount:"FirstUint16"` // Array of alternate glyph IDs, in arbitrary order
 }
 
 type LigatureSubstitution struct {
 	substFormat  uint16        // Format identifier: format = 1
-	coverage     Coverage      `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable
-	ligatureSets []LigatureSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[ligatureSetCount]	Array of offsets to LigatureSet tables. Offsets are from beginning of substitution subtable, ordered by Coverage index
+	Coverage     Coverage      `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable
+	LigatureSets []LigatureSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[ligatureSetCount]	Array of offsets to LigatureSet tables. Offsets are from beginning of substitution subtable, ordered by Coverage index
 }
 
 // All ligatures beginning with the same glyph
@@ -65,14 +65,14 @@ type LigatureSet struct {
 
 // Glyph components for one ligature
 type Ligature struct {
-	ligatureGlyph     glyphID   //	glyph ID of ligature to substitute
+	LigatureGlyph     GlyphID   //	glyph ID of ligature to substitute
 	componentCount    uint16    //	Number of components in the ligature
-	componentGlyphIDs []glyphID `arrayCount:"ComputedField-componentCount-1"` //  [componentCount - 1]	Array of component glyph IDs — start with the second component, ordered in writing direction
+	ComponentGlyphIDs []GlyphID `arrayCount:"ComputedField-componentCount-1"` //  [componentCount - 1]	Array of component glyph IDs — start with the second component, ordered in writing direction
 }
 
 type ContextualSubstitution struct {
 	format contextualSubsVersion
-	data   ContextualSubs `unionField:"format" subsliceStart:"AtStart"`
+	Data   ContextualSubs `unionField:"format" subsliceStart:"AtStart"`
 }
 
 type contextualSubsVersion uint16
@@ -102,7 +102,7 @@ func (ContextualSubs3) isContextualSubs() {}
 
 type ChainedContextualSubstitution struct {
 	format chainedContextualSubsVersion
-	data   ChainedContextualSubs `unionField:"format" subsliceStart:"AtStart"`
+	Data   ChainedContextualSubs `unionField:"format" subsliceStart:"AtStart"`
 }
 
 type chainedContextualSubsVersion uint16
@@ -132,15 +132,15 @@ func (ChainedContextualSubs3) isChainedContextualSubs() {}
 
 type ExtensionSubstitution struct {
 	substFormat         uint16   //	Format identifier. Set to 1.
-	extensionLookupType uint16   //	Lookup type of subtable referenced by extensionOffset (that is, the extension subtable).
-	extensionOffset     Offset32 //	Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable.
-	rawData             []byte   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
+	ExtensionLookupType uint16   //	Lookup type of subtable referenced by extensionOffset (that is, the extension subtable).
+	ExtensionOffset     Offset32 //	Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable.
+	RawData             []byte   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
 }
 
 type ReverseChainSingleSubstitution struct {
 	substFormat              uint16     // Format identifier: format = 1
-	coverage                 Coverage   `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable.
-	backtrackCoverageOffsets []Coverage `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[backtrackGlyphCount]	Array of offsets to coverage tables in backtrack sequence, in glyph sequence order.
-	lookaheadCoverageOffsets []Coverage `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[lookaheadGlyphCount]	Array of offsets to coverage tables in lookahead sequence, in glyph sequence order.
-	substituteGlyphIDs       []glyphID  `arrayCount:"FirstUint16"`                          //[glyphCount]	Array of substitute glyph IDs — ordered by Coverage index.
+	Coverage                 Coverage   `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable.
+	BacktrackCoverageOffsets []Coverage `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[backtrackGlyphCount]	Array of offsets to coverage tables in backtrack sequence, in glyph sequence order.
+	LookaheadCoverageOffsets []Coverage `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[lookaheadGlyphCount]	Array of offsets to coverage tables in lookahead sequence, in glyph sequence order.
+	SubstituteGlyphIDs       []GlyphID  `arrayCount:"FirstUint16"`                          //[glyphCount]	Array of substitute glyph IDs — ordered by Coverage index.
 }
