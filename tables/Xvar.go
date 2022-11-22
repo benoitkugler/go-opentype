@@ -1,5 +1,10 @@
 package tables
 
+// VariationStoreIndex reference an item in the variation store
+type VariationStoreIndex struct {
+	DeltaSetOuter, DeltaSetInner uint16
+}
+
 // Variations table
 
 type fvarHeader struct {
