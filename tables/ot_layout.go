@@ -13,68 +13,51 @@ import (
 // positioning operation described in a subtable.
 // Conceptually is it a []GlyphIndex, but it may be implemented for efficiently.
 // See https://learn.microsoft.com/typography/opentype/spec/chapter2#lookup-table
-type Coverage struct {
-	format coverageVersion
-	data   coverageData `unionField:"format"`
-}
-
-type coverageVersion uint16
-
-const (
-	coverageVersion1 coverageVersion = iota + 1
-	coverageVersion2
-)
-
-type coverageData interface {
+type Coverage interface {
 	isCoverage()
 }
 
-func (coverageData1) isCoverage() {}
-func (coverageData2) isCoverage() {}
+func (Coverage1) isCoverage() {}
+func (Coverage2) isCoverage() {}
 
-type coverageData1 struct {
+type Coverage1 struct {
+	format uint16    `unionTag:"1"`
 	Glyphs []GlyphID `arrayCount:"FirstUint16"`
 }
 
-type coverageData2 struct {
-	Ranges []rangeRecord `arrayCount:"FirstUint16"`
+type Coverage2 struct {
+	format uint16        `unionTag:"2"`
+	Ranges []RangeRecord `arrayCount:"FirstUint16"`
 }
 
-type rangeRecord struct {
+type RangeRecord struct {
 	StartGlyphID       GlyphID // First glyph ID in the range
 	EndGlyphID         GlyphID // Last glyph ID in the range
 	StartCoverageIndex uint16  // Coverage Index of first glyph ID in range
 }
 
-type ClassDef struct {
-	format classDefVersion
-	data   classDefData `unionField:"format"`
+// ClassDef stores a value for a set of GlyphIDs.
+// Conceptually it is a map[GlyphID]uint16, but it may
+// be implemented more efficiently.
+type ClassDef interface {
+	isClassDef()
 }
 
-type classDefVersion uint16
+func (ClassDef1) isClassDef() {}
+func (ClassDef2) isClassDef() {}
 
-const (
-	classDefVersion1 classDefVersion = 1
-	classDefVersion2 classDefVersion = 2
-)
-
-type classDefData interface {
-	isClassDefData()
-}
-
-func (classDefData1) isClassDefData() {}
-func (classDefData2) isClassDefData() {}
-
-type classDefData1 struct {
+type ClassDef1 struct {
+	format          uint16   `unionTag:"1"`
 	StartGlyphID    GlyphID  // First glyph ID of the classValueArray
 	ClassValueArray []uint16 `arrayCount:"FirstUint16"` //[glyphCount]	Array of Class Values — one per glyph ID
 }
 
-type classDefData2 struct {
-	ClassRangeRecords []classRangeRecord `arrayCount:"FirstUint16"` //[glyphCount]	Array of Class Values — one per glyph ID
+type ClassDef2 struct {
+	format            uint16             `unionTag:"2"`
+	ClassRangeRecords []ClassRangeRecord `arrayCount:"FirstUint16"` //[glyphCount]	Array of Class Values — one per glyph ID
 }
 
-type classRangeRecord struct {
+type ClassRangeRecord struct {
 	StartGlyphID GlyphID // First glyph ID in the range
 	EndGlyphID   GlyphID // Last glyph ID in the range
 	Class        uint16  // Applied to all glyphs in the range

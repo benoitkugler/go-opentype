@@ -22,6 +22,13 @@ func (item *AnchorFormat2) mustParse(src []byte) {
 	item.AnchorPoint = binary.BigEndian.Uint16(src[6:])
 }
 
+func (item *ClassRangeRecord) mustParse(src []byte) {
+	_ = src[5] // early bound checking
+	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.Class = binary.BigEndian.Uint16(src[4:])
+}
+
 func (item *DeviceTableHeader) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.first = binary.BigEndian.Uint16(src[0:])
@@ -171,62 +178,185 @@ func ParseBaseRecord(src []byte, baseAnchorOffsetsCount int) (BaseRecord, int, e
 
 func ParseClassDef(src []byte) (ClassDef, int, error) {
 	var item ClassDef
+
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading ClassDef: "+"EOF: expected length: 2, got %d", L)
+	}
+	format := uint16(binary.BigEndian.Uint16(src[0:]))
+	var (
+		read int
+		err  error
+	)
+	switch format {
+	case 1:
+		item, read, err = ParseClassDef1(src[0:])
+	case 2:
+		item, read, err = ParseClassDef2(src[0:])
+	default:
+		err = fmt.Errorf("unsupported ClassDef format %d", format)
+	}
+	if err != nil {
+		return item, 0, fmt.Errorf("reading ClassDef: %s", err)
+	}
+
+	return item, read, nil
+}
+
+func ParseClassDef1(src []byte) (ClassDef1, int, error) {
+	var item ClassDef1
+	n := 0
+	{
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading ClassDef1: "+"EOF: expected length: 4, got %d", L)
+		}
+		_ = src[3] // early bound checking
+		item.format = binary.BigEndian.Uint16(src[0:])
+		item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+		n += 4
+	}
+	{
+		if L := len(src); L < 6 {
+			return item, 0, fmt.Errorf("reading ClassDef1: "+"EOF: expected length: 6, got %d", L)
+		}
+		arrayLength := int(binary.BigEndian.Uint16(src[4:]))
+		n += 2
+
+		if L := len(src); L < 6+arrayLength*2 {
+			return item, 0, fmt.Errorf("reading ClassDef1: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
+		}
+
+		item.ClassValueArray = make([]uint16, arrayLength) // allocation guarded by the previous check
+		for i := range item.ClassValueArray {
+			item.ClassValueArray[i] = binary.BigEndian.Uint16(src[6+i*2:])
+		}
+		n += arrayLength * 2
+	}
+	return item, n, nil
+}
+
+func ParseClassDef2(src []byte) (ClassDef2, int, error) {
+	var item ClassDef2
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading ClassDef: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading ClassDef2: "+"EOF: expected length: 2, got %d", L)
 		}
-		item.format = classDefVersion(binary.BigEndian.Uint16(src[0:]))
+		item.format = binary.BigEndian.Uint16(src[0:])
 		n += 2
 	}
 	{
-		var (
-			read int
-			err  error
-		)
-		switch item.format {
-		case classDefVersion1:
-			item.data, read, err = parseClassDefData1(src[2:])
-		case classDefVersion2:
-			item.data, read, err = parseClassDefData2(src[2:])
-		default:
-			err = fmt.Errorf("unsupported classDefDataVersion %d", item.format)
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading ClassDef2: "+"EOF: expected length: 4, got %d", L)
 		}
-		if err != nil {
-			return item, 0, fmt.Errorf("reading ClassDef: %s", err)
+		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
+		n += 2
+
+		if L := len(src); L < 4+arrayLength*6 {
+			return item, 0, fmt.Errorf("reading ClassDef2: "+"EOF: expected length: %d, got %d", 4+arrayLength*6, L)
 		}
-		n += read
+
+		item.ClassRangeRecords = make([]ClassRangeRecord, arrayLength) // allocation guarded by the previous check
+		for i := range item.ClassRangeRecords {
+			item.ClassRangeRecords[i].mustParse(src[4+i*6:])
+		}
+		n += arrayLength * 6
 	}
+	return item, n, nil
+}
+
+func ParseClassRangeRecord(src []byte) (ClassRangeRecord, int, error) {
+	var item ClassRangeRecord
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading ClassRangeRecord: "+"EOF: expected length: 6, got %d", L)
+	}
+	item.mustParse(src)
+	n += 6
 	return item, n, nil
 }
 
 func ParseCoverage(src []byte) (Coverage, int, error) {
 	var item Coverage
+
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading Coverage: "+"EOF: expected length: 2, got %d", L)
+	}
+	format := uint16(binary.BigEndian.Uint16(src[0:]))
+	var (
+		read int
+		err  error
+	)
+	switch format {
+	case 1:
+		item, read, err = ParseCoverage1(src[0:])
+	case 2:
+		item, read, err = ParseCoverage2(src[0:])
+	default:
+		err = fmt.Errorf("unsupported Coverage format %d", format)
+	}
+	if err != nil {
+		return item, 0, fmt.Errorf("reading Coverage: %s", err)
+	}
+
+	return item, read, nil
+}
+
+func ParseCoverage1(src []byte) (Coverage1, int, error) {
+	var item Coverage1
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading Coverage: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: 2, got %d", L)
 		}
-		item.format = coverageVersion(binary.BigEndian.Uint16(src[0:]))
+		item.format = binary.BigEndian.Uint16(src[0:])
 		n += 2
 	}
 	{
-		var (
-			read int
-			err  error
-		)
-		switch item.format {
-		case coverageVersion1:
-			item.data, read, err = parseCoverageData1(src[2:])
-		case coverageVersion2:
-			item.data, read, err = parseCoverageData2(src[2:])
-		default:
-			err = fmt.Errorf("unsupported coverageDataVersion %d", item.format)
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: 4, got %d", L)
 		}
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Coverage: %s", err)
+		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
+		n += 2
+
+		if L := len(src); L < 4+arrayLength*2 {
+			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
 		}
-		n += read
+
+		item.Glyphs = make([]GlyphID, arrayLength) // allocation guarded by the previous check
+		for i := range item.Glyphs {
+			item.Glyphs[i] = GlyphID(binary.BigEndian.Uint16(src[4+i*2:]))
+		}
+		n += arrayLength * 2
+	}
+	return item, n, nil
+}
+
+func ParseCoverage2(src []byte) (Coverage2, int, error) {
+	var item Coverage2
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading Coverage2: "+"EOF: expected length: 2, got %d", L)
+		}
+		item.format = binary.BigEndian.Uint16(src[0:])
+		n += 2
+	}
+	{
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading Coverage2: "+"EOF: expected length: 4, got %d", L)
+		}
+		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
+		n += 2
+
+		if L := len(src); L < 4+arrayLength*6 {
+			return item, 0, fmt.Errorf("reading Coverage2: "+"EOF: expected length: %d, got %d", 4+arrayLength*6, L)
+		}
+
+		item.Ranges = make([]RangeRecord, arrayLength) // allocation guarded by the previous check
+		for i := range item.Ranges {
+			item.Ranges[i].mustParse(src[4+i*6:])
+		}
+		n += arrayLength * 6
 	}
 	return item, n, nil
 }
@@ -683,6 +813,17 @@ func ParsePairSet(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat
 	return item, n, nil
 }
 
+func ParseRangeRecord(src []byte) (RangeRecord, int, error) {
+	var item RangeRecord
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading RangeRecord: "+"EOF: expected length: 6, got %d", L)
+	}
+	item.mustParse(src)
+	n += 6
+	return item, n, nil
+}
+
 func ParseSinglePos(src []byte) (SinglePos, int, error) {
 	var item SinglePos
 	n := 0
@@ -800,121 +941,15 @@ func ParseSinglePosData2(src []byte) (SinglePosData2, int, error) {
 	return item, n, nil
 }
 
-func (item *classRangeRecord) mustParse(src []byte) {
+func (item *RangeRecord) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	item.Class = binary.BigEndian.Uint16(src[4:])
+	item.StartCoverageIndex = binary.BigEndian.Uint16(src[4:])
 }
 
 func (item *entryExitRecord) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.entryAnchorOffset = Offset16(binary.BigEndian.Uint16(src[0:]))
 	item.exitAnchorOffset = Offset16(binary.BigEndian.Uint16(src[2:]))
-}
-
-func parseClassDefData1(src []byte) (classDefData1, int, error) {
-	var item classDefData1
-	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading classDefData1: "+"EOF: expected length: 2, got %d", L)
-		}
-		item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
-		n += 2
-	}
-	{
-		if L := len(src); L < 4 {
-			return item, 0, fmt.Errorf("reading classDefData1: "+"EOF: expected length: 4, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
-		n += 2
-
-		if L := len(src); L < 4+arrayLength*2 {
-			return item, 0, fmt.Errorf("reading classDefData1: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
-		}
-
-		item.ClassValueArray = make([]uint16, arrayLength) // allocation guarded by the previous check
-		for i := range item.ClassValueArray {
-			item.ClassValueArray[i] = binary.BigEndian.Uint16(src[4+i*2:])
-		}
-		n += arrayLength * 2
-	}
-	return item, n, nil
-}
-
-func parseClassDefData2(src []byte) (classDefData2, int, error) {
-	var item classDefData2
-	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading classDefData2: "+"EOF: expected length: 2, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
-		n += 2
-
-		if L := len(src); L < 2+arrayLength*6 {
-			return item, 0, fmt.Errorf("reading classDefData2: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
-		}
-
-		item.ClassRangeRecords = make([]classRangeRecord, arrayLength) // allocation guarded by the previous check
-		for i := range item.ClassRangeRecords {
-			item.ClassRangeRecords[i].mustParse(src[2+i*6:])
-		}
-		n += arrayLength * 6
-	}
-	return item, n, nil
-}
-
-func parseCoverageData1(src []byte) (coverageData1, int, error) {
-	var item coverageData1
-	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading coverageData1: "+"EOF: expected length: 2, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
-		n += 2
-
-		if L := len(src); L < 2+arrayLength*2 {
-			return item, 0, fmt.Errorf("reading coverageData1: "+"EOF: expected length: %d, got %d", 2+arrayLength*2, L)
-		}
-
-		item.Glyphs = make([]GlyphID, arrayLength) // allocation guarded by the previous check
-		for i := range item.Glyphs {
-			item.Glyphs[i] = GlyphID(binary.BigEndian.Uint16(src[2+i*2:]))
-		}
-		n += arrayLength * 2
-	}
-	return item, n, nil
-}
-
-func parseCoverageData2(src []byte) (coverageData2, int, error) {
-	var item coverageData2
-	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading coverageData2: "+"EOF: expected length: 2, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
-		n += 2
-
-		if L := len(src); L < 2+arrayLength*6 {
-			return item, 0, fmt.Errorf("reading coverageData2: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
-		}
-
-		item.Ranges = make([]rangeRecord, arrayLength) // allocation guarded by the previous check
-		for i := range item.Ranges {
-			item.Ranges[i].mustParse(src[2+i*6:])
-		}
-		n += arrayLength * 6
-	}
-	return item, n, nil
-}
-
-func (item *rangeRecord) mustParse(src []byte) {
-	_ = src[5] // early bound checking
-	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	item.StartCoverageIndex = binary.BigEndian.Uint16(src[4:])
 }
