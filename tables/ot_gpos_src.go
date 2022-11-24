@@ -158,3 +158,87 @@ type DeviceTableHeader struct {
 	second      uint16
 	deltaFormat uint16 // Format of deltaValue array data
 }
+
+type Anchor interface {
+	isAnchor()
+}
+
+type EntryExit struct {
+	EntryAnchor Anchor
+	ExitAnchor  Anchor
+}
+
+type CursivePos struct {
+	posFormat        uint16            //	Format identifier: format = 1
+	coverage         Coverage          `offsetSize:"Offset16"`    //	Offset to Coverage table, from beginning of CursivePos subtable.
+	entryExitRecords []entryExitRecord `arrayCount:"FirstUint16"` //[entryExitCount]	Array of EntryExit records, in Coverage index order.
+	EntryExits       []EntryExit       `isOpaque:"" subsliceStart:"AtStart"`
+}
+
+type entryExitRecord struct {
+	entryAnchorOffset Offset16 // Offset to entryAnchor table, from beginning of CursivePos subtable (may be NULL).
+	exitAnchorOffset  Offset16 // Offset to exitAnchor table, from beginning of CursivePos subtable (may be NULL).
+}
+
+func (cp *CursivePos) customParseEntryExits(src []byte) (int, error) {
+	cp.EntryExits = make([]EntryExit, len(cp.entryExitRecords))
+	var err error
+	for i, rec := range cp.entryExitRecords {
+		if rec.entryAnchorOffset != 0 {
+			if L := len(src); L < int(rec.entryAnchorOffset) {
+				return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.entryAnchorOffset, L)
+			}
+			cp.EntryExits[i].EntryAnchor, _, err = ParseAnchor(src[rec.entryAnchorOffset:])
+			if err != nil {
+				return 0, err
+			}
+		}
+		if rec.exitAnchorOffset != 0 {
+			if L := len(src); L < int(rec.exitAnchorOffset) {
+				return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.exitAnchorOffset, L)
+			}
+			cp.EntryExits[i].ExitAnchor, _, err = ParseAnchor(src[rec.exitAnchorOffset:])
+			if err != nil {
+				return 0, err
+			}
+		}
+	}
+	return 0, nil
+}
+
+type MarkBasePos struct {
+	posFormat      uint16    // Format identifier: format = 1
+	markCoverage   Coverage  `offsetSize:"Offset16"` // Offset to markCoverage table, from beginning of MarkBasePos subtable.
+	baseCoverage   Coverage  `offsetSize:"Offset16"` // Offset to baseCoverage table, from beginning of MarkBasePos subtable.
+	markClassCount uint16    // Number of classes defined for marks
+	markArray      MarkArray `offsetSize:"Offset16"`                            // Offset to MarkArray table, from beginning of MarkBasePos subtable.
+	baseArray      BaseArray `offsetSize:"Offset16" arguments:"markClassCount"` // Offset to BaseArray table, from beginning of MarkBasePos subtable.
+}
+
+type BaseArray struct {
+	baseRecords []BaseRecord `arrayCount:"FirstUint16"`
+	BaseAnchors [][]Anchor   `isOpaque:"" subsliceStart:"AtStart"`
+}
+
+func (ba *BaseArray) customParseBaseAnchors(src []byte, _ int) (int, error) {
+	ba.BaseAnchors = make([][]Anchor, len(ba.baseRecords))
+	var err error
+	for i, rec := range ba.baseRecords {
+		bi := make([]Anchor, len(rec.baseAnchorOffsets))
+		for j, offset := range rec.baseAnchorOffsets {
+			if L := len(src); L < int(offset) {
+				return 0, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
+			}
+			bi[j], _, err = ParseAnchor(src[offset:])
+			if err != nil {
+				return 0, err
+			}
+		}
+		ba.BaseAnchors[i] = bi
+	}
+	return len(src), nil
+}
+
+type BaseRecord struct {
+	baseAnchorOffsets []Offset16 // [markClassCount] // Array of offsets (one per mark class) to Anchor tables. Offsets are from beginning of BaseArray table, ordered by class (offsets may be NULL).
+}

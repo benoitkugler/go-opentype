@@ -18,20 +18,20 @@ func ParseFeature(src []byte) (Feature, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return Feature{}, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: 2, got %d", L)
 		}
 		item.featureParamsOffset = binary.BigEndian.Uint16(src[0:])
 		n += 2
 	}
 	{
 		if L := len(src); L < 4 {
-			return Feature{}, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: 4, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
 		n += 2
 
 		if L := len(src); L < 4+arrayLength*2 {
-			return Feature{}, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
 		}
 
 		item.lookupListIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -48,7 +48,7 @@ func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return FeatureVariation{}, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.majorVersion = binary.BigEndian.Uint16(src[0:])
@@ -57,13 +57,13 @@ func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 	}
 	{
 		if L := len(src); L < 8 {
-			return FeatureVariation{}, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: 8, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint32(src[4:]))
 		n += 4
 
 		if L := len(src); L < 8+arrayLength*8 {
-			return FeatureVariation{}, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: %d, got %d", 8+arrayLength*8, L)
+			return item, 0, fmt.Errorf("reading FeatureVariation: "+"EOF: expected length: %d, got %d", 8+arrayLength*8, L)
 		}
 
 		item.featureVariationRecords = make([]FeatureVariationRecord, arrayLength) // allocation guarded by the previous check
@@ -84,7 +84,7 @@ func ParseFeatureVariationRecord(src []byte) (FeatureVariationRecord, int, error
 	var item FeatureVariationRecord
 	n := 0
 	if L := len(src); L < 8 {
-		return FeatureVariationRecord{}, 0, fmt.Errorf("reading FeatureVariationRecord: "+"EOF: expected length: 8, got %d", L)
+		return item, 0, fmt.Errorf("reading FeatureVariationRecord: "+"EOF: expected length: 8, got %d", L)
 	}
 	item.mustParse(src)
 	n += 8
@@ -96,7 +96,7 @@ func ParseLangSys(src []byte) (LangSys, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return LangSys{}, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.lookupOrderOffset = binary.BigEndian.Uint16(src[0:])
@@ -105,13 +105,13 @@ func ParseLangSys(src []byte) (LangSys, int, error) {
 	}
 	{
 		if L := len(src); L < 6 {
-			return LangSys{}, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: 6, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
 
 		if L := len(src); L < 6+arrayLength*2 {
-			return LangSys{}, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
 		item.featureIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -128,7 +128,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.majorVersion = binary.BigEndian.Uint16(src[0:])
@@ -137,12 +137,12 @@ func ParseLayout(src []byte) (Layout, int, error) {
 	}
 	{
 		if L := len(src); L < 6 {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 6, got %d", L)
 		}
 		offset := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
 		if L := len(src); L < offset {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
 		}
 
 		var (
@@ -151,18 +151,18 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		)
 		item.scriptList, read, err = parseScriptList(src[offset:])
 		if err != nil {
-			return Layout{}, 0, fmt.Errorf("reading Layout: %s", err)
+			return item, 0, fmt.Errorf("reading Layout: %s", err)
 		}
 		offset += read
 	}
 	{
 		if L := len(src); L < 8 {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 8, got %d", L)
 		}
 		offset := int(binary.BigEndian.Uint16(src[6:]))
 		n += 2
 		if L := len(src); L < offset {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
 		}
 
 		var (
@@ -171,18 +171,18 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		)
 		item.featureList, read, err = parseFeatureList(src[offset:])
 		if err != nil {
-			return Layout{}, 0, fmt.Errorf("reading Layout: %s", err)
+			return item, 0, fmt.Errorf("reading Layout: %s", err)
 		}
 		offset += read
 	}
 	{
 		if L := len(src); L < 10 {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: 10, got %d", L)
 		}
 		offset := int(binary.BigEndian.Uint16(src[8:]))
 		n += 2
 		if L := len(src); L < offset {
-			return Layout{}, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
 		}
 
 		var (
@@ -191,7 +191,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		)
 		item.lookupList, read, err = parseLookupList(src[offset:])
 		if err != nil {
-			return Layout{}, 0, fmt.Errorf("reading Layout: %s", err)
+			return item, 0, fmt.Errorf("reading Layout: %s", err)
 		}
 		offset += read
 	}
@@ -199,7 +199,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 
 		read, err := item.customParseFeatureVariations(src[:])
 		if err != nil {
-			return Layout{}, 0, fmt.Errorf("reading Layout: %s", err)
+			return item, 0, fmt.Errorf("reading Layout: %s", err)
 		}
 		n = read
 	}
@@ -211,7 +211,7 @@ func ParseLookup(src []byte) (Lookup, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return Lookup{}, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.lookupType = binary.BigEndian.Uint16(src[0:])
@@ -220,13 +220,13 @@ func ParseLookup(src []byte) (Lookup, int, error) {
 	}
 	{
 		if L := len(src); L < 6 {
-			return Lookup{}, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: 6, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
 
 		if L := len(src); L < 6+arrayLength*2 {
-			return Lookup{}, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
 		item.subtableOffsets = make([]Offset16, arrayLength) // allocation guarded by the previous check
@@ -237,7 +237,7 @@ func ParseLookup(src []byte) (Lookup, int, error) {
 	}
 	{
 		if L := len(src); L < n+2 {
-			return Lookup{}, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: n + 2, got %d", L)
 		}
 		item.markFilteringSet = binary.BigEndian.Uint16(src[n:])
 		n += 2
@@ -255,20 +255,20 @@ func ParseScript(src []byte) (Script, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return Script{}, 0, fmt.Errorf("reading Script: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: 2, got %d", L)
 		}
 		item.defaultLangSysOffset = binary.BigEndian.Uint16(src[0:])
 		n += 2
 	}
 	{
 		if L := len(src); L < 4 {
-			return Script{}, 0, fmt.Errorf("reading Script: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: 4, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
 		n += 2
 
 		if L := len(src); L < 4+arrayLength*6 {
-			return Script{}, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", 4+arrayLength*6, L)
+			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", 4+arrayLength*6, L)
 		}
 
 		item.langSysRecords = make([]tagOffsetRecord, arrayLength) // allocation guarded by the previous check
@@ -290,13 +290,13 @@ func parseFeatureList(src []byte) (featureList, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return featureList{}, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: 2, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
 		n += 2
 
 		if L := len(src); L < 2+arrayLength*6 {
-			return featureList{}, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
+			return item, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
 		}
 
 		item.records = make([]tagOffsetRecord, arrayLength) // allocation guarded by the previous check
@@ -318,13 +318,13 @@ func parseLookupList(src []byte) (lookupList, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return lookupList{}, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: 2, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
 		n += 2
 
 		if L := len(src); L < 2+arrayLength*2 {
-			return lookupList{}, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: %d, got %d", 2+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: %d, got %d", 2+arrayLength*2, L)
 		}
 
 		item.records = make([]Offset16, arrayLength) // allocation guarded by the previous check
@@ -337,7 +337,7 @@ func parseLookupList(src []byte) (lookupList, int, error) {
 
 		read, err := item.customParseLookups(src[:])
 		if err != nil {
-			return lookupList{}, 0, fmt.Errorf("reading lookupList: %s", err)
+			return item, 0, fmt.Errorf("reading lookupList: %s", err)
 		}
 		n = read
 	}
@@ -349,13 +349,13 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return scriptList{}, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: 2, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
 		n += 2
 
 		if L := len(src); L < 2+arrayLength*6 {
-			return scriptList{}, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
+			return item, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: %d, got %d", 2+arrayLength*6, L)
 		}
 
 		item.records = make([]tagOffsetRecord, arrayLength) // allocation guarded by the previous check

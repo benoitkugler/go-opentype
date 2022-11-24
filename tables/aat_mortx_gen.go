@@ -12,7 +12,7 @@ func ParseMorx(src []byte) (Morx, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 8 {
-			return Morx{}, 0, fmt.Errorf("reading Morx: "+"EOF: expected length: 8, got %d", L)
+			return item, 0, fmt.Errorf("reading Morx: "+"EOF: expected length: 8, got %d", L)
 		}
 		_ = src[7] // early bound checking
 		item.version = binary.BigEndian.Uint16(src[0:])
@@ -27,7 +27,7 @@ func ParseMorx(src []byte) (Morx, int, error) {
 		for i := 0; i < arrayLength; i++ {
 			elem, read, err := parseMorxChain(src[offset:])
 			if err != nil {
-				return Morx{}, 0, fmt.Errorf("reading Morx: %s", err)
+				return item, 0, fmt.Errorf("reading Morx: %s", err)
 			}
 			item.chains = append(item.chains, elem)
 			offset += read
@@ -42,7 +42,7 @@ func ParseMorxChainSubtable(src []byte, valuesCount int) (MorxChainSubtable, int
 	n := 0
 	{
 		if L := len(src); L < 12 {
-			return MorxChainSubtable{}, 0, fmt.Errorf("reading MorxChainSubtable: "+"EOF: expected length: 12, got %d", L)
+			return item, 0, fmt.Errorf("reading MorxChainSubtable: "+"EOF: expected length: 12, got %d", L)
 		}
 		_ = src[11] // early bound checking
 		item.length = binary.BigEndian.Uint32(src[0:])
@@ -73,7 +73,7 @@ func ParseMorxChainSubtable(src []byte, valuesCount int) (MorxChainSubtable, int
 			err = fmt.Errorf("unsupported morxSubtableVersion %d", item.version)
 		}
 		if err != nil {
-			return MorxChainSubtable{}, 0, fmt.Errorf("reading MorxChainSubtable: %s", err)
+			return item, 0, fmt.Errorf("reading MorxChainSubtable: %s", err)
 		}
 		n += read
 	}
@@ -130,7 +130,7 @@ func parseAatLookup(src []byte, valuesCount int) (aatLookup, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return aatLookup{}, 0, fmt.Errorf("reading aatLookup: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookup: "+"EOF: expected length: 2, got %d", L)
 		}
 		item.version = aatLookupVersion(binary.BigEndian.Uint16(src[0:]))
 		n += 2
@@ -157,7 +157,7 @@ func parseAatLookup(src []byte, valuesCount int) (aatLookup, int, error) {
 			err = fmt.Errorf("unsupported aatLookupTableVersion %d", item.version)
 		}
 		if err != nil {
-			return aatLookup{}, 0, fmt.Errorf("reading aatLookup: %s", err)
+			return item, 0, fmt.Errorf("reading aatLookup: %s", err)
 		}
 		n += read
 	}
@@ -170,7 +170,7 @@ func parseAatLookupTable0(src []byte, valuesCount int) (aatLookupTable0, int, er
 	{
 
 		if L := len(src); L < valuesCount*2 {
-			return aatLookupTable0{}, 0, fmt.Errorf("reading aatLookupTable0: "+"EOF: expected length: %d, got %d", valuesCount*2, L)
+			return item, 0, fmt.Errorf("reading aatLookupTable0: "+"EOF: expected length: %d, got %d", valuesCount*2, L)
 		}
 
 		item.values = make([]uint16, valuesCount) // allocation guarded by the previous check
@@ -187,7 +187,7 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return aatLookupTable10{}, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.unitSize = binary.BigEndian.Uint16(src[0:])
@@ -196,13 +196,13 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	}
 	{
 		if L := len(src); L < 6 {
-			return aatLookupTable10{}, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 6, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
 
 		if L := len(src); L < 6+arrayLength*2 {
-			return aatLookupTable10{}, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
 		item.values = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -219,7 +219,7 @@ func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 10 {
-			return aatLookupTable2{}, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: 10, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: 10, got %d", L)
 		}
 		item.binSearchHeader.mustParse(src[0:])
 		n += 10
@@ -228,7 +228,7 @@ func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 		arrayLength := int(item.nUnits)
 
 		if L := len(src); L < 10+arrayLength*6 {
-			return aatLookupTable2{}, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: %d, got %d", 10+arrayLength*6, L)
+			return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: %d, got %d", 10+arrayLength*6, L)
 		}
 
 		item.records = make([]lookupRecord2, arrayLength) // allocation guarded by the previous check
@@ -245,7 +245,7 @@ func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 10 {
-			return aatLookupTable4{}, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: 10, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: 10, got %d", L)
 		}
 		item.binSearchHeader.mustParse(src[0:])
 		n += 10
@@ -254,7 +254,7 @@ func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 		arrayLength := int(item.nUnits)
 
 		if L := len(src); L < 10+arrayLength*6 {
-			return aatLookupTable4{}, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: %d, got %d", 10+arrayLength*6, L)
+			return item, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: %d, got %d", 10+arrayLength*6, L)
 		}
 
 		item.records = make([]loopkupRecord4, arrayLength) // allocation guarded by the previous check
@@ -276,7 +276,7 @@ func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 10 {
-			return aatLookupTable6{}, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: 10, got %d", L)
+			return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: 10, got %d", L)
 		}
 		item.binSearchHeader.mustParse(src[0:])
 		n += 10
@@ -285,7 +285,7 @@ func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 		arrayLength := int(item.nUnits)
 
 		if L := len(src); L < 10+arrayLength*4 {
-			return aatLookupTable6{}, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: %d, got %d", 10+arrayLength*4, L)
+			return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: %d, got %d", 10+arrayLength*4, L)
 		}
 
 		item.records = make([]loopkupRecord6, arrayLength) // allocation guarded by the previous check
@@ -302,7 +302,7 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 16 {
-			return morxChain{}, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: 16, got %d", L)
+			return item, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: 16, got %d", L)
 		}
 		_ = src[15] // early bound checking
 		item.flags = binary.BigEndian.Uint32(src[0:])
@@ -315,7 +315,7 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 		arrayLength := int(item.nFeatureEntries)
 
 		if L := len(src); L < 16+arrayLength*12 {
-			return morxChain{}, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
+			return item, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
 		}
 
 		item.features = make([]aatFeature, arrayLength) // allocation guarded by the previous check
@@ -328,7 +328,7 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 
 		L := int(item.chainLength)
 		if len(src) < L {
-			return morxChain{}, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: %d, got %d", L, len(src))
+			return item, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: %d, got %d", L, len(src))
 		}
 		item.subtablesData = src[n:L]
 		n = L
@@ -341,7 +341,7 @@ func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error
 	n := 0
 	{
 		if L := len(src); L < 20 {
-			return morxSubtableContextual{}, 0, fmt.Errorf("reading morxSubtableContextual: "+"EOF: expected length: 20, got %d", L)
+			return item, 0, fmt.Errorf("reading morxSubtableContextual: "+"EOF: expected length: 20, got %d", L)
 		}
 		_ = src[19] // early bound checking
 		item.aatSTXHeader.mustParse(src[0:])
@@ -361,7 +361,7 @@ func parseMorxSubtableInsertion(src []byte) (morxSubtableInsertion, int, error) 
 	n := 0
 	{
 		if L := len(src); L < 20 {
-			return morxSubtableInsertion{}, 0, fmt.Errorf("reading morxSubtableInsertion: "+"EOF: expected length: 20, got %d", L)
+			return item, 0, fmt.Errorf("reading morxSubtableInsertion: "+"EOF: expected length: 20, got %d", L)
 		}
 		_ = src[19] // early bound checking
 		item.aatSTXHeader.mustParse(src[0:])
@@ -381,7 +381,7 @@ func parseMorxSubtableLigature(src []byte) (morxSubtableLigature, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 28 {
-			return morxSubtableLigature{}, 0, fmt.Errorf("reading morxSubtableLigature: "+"EOF: expected length: 28, got %d", L)
+			return item, 0, fmt.Errorf("reading morxSubtableLigature: "+"EOF: expected length: 28, got %d", L)
 		}
 		_ = src[27] // early bound checking
 		item.aatSTXHeader.mustParse(src[0:])
@@ -408,7 +408,7 @@ func parseMorxSubtableNonContextual(src []byte, valuesCount int) (morxSubtableNo
 		)
 		item.table, read, err = parseAatLookup(src[0:], valuesCount)
 		if err != nil {
-			return morxSubtableNonContextual{}, 0, fmt.Errorf("reading morxSubtableNonContextual: %s", err)
+			return item, 0, fmt.Errorf("reading morxSubtableNonContextual: %s", err)
 		}
 		n += read
 	}
@@ -420,7 +420,7 @@ func parseMorxSubtableRearrangement(src []byte) (morxSubtableRearrangement, int,
 	n := 0
 	{
 		if L := len(src); L < 16 {
-			return morxSubtableRearrangement{}, 0, fmt.Errorf("reading morxSubtableRearrangement: "+"EOF: expected length: 16, got %d", L)
+			return item, 0, fmt.Errorf("reading morxSubtableRearrangement: "+"EOF: expected length: 16, got %d", L)
 		}
 		item.aatSTXHeader.mustParse(src[0:])
 		n += 16

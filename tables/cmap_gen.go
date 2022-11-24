@@ -275,7 +275,7 @@ func ParseCmap(src []byte) (Cmap, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return Cmap{}, 0, fmt.Errorf("reading Cmap: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading Cmap: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.version = binary.BigEndian.Uint16(src[0:])
@@ -286,7 +286,7 @@ func ParseCmap(src []byte) (Cmap, int, error) {
 		arrayLength := int(item.numTables)
 
 		if L := len(src); L < 4+arrayLength*8 {
-			return Cmap{}, 0, fmt.Errorf("reading Cmap: "+"EOF: expected length: %d, got %d", 4+arrayLength*8, L)
+			return item, 0, fmt.Errorf("reading Cmap: "+"EOF: expected length: %d, got %d", 4+arrayLength*8, L)
 		}
 
 		item.records = make([]encodingRecord, arrayLength) // allocation guarded by the previous check
@@ -299,7 +299,7 @@ func ParseCmap(src []byte) (Cmap, int, error) {
 
 		read, err := item.customParseSubtables(src[:])
 		if err != nil {
-			return Cmap{}, 0, fmt.Errorf("reading Cmap: %s", err)
+			return item, 0, fmt.Errorf("reading Cmap: %s", err)
 		}
 		n = read
 	}
@@ -310,7 +310,7 @@ func ParseCmapSubtable0(src []byte) (CmapSubtable0, int, error) {
 	var item CmapSubtable0
 	n := 0
 	if L := len(src); L < 262 {
-		return CmapSubtable0{}, 0, fmt.Errorf("reading CmapSubtable0: "+"EOF: expected length: 262, got %d", L)
+		return item, 0, fmt.Errorf("reading CmapSubtable0: "+"EOF: expected length: 262, got %d", L)
 	}
 	item.mustParse(src)
 	n += 262
@@ -322,7 +322,7 @@ func ParseCmapSubtable10(src []byte) (CmapSubtable10, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 20 {
-			return CmapSubtable10{}, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: 20, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: 20, got %d", L)
 		}
 		_ = src[19] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -337,7 +337,7 @@ func ParseCmapSubtable10(src []byte) (CmapSubtable10, int, error) {
 		arrayLength := int(item.numChars)
 
 		if L := len(src); L < 20+arrayLength*2 {
-			return CmapSubtable10{}, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: %d, got %d", 20+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: %d, got %d", 20+arrayLength*2, L)
 		}
 
 		item.glyphIdArray = make([]GlyphID, arrayLength) // allocation guarded by the previous check
@@ -354,7 +354,7 @@ func ParseCmapSubtable12(src []byte) (CmapSubtable12, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 16 {
-			return CmapSubtable12{}, 0, fmt.Errorf("reading CmapSubtable12: "+"EOF: expected length: 16, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable12: "+"EOF: expected length: 16, got %d", L)
 		}
 		_ = src[15] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -368,7 +368,7 @@ func ParseCmapSubtable12(src []byte) (CmapSubtable12, int, error) {
 		arrayLength := int(item.numGroups)
 
 		if L := len(src); L < 16+arrayLength*12 {
-			return CmapSubtable12{}, 0, fmt.Errorf("reading CmapSubtable12: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable12: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
 		}
 
 		item.groups = make([]sequentialMapGroup, arrayLength) // allocation guarded by the previous check
@@ -385,7 +385,7 @@ func ParseCmapSubtable13(src []byte) (CmapSubtable13, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 16 {
-			return CmapSubtable13{}, 0, fmt.Errorf("reading CmapSubtable13: "+"EOF: expected length: 16, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable13: "+"EOF: expected length: 16, got %d", L)
 		}
 		_ = src[15] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -399,7 +399,7 @@ func ParseCmapSubtable13(src []byte) (CmapSubtable13, int, error) {
 		arrayLength := int(item.numGroups)
 
 		if L := len(src); L < 16+arrayLength*12 {
-			return CmapSubtable13{}, 0, fmt.Errorf("reading CmapSubtable13: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable13: "+"EOF: expected length: %d, got %d", 16+arrayLength*12, L)
 		}
 
 		item.groups = make([]sequentialMapGroup, arrayLength) // allocation guarded by the previous check
@@ -416,7 +416,7 @@ func ParseCmapSubtable14(src []byte) (CmapSubtable14, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 10 {
-			return CmapSubtable14{}, 0, fmt.Errorf("reading CmapSubtable14: "+"EOF: expected length: 10, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable14: "+"EOF: expected length: 10, got %d", L)
 		}
 		_ = src[9] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -428,7 +428,7 @@ func ParseCmapSubtable14(src []byte) (CmapSubtable14, int, error) {
 		arrayLength := int(item.numVarSelectorRecords)
 
 		if L := len(src); L < 10+arrayLength*11 {
-			return CmapSubtable14{}, 0, fmt.Errorf("reading CmapSubtable14: "+"EOF: expected length: %d, got %d", 10+arrayLength*11, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable14: "+"EOF: expected length: %d, got %d", 10+arrayLength*11, L)
 		}
 
 		item.varSelectors = make([]variationSelector, arrayLength) // allocation guarded by the previous check
@@ -450,7 +450,7 @@ func ParseCmapSubtable2(src []byte) (CmapSubtable2, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 2 {
-			return CmapSubtable2{}, 0, fmt.Errorf("reading CmapSubtable2: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable2: "+"EOF: expected length: 2, got %d", L)
 		}
 		item.format = binary.BigEndian.Uint16(src[0:])
 		n += 2
@@ -468,7 +468,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 14 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: 14, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: 14, got %d", L)
 		}
 		_ = src[13] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -484,7 +484,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 		arrayLength := int(item.segCountX2 / 2)
 
 		if L := len(src); L < 14+arrayLength*2 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", 14+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", 14+arrayLength*2, L)
 		}
 
 		item.endCode = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -495,7 +495,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 	}
 	{
 		if L := len(src); L < n+2 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: n + 2, got %d", L)
 		}
 		item.reservedPad = binary.BigEndian.Uint16(src[n:])
 		n += 2
@@ -504,7 +504,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 		arrayLength := int(item.segCountX2 / 2)
 
 		if L := len(src); L < n+arrayLength*2 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
 		}
 
 		item.startCode = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -517,7 +517,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 		arrayLength := int(item.segCountX2 / 2)
 
 		if L := len(src); L < n+arrayLength*2 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
 		}
 
 		item.idDelta = make([]int16, arrayLength) // allocation guarded by the previous check
@@ -530,7 +530,7 @@ func ParseCmapSubtable4(src []byte) (CmapSubtable4, int, error) {
 		arrayLength := int(item.segCountX2 / 2)
 
 		if L := len(src); L < n+arrayLength*2 {
-			return CmapSubtable4{}, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable4: "+"EOF: expected length: %d, got %d", n+arrayLength*2, L)
 		}
 
 		item.idRangeOffsets = make([]uint16, arrayLength) // allocation guarded by the previous check
@@ -552,7 +552,7 @@ func ParseCmapSubtable6(src []byte) (CmapSubtable6, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 10 {
-			return CmapSubtable6{}, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: 10, got %d", L)
+			return item, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: 10, got %d", L)
 		}
 		_ = src[9] // early bound checking
 		item.format = binary.BigEndian.Uint16(src[0:])
@@ -566,7 +566,7 @@ func ParseCmapSubtable6(src []byte) (CmapSubtable6, int, error) {
 		arrayLength := int(item.entryCount)
 
 		if L := len(src); L < 10+arrayLength*2 {
-			return CmapSubtable6{}, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: %d, got %d", 10+arrayLength*2, L)
+			return item, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: %d, got %d", 10+arrayLength*2, L)
 		}
 
 		item.glyphIdArray = make([]GlyphID, arrayLength) // allocation guarded by the previous check
@@ -583,13 +583,13 @@ func ParseDefaultUVSTable(src []byte) (DefaultUVSTable, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return DefaultUVSTable{}, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: 4, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint32(src[0:]))
 		n += 4
 
 		if L := len(src); L < 4+arrayLength*4 {
-			return DefaultUVSTable{}, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: %d, got %d", 4+arrayLength*4, L)
+			return item, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: %d, got %d", 4+arrayLength*4, L)
 		}
 
 		item.ranges = make([]unicodeRange, arrayLength) // allocation guarded by the previous check
@@ -606,13 +606,13 @@ func ParseUVSMappingTable(src []byte) (UVSMappingTable, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return UVSMappingTable{}, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: 4, got %d", L)
 		}
 		arrayLength := int(binary.BigEndian.Uint32(src[0:]))
 		n += 4
 
 		if L := len(src); L < 4+arrayLength*5 {
-			return UVSMappingTable{}, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: %d, got %d", 4+arrayLength*5, L)
+			return item, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: %d, got %d", 4+arrayLength*5, L)
 		}
 
 		item.ranges = make([]uvsMappingRecord, arrayLength) // allocation guarded by the previous check

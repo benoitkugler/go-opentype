@@ -33,7 +33,7 @@ func ParseHead(src []byte) (Head, int, error) {
 	var item Head
 	n := 0
 	if L := len(src); L < 54 {
-		return Head{}, 0, fmt.Errorf("reading Head: "+"EOF: expected length: 54, got %d", L)
+		return item, 0, fmt.Errorf("reading Head: "+"EOF: expected length: 54, got %d", L)
 	}
 	item.mustParse(src)
 	n += 54

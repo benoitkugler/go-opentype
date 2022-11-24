@@ -33,7 +33,7 @@ func ParseHhea(src []byte) (Hhea, int, error) {
 	var item Hhea
 	n := 0
 	if L := len(src); L < 36 {
-		return Hhea{}, 0, fmt.Errorf("reading Hhea: "+"EOF: expected length: 36, got %d", L)
+		return item, 0, fmt.Errorf("reading Hhea: "+"EOF: expected length: 36, got %d", L)
 	}
 	item.mustParse(src)
 	n += 36

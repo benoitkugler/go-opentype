@@ -12,7 +12,7 @@ func ParseOs2(src []byte) (Os2, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 78 {
-			return Os2{}, 0, fmt.Errorf("reading Os2: "+"EOF: expected length: 78, got %d", L)
+			return item, 0, fmt.Errorf("reading Os2: "+"EOF: expected length: 78, got %d", L)
 		}
 		_ = src[77] // early bound checking
 		item.version = binary.BigEndian.Uint16(src[0:])

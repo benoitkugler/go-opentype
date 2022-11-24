@@ -12,7 +12,7 @@ func ParseName(src []byte) (Name, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 4 {
-			return Name{}, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 4, got %d", L)
+			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 4, got %d", L)
 		}
 		_ = src[3] // early bound checking
 		item.version = binary.BigEndian.Uint16(src[0:])
@@ -21,12 +21,12 @@ func ParseName(src []byte) (Name, int, error) {
 	}
 	{
 		if L := len(src); L < 6 {
-			return Name{}, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 2, got %d", L)
+			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 6, got %d", L)
 		}
 		offset := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
 		if L := len(src); L < offset {
-			return Name{}, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offset, L)
+			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offset, L)
 		}
 
 		item.stringData = src[offset:]
@@ -36,7 +36,7 @@ func ParseName(src []byte) (Name, int, error) {
 		arrayLength := int(item.count)
 
 		if L := len(src); L < 6+arrayLength*12 {
-			return Name{}, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", 6+arrayLength*12, L)
+			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", 6+arrayLength*12, L)
 		}
 
 		item.nameRecords = make([]nameRecord, arrayLength) // allocation guarded by the previous check

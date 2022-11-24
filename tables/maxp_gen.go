@@ -12,7 +12,7 @@ func ParseMaxp(src []byte) (Maxp, int, error) {
 	n := 0
 	{
 		if L := len(src); L < 6 {
-			return Maxp{}, 0, fmt.Errorf("reading Maxp: "+"EOF: expected length: 6, got %d", L)
+			return item, 0, fmt.Errorf("reading Maxp: "+"EOF: expected length: 6, got %d", L)
 		}
 		_ = src[5] // early bound checking
 		item.version = maxpVersion(binary.BigEndian.Uint32(src[0:]))
@@ -33,7 +33,7 @@ func ParseMaxp(src []byte) (Maxp, int, error) {
 			err = fmt.Errorf("unsupported maxpDataVersion %d", item.version)
 		}
 		if err != nil {
-			return Maxp{}, 0, fmt.Errorf("reading Maxp: %s", err)
+			return item, 0, fmt.Errorf("reading Maxp: %s", err)
 		}
 		n += read
 	}
@@ -66,7 +66,7 @@ func parseMaxpData1(src []byte) (maxpData1, int, error) {
 	var item maxpData1
 	n := 0
 	if L := len(src); L < 26 {
-		return maxpData1{}, 0, fmt.Errorf("reading maxpData1: "+"EOF: expected length: 26, got %d", L)
+		return item, 0, fmt.Errorf("reading maxpData1: "+"EOF: expected length: 26, got %d", L)
 	}
 	item.mustParse(src)
 	n += 26

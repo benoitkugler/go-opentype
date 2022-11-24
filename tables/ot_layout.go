@@ -21,8 +21,8 @@ type Coverage struct {
 type coverageVersion uint16
 
 const (
-	coverageVersion1 coverageVersion = 1
-	coverageVersion2 coverageVersion = 2
+	coverageVersion1 coverageVersion = iota + 1
+	coverageVersion2
 )
 
 type coverageData interface {
@@ -440,6 +440,84 @@ type Class2Record struct {
 	ValueRecord1 ValueRecord //	Positioning for first glyph — empty if valueFormat1 = 0.
 	ValueRecord2 ValueRecord //	Positioning for second glyph — empty if valueFormat2 = 0.
 }
+
+func (AnchorFormat1) isAnchor() {}
+func (AnchorFormat2) isAnchor() {}
+func (AnchorFormat3) isAnchor() {}
+
+type AnchorFormat1 struct {
+	anchorFormat uint16 `unionTag:"1"`
+	XCoordinate  int16  // Horizontal value, in design units
+	YCoordinate  int16  // Vertical value, in design units
+}
+
+type AnchorFormat2 struct {
+	anchorFormat uint16 `unionTag:"2"`
+	XCoordinate  int16  // Horizontal value, in design units
+	YCoordinate  int16  // Vertical value, in design units
+	AnchorPoint  uint16 // Index to glyph contour point
+}
+
+type AnchorFormat3 struct {
+	anchorFormat  uint16      `unionTag:"3"`
+	XCoordinate   int16       // Horizontal value, in design units
+	YCoordinate   int16       // Vertical value, in design units
+	xDeviceOffset Offset16    // Offset to Device table (non-variable font) / VariationIndex table (variable font) for X coordinate, from beginning of Anchor table (may be NULL)
+	yDeviceOffset Offset16    // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
+	XDevice       DeviceTable `isOpaque:"" subsliceStart:"AtStart"` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for X coordinate, from beginning of Anchor table (may be NULL)
+	YDevice       DeviceTable `isOpaque:"" subsliceStart:"AtStart"` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
+}
+
+func (af AnchorFormat3) customParseXDevice(src []byte) (int, error) {
+	if af.xDeviceOffset == 0 {
+		return 0, nil
+	}
+	var err error
+	af.XDevice, err = parseDeviceTable(src, uint16(af.xDeviceOffset))
+	if err != nil {
+		return 0, err
+	}
+	return 0, nil
+}
+
+func (af AnchorFormat3) customParseYDevice(src []byte) (int, error) {
+	if af.yDeviceOffset == 0 {
+		return 0, nil
+	}
+	var err error
+	af.YDevice, err = parseDeviceTable(src, uint16(af.yDeviceOffset))
+	if err != nil {
+		return 0, err
+	}
+	return 0, nil
+}
+
+type MarkArray struct {
+	MarkRecords []MarkRecord `arrayCount:"FirstUint16"`            //[markCount]	Array of MarkRecords, ordered by corresponding glyphs in the associated mark Coverage table.
+	MarkAnchors []Anchor     `isOpaque:"" subsliceStart:"AtStart"` // with same length as MarkRecords
+}
+
+func (ma *MarkArray) customParseMarkAnchors(src []byte) (int, error) {
+	ma.MarkAnchors = make([]Anchor, len(ma.MarkRecords))
+	var err error
+	for i, rec := range ma.MarkRecords {
+		if L := len(src); L < int(rec.markAnchorOffset) {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.markAnchorOffset, L)
+		}
+		ma.MarkAnchors[i], _, err = ParseAnchor(src[rec.markAnchorOffset:])
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(src), nil
+}
+
+type MarkRecord struct {
+	markClass        uint16   // Class defined for the associated mark.
+	markAnchorOffset Offset16 // Offset to Anchor table, from beginning of MarkArray table.
+}
+
+// ------------------------------ parsing helpers ------------------------------
 
 // write 8 elements
 func uint16As2Bits(dst []int8, u uint16) {
