@@ -6,16 +6,8 @@ import (
 )
 
 type SinglePos struct {
-	posFormat singlePosVersion
-	Data      SinglePosData `unionField:"posFormat" subsliceStart:"AtStart"`
+	Data SinglePosData
 }
-
-type singlePosVersion uint16
-
-const (
-	singlePosVersion1 singlePosVersion = 1
-	singlePosVersion2 singlePosVersion = 2
-)
 
 type SinglePosData interface {
 	isSinglePosData()
@@ -24,8 +16,8 @@ type SinglePosData interface {
 func (SinglePosData1) isSinglePosData() {}
 func (SinglePosData2) isSinglePosData() {}
 
-// binarygen: startOffset=2
 type SinglePosData1 struct {
+	format      uint16      `unionTag:"1"`
 	Coverage    Coverage    `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of SinglePos subtable.
 	valueFormat ValueFormat //	Defines the types of data in the ValueRecord.
 	ValueRecord ValueRecord `isOpaque:""` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
@@ -36,8 +28,8 @@ func (sp *SinglePosData1) customParseValueRecord(src []byte) (read int, err erro
 	return read, err
 }
 
-// binarygen: startOffset=2
 type SinglePosData2 struct {
+	format       uint16        `unionTag:"2"`
 	Coverage     Coverage      `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of SinglePos subtable.
 	valueFormat  ValueFormat   // Defines the types of data in the ValueRecords.
 	valueCount   uint16        // Number of ValueRecords — must equal glyphCount in the Coverage table.
@@ -58,16 +50,8 @@ func (sp *SinglePosData2) customParseValueRecords(src []byte) (read int, err err
 }
 
 type PairPos struct {
-	posFormat pairPosVersion
-	Data      PairPosData `unionField:"posFormat" subsliceStart:"AtStart"`
+	Data PairPosData
 }
-
-type pairPosVersion uint16
-
-const (
-	pairPosVersion1 pairPosVersion = 1
-	pairPosVersion2 pairPosVersion = 2
-)
 
 type PairPosData interface {
 	isPairPosData()
@@ -76,8 +60,8 @@ type PairPosData interface {
 func (PairPosData1) isPairPosData() {}
 func (PairPosData2) isPairPosData() {}
 
-// binarygen: startOffset=2
 type PairPosData1 struct {
+	format   uint16   `unionTag:"1"`
 	Coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
 
 	valueFormat1  ValueFormat // Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
@@ -113,8 +97,8 @@ func (ps *PairSet) customParsePairValueRecords(src []byte, fmt1, fmt2 ValueForma
 	return offsetR, nil
 }
 
-// binarygen: startOffset=2
 type PairPosData2 struct {
+	format   uint16   `unionTag:"2"`
 	Coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
 
 	valueFormat1 ValueFormat //	Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
@@ -297,5 +281,41 @@ func (ma *Mark2Array) customParseMark2Anchors(src []byte, _ int) (int, error) {
 	ma.Mark2Anchors, err = resolveAnchorOffsets(ma.mark2Records, src)
 	return len(src), err
 }
+
+type ContextualPos struct {
+	Data ContextualPosITF
+}
+
+type ContextualPosITF interface {
+	isContextualPosITF()
+}
+
+type (
+	ContextualPos1 SequenceContextFormat1
+	ContextualPos2 SequenceContextFormat2
+	ContextualPos3 SequenceContextFormat3
+)
+
+func (ContextualPos1) isContextualPosITF() {}
+func (ContextualPos2) isContextualPosITF() {}
+func (ContextualPos3) isContextualPosITF() {}
+
+type ChainedContextualPos struct {
+	Data ChainedContextualPosITF
+}
+
+type ChainedContextualPosITF interface {
+	isChainedContextualPosITF()
+}
+
+type (
+	ChainedContextualPos1 ChainedSequenceContextFormat1
+	ChainedContextualPos2 ChainedSequenceContextFormat2
+	ChainedContextualPos3 ChainedSequenceContextFormat3
+)
+
+func (ChainedContextualPos1) isChainedContextualPosITF() {}
+func (ChainedContextualPos2) isChainedContextualPosITF() {}
+func (ChainedContextualPos3) isChainedContextualPosITF() {}
 
 type ExtensionPos Extension

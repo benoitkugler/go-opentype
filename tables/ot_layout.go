@@ -70,9 +70,8 @@ type SequenceLookupRecord struct {
 	LookupListIndex uint16 // Index (zero-based) into the LookupList
 }
 
-// binarygen: startOffset=2
-// Format identifier: format = 1
 type SequenceContextFormat1 struct {
+	format     uint16            `unionTag:"1"`
 	Coverage   Coverage          `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of SequenceContextFormat1 table
 	SeqRuleSet []SequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[seqRuleSetCount]	Array of offsets to SequenceRuleSet tables, from beginning of SequenceContextFormat1 table (offsets may be NULL)
 }
@@ -88,9 +87,8 @@ type SequenceRule struct {
 	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"` //[seqLookupCount]	Array of Sequence lookup records
 }
 
-// binarygen: startOffset=2
-// Format identifier: format = 2
 type SequenceContextFormat2 struct {
+	format          uint16                 `unionTag:"2"`
 	Coverage        Coverage               `offsetSize:"Offset16"`                            //	Offset to Coverage table, from beginning of SequenceContextFormat2 table
 	ClassDef        ClassDef               `offsetSize:"Offset16"`                            //	Offset to ClassDef table, from beginning of SequenceContextFormat2 table
 	ClassSeqRuleSet []ClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[classSeqRuleSetCount]	Array of offsets to ClassSequenceRuleSet tables, from beginning of SequenceContextFormat2 table (may be NULL)
@@ -107,17 +105,16 @@ type ClassSequenceRule struct {
 	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"` //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
-// binarygen: startOffset=2
-// Format identifier: format = 2
 type SequenceContextFormat3 struct {
+	format           uint16                 `unionTag:"3"`
 	glyphCount       uint16                 // Number of glyphs in the input sequence
 	seqLookupCount   uint16                 // Number of SequenceLookupRecords
 	CoverageOffsets  []Coverage             `arrayCount:"ComputedField-glyphCount" offsetsArray:"Offset16"` //[glyphCount]	Array of offsets to Coverage tables, from beginning of SequenceContextFormat3 subtable
 	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"`                     //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
-// Format identifier: format = 1
 type ChainedSequenceContextFormat1 struct {
+	format            uint16                   `unionTag:"1"`
 	Coverage          Coverage                 `offsetSize:"Offset16"`                             //	Offset to Coverage table, from beginning of ChainSequenceContextFormat1 table
 	ChainedSeqRuleSet []ChainedSequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[chainedSeqRuleSetCount]	Array of offsets to ChainedSeqRuleSet tables, from beginning of ChainedSequenceContextFormat1 table (may be NULL)
 }
@@ -134,9 +131,8 @@ type ChainedSequenceRule struct {
 	SeqLookupRecords  []SequenceLookupRecord `arrayCount:"FirstUint16"`                     //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
-// binarygen: startOffset=2
-// Format identifier: format = 2
 type ChainedSequenceContextFormat2 struct {
+	format                 uint16                        `unionTag:"2"`
 	Coverage               Coverage                      `offsetSize:"Offset16"`                            // Offset to Coverage table, from beginning of ChainedSequenceContextFormat2 table
 	BacktrackClassDef      ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing backtrack sequence context, from beginning of ChainedSequenceContextFormat2 table
 	InputClassDef          ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing input sequence context, from beginning of ChainedSequenceContextFormat2 table
@@ -149,16 +145,15 @@ type ChainedClassSequenceRuleSet struct {
 }
 
 type ChainedClassSequenceRule struct {
-	BacktrackSequence   []uint16               `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of backtrack-sequence classes
-	inputGlyphCount     uint16                 //	Total number of glyphs in the input sequence
-	InputSequence       []uint16               `arrayCount:"ComputedField-inputGlyphCount-1"` //[inputGlyphCount - 1]	Array of input sequence classes, beginning with the second glyph position
-	LookaheadGlyphCount []uint16               `arrayCount:"FirstUint16"`                     //[lookaheadGlyphCount]	Array of lookahead-sequence classes
-	SeqLookupRecords    []SequenceLookupRecord `arrayCount:"FirstUint16"`                     //[seqLookupCount]	Array of SequenceLookupRecords
+	BacktrackSequence []uint16               `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of backtrack-sequence classes
+	inputGlyphCount   uint16                 //	Total number of glyphs in the input sequence
+	InputSequence     []uint16               `arrayCount:"ComputedField-inputGlyphCount-1"` //[inputGlyphCount - 1]	Array of input sequence classes, beginning with the second glyph position
+	LookaheadGlyph    []uint16               `arrayCount:"FirstUint16"`                     //[lookaheadGlyphCount]	Array of lookahead-sequence classes
+	SeqLookupRecords  []SequenceLookupRecord `arrayCount:"FirstUint16"`                     //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
-// binarygen: startOffset=2
-// Format identifier: format = 3
 type ChainedSequenceContextFormat3 struct {
+	format             uint16                 `unionTag:"3"`
 	BacktrackCoverages []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[backtrackGlyphCount]	Array of offsets to coverage tables for the backtrack sequence
 	InputCoverages     []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[inputGlyphCount]	Array of offsets to coverage tables for the input sequence
 	LookaheadCoverages []Coverage             `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[lookaheadGlyphCount]	Array of offsets to coverage tables for the lookahead sequence
@@ -183,14 +178,14 @@ type GSUBLookup interface {
 	isGSUBLookup()
 }
 
-func (SingleSubstitution) isGSUBLookup()             {}
-func (MultipleSubstitution) isGSUBLookup()           {}
-func (AlternateSubstitution) isGSUBLookup()          {}
-func (LigatureSubstitution) isGSUBLookup()           {}
-func (ContextualSubstitution) isGSUBLookup()         {}
-func (ChainedContextualSubstitution) isGSUBLookup()  {}
-func (ExtensionSubs) isGSUBLookup()                  {}
-func (ReverseChainSingleSubstitution) isGSUBLookup() {}
+func (SingleSubs) isGSUBLookup()             {}
+func (MultipleSubs) isGSUBLookup()           {}
+func (AlternateSubs) isGSUBLookup()          {}
+func (LigatureSubs) isGSUBLookup()           {}
+func (ContextualSubs) isGSUBLookup()         {}
+func (ChainedContextualSubs) isGSUBLookup()  {}
+func (ExtensionSubs) isGSUBLookup()          {}
+func (ReverseChainSingleSubs) isGSUBLookup() {}
 
 // AsGSUBLookups returns the GSUB lookup subtables
 func (lk Lookup) AsGSUBLookups() ([]GSUBLookup, error) {
@@ -202,21 +197,21 @@ func (lk Lookup) AsGSUBLookups() ([]GSUBLookup, error) {
 		}
 		switch lk.lookupType {
 		case 1: // Single (format 1.1 1.2)	Replace one glyph with one glyph
-			out[i], _, err = ParseSingleSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseSingleSubs(lk.rawData[offset:])
 		case 2: // Multiple (format 2.1)	Replace one glyph with more than one glyph
-			out[i], _, err = ParseMultipleSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseMultipleSubs(lk.rawData[offset:])
 		case 3: // Alternate (format 3.1)	Replace one glyph with one of many glyphs
-			out[i], _, err = ParseAlternateSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseAlternateSubs(lk.rawData[offset:])
 		case 4: // Ligature (format 4.1)	Replace multiple glyphs with one glyph
-			out[i], _, err = ParseLigatureSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseLigatureSubs(lk.rawData[offset:])
 		case 5: // Context (format 5.1 5.2 5.3)	Replace one or more glyphs in context
-			out[i], _, err = ParseContextualSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseContextualSubs(lk.rawData[offset:])
 		case 6: // Chaining Context (format 6.1 6.2 6.3)	Replace one or more glyphs in chained context
-			out[i], _, err = ParseChainedContextualSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseChainedContextualSubs(lk.rawData[offset:])
 		case 7: // Extension Substitution (format 7.1) Extension mechanism for other substitutions
-			out[i], _, err = ParseExtensionSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseExtensionSubs(lk.rawData[offset:])
 		case 8: // Reverse chaining context single (format 8.1)
-			out[i], _, err = ParseReverseChainSingleSubstitution(lk.rawData[offset:])
+			out[i], _, err = ParseReverseChainSingleSubs(lk.rawData[offset:])
 		default:
 			err = fmt.Errorf("invalid GSUB Loopkup type %d", lk.lookupType)
 		}
@@ -236,6 +231,58 @@ func (lk Lookup) AsGSUBLookups() ([]GSUBLookup, error) {
 // and language system that a font supports.
 // See https://learn.microsoft.com/fr-fr/typography/opentype/spec/gpos
 type GPOS Layout
+
+type GPOSLookup interface {
+	isGPOSLookup()
+}
+
+func (SinglePos) isGPOSLookup()            {}
+func (PairPos) isGPOSLookup()              {}
+func (CursivePos) isGPOSLookup()           {}
+func (MarkBasePos) isGPOSLookup()          {}
+func (MarkLigPos) isGPOSLookup()           {}
+func (MarkMarkPos) isGPOSLookup()          {}
+func (ContextualPos) isGPOSLookup()        {}
+func (ChainedContextualPos) isGPOSLookup() {}
+func (ExtensionPos) isGPOSLookup()         {}
+
+// AsGPOSLookups returns the GPOS lookup subtables
+func (lk Lookup) AsGPOSLookups() ([]GPOSLookup, error) {
+	var err error
+	out := make([]GPOSLookup, len(lk.subtableOffsets))
+	for i, offset := range lk.subtableOffsets {
+		if L := len(lk.rawData); L < int(offset) {
+			return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
+		}
+		switch lk.lookupType {
+		case 1: // Single adjustment	Adjust position of a single glyph
+			out[i], _, err = ParseSinglePos(lk.rawData[offset:])
+		case 2: // Pair adjustment	Adjust position of a pair of glyphs
+			out[i], _, err = ParsePairPos(lk.rawData[offset:])
+		case 3: // Cursive attachment	Attach cursive glyphs
+			out[i], _, err = ParseCursivePos(lk.rawData[offset:])
+		case 4: // MarkToBase attachment	Attach a combining mark to a base glyph
+			out[i], _, err = ParseMarkBasePos(lk.rawData[offset:])
+		case 5: // MarkToLigature attachment	Attach a combining mark to a ligature
+			out[i], _, err = ParseMarkLigPos(lk.rawData[offset:])
+		case 6: // MarkToMark attachment	Attach a combining mark to another mark
+			out[i], _, err = ParseMarkMarkPos(lk.rawData[offset:])
+		case 7: // Context positioning	Position one or more glyphs in context
+			out[i], _, err = ParseContextualPos(lk.rawData[offset:])
+		case 8: // Chained Context positioning	Position one or more glyphs in chained context
+			out[i], _, err = ParseChainedContextualPos(lk.rawData[offset:])
+		case 9: // Extension positioning	Extension mechanism for other positionings
+			out[i], _, err = ParseExtensionPos(lk.rawData[offset:])
+		default:
+			err = fmt.Errorf("invalid GSUB Loopkup type %d", lk.lookupType)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
+}
 
 // ValueFormat is a mask indicating which field
 // are set in a [ValueRecord].

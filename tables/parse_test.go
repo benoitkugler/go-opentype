@@ -47,14 +47,15 @@ func filenames(t *testing.T, dir string) []string {
 	return out
 }
 
+// wrap td.Files.ReadFile
 func readFontFile(t *testing.T, filepath string) *opentype.Loader {
 	t.Helper()
 
 	file, err := td.Files.ReadFile(filepath)
-	assertC(t, err == nil, "reading "+filepath)
+	assertNoErr(t, err)
 
 	fp, err := opentype.NewLoader(bytes.NewReader(file))
-	assertC(t, err == nil, "reading "+filepath)
+	assertNoErr(t, err)
 
 	return fp
 }
@@ -135,33 +136,4 @@ func TestParseCmap(t *testing.T) {
 	cmap, _, err := ParseCmapSubtable2(file)
 	assertNoErr(t, err)
 	assert(t, cmap.format == 2)
-}
-
-func TestParseOTLayout(t *testing.T) {
-	for _, filename := range td.WithOTLayout {
-		fp := readFontFile(t, filename)
-		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-		assertNoErr(t, err)
-		assert(t, len(gsub.lookupList.lookups) == len(gsub.lookupList.lookups))
-		assert(t, len(gsub.lookupList.lookups) > 0)
-
-		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
-		assertNoErr(t, err)
-		assert(t, len(gpos.lookupList.lookups) == len(gpos.lookupList.lookups))
-		assert(t, len(gpos.lookupList.lookups) > 0)
-	}
-
-	for _, filename := range filenames(t, "toys/gsub") {
-		fp := readFontFile(t, filename)
-		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-		assertNoErr(t, err)
-		assert(t, len(gsub.lookupList.lookups) == len(gsub.lookupList.lookups))
-		assert(t, len(gsub.lookupList.lookups) > 0)
-
-		for _, lookup := range gsub.lookupList.lookups {
-			assert(t, lookup.lookupType > 0)
-			_, err = lookup.AsGSUBLookups()
-			assertNoErr(t, err)
-		}
-	}
 }

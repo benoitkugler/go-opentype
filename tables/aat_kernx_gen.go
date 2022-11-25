@@ -144,19 +144,22 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 		}
 		offset := int(binary.BigEndian.Uint16(src[2:]))
 		n += 2
-		if L := len(src); L < offset {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
-		}
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
+			}
 
-		var (
-			err  error
-			read int
-		)
-		item.left, read, err = parseAatLookupTable8(src[offset:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			var (
+				err  error
+				read int
+			)
+			item.left, read, err = parseAatLookupTable8(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offset += read
+
 		}
-		offset += read
 	}
 	{
 		if L := len(src); L < 6 {
@@ -164,19 +167,22 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 		}
 		offset := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
-		if L := len(src); L < offset {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
-		}
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
+			}
 
-		var (
-			err  error
-			read int
-		)
-		item.right, read, err = parseAatLookupTable8(src[offset:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			var (
+				err  error
+				read int
+			)
+			item.right, read, err = parseAatLookupTable8(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offset += read
+
 		}
-		offset += read
 	}
 	{
 		if L := len(src); L < 8 {

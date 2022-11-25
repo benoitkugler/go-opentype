@@ -1,16 +1,8 @@
 package tables
 
-type SingleSubstitution struct {
-	substFormat singleSubsVersion
-	Data        SingleSubstData `unionField:"substFormat" subsliceStart:"AtStart"`
+type SingleSubs struct {
+	Data SingleSubstData
 }
-
-type singleSubsVersion uint16
-
-const (
-	singleSubsVersion1 singleSubsVersion = 1
-	singleSubsVersion2 singleSubsVersion = 2
-)
 
 type SingleSubstData interface {
 	isSingleSubstData()
@@ -19,19 +11,19 @@ type SingleSubstData interface {
 func (SingleSubstData1) isSingleSubstData() {}
 func (SingleSubstData2) isSingleSubstData() {}
 
-// binarygen: startOffset=2
 type SingleSubstData1 struct {
+	format       uint16   `unionTag:"1"`
 	Coverage     Coverage `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
 	DeltaGlyphID int16    // Add to original glyph ID to get substitute glyph ID
 }
 
-// binarygen: startOffset=2
 type SingleSubstData2 struct {
+	format             uint16    `unionTag:"2"`
 	Coverage           Coverage  `offsetSize:"Offset16"`    // Offset to Coverage table, from beginning of substitution subtable
 	SubstituteGlyphIDs []GlyphID `arrayCount:"FirstUint16"` //[glyphCount]	Array of substitute glyph IDs — ordered by Coverage index
 }
 
-type MultipleSubstitution struct {
+type MultipleSubs struct {
 	substFormat    uint16     // Format identifier: format = 1
 	CoverageOffset Coverage   `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
 	Sequences      []Sequence `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
@@ -42,7 +34,7 @@ type Sequence struct {
 	SubstituteGlyphIDs []GlyphID `arrayCount:"FirstUint16"` // [glyphCount]	String of glyph IDs to substitute
 }
 
-type AlternateSubstitution struct {
+type AlternateSubs struct {
 	substFormat    uint16         //	Format identifier: format = 1
 	CoverageOffset Coverage       `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of substitution subtable
 	AlternateSets  []AlternateSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
@@ -52,7 +44,7 @@ type AlternateSet struct {
 	AlternateGlyphIDs []GlyphID `arrayCount:"FirstUint16"` // Array of alternate glyph IDs, in arbitrary order
 }
 
-type LigatureSubstitution struct {
+type LigatureSubs struct {
 	substFormat  uint16        // Format identifier: format = 1
 	Coverage     Coverage      `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable
 	LigatureSets []LigatureSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[ligatureSetCount]	Array of offsets to LigatureSet tables. Offsets are from beginning of substitution subtable, ordered by Coverage index
@@ -70,69 +62,45 @@ type Ligature struct {
 	ComponentGlyphIDs []GlyphID `arrayCount:"ComputedField-componentCount-1"` //  [componentCount - 1]	Array of component glyph IDs — start with the second component, ordered in writing direction
 }
 
-type ContextualSubstitution struct {
-	format contextualSubsVersion
-	Data   ContextualSubs `unionField:"format" subsliceStart:"AtStart"`
+type ContextualSubs struct {
+	Data ContextualSubsITF
 }
 
-type contextualSubsVersion uint16
+type ContextualSubsITF interface {
+	isContextualSubsITF()
+}
 
-const (
-	contextualSubsVersion1 contextualSubsVersion = 1
-	contextualSubsVersion2 contextualSubsVersion = 2
-	contextualSubsVersion3 contextualSubsVersion = 3
+type (
+	ContextualSubs1 SequenceContextFormat1
+	ContextualSubs2 SequenceContextFormat2
+	ContextualSubs3 SequenceContextFormat3
 )
 
-type ContextualSubs interface {
-	isContextualSubs()
+func (ContextualSubs1) isContextualSubsITF() {}
+func (ContextualSubs2) isContextualSubsITF() {}
+func (ContextualSubs3) isContextualSubsITF() {}
+
+type ChainedContextualSubs struct {
+	Data ChainedContextualSubsITF
 }
 
-// binarygen: startOffset=2
-type ContextualSubs1 SequenceContextFormat1
-
-// binarygen: startOffset=2
-type ContextualSubs2 SequenceContextFormat2
-
-// binarygen: startOffset=2
-type ContextualSubs3 SequenceContextFormat3
-
-func (ContextualSubs1) isContextualSubs() {}
-func (ContextualSubs2) isContextualSubs() {}
-func (ContextualSubs3) isContextualSubs() {}
-
-type ChainedContextualSubstitution struct {
-	format chainedContextualSubsVersion
-	Data   ChainedContextualSubs `unionField:"format" subsliceStart:"AtStart"`
+type ChainedContextualSubsITF interface {
+	isChainedContextualSubsITF()
 }
 
-type chainedContextualSubsVersion uint16
-
-const (
-	chainedContextualSubsVersion1 chainedContextualSubsVersion = 1
-	chainedContextualSubsVersion2 chainedContextualSubsVersion = 2
-	chainedContextualSubsVersion3 chainedContextualSubsVersion = 3
+type (
+	ChainedContextualSubs1 ChainedSequenceContextFormat1
+	ChainedContextualSubs2 ChainedSequenceContextFormat2
+	ChainedContextualSubs3 ChainedSequenceContextFormat3
 )
 
-type ChainedContextualSubs interface {
-	isChainedContextualSubs()
-}
-
-// binarygen: startOffset=2
-type ChainedContextualSubs1 ChainedSequenceContextFormat1
-
-// binarygen: startOffset=2
-type ChainedContextualSubs2 ChainedSequenceContextFormat2
-
-// binarygen: startOffset=2
-type ChainedContextualSubs3 ChainedSequenceContextFormat3
-
-func (ChainedContextualSubs1) isChainedContextualSubs() {}
-func (ChainedContextualSubs2) isChainedContextualSubs() {}
-func (ChainedContextualSubs3) isChainedContextualSubs() {}
+func (ChainedContextualSubs1) isChainedContextualSubsITF() {}
+func (ChainedContextualSubs2) isChainedContextualSubsITF() {}
+func (ChainedContextualSubs3) isChainedContextualSubsITF() {}
 
 type ExtensionSubs Extension
 
-type ReverseChainSingleSubstitution struct {
+type ReverseChainSingleSubs struct {
 	substFormat              uint16     // Format identifier: format = 1
 	Coverage                 Coverage   `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of substitution subtable.
 	BacktrackCoverageOffsets []Coverage `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[backtrackGlyphCount]	Array of offsets to coverage tables in backtrack sequence, in glyph sequence order.

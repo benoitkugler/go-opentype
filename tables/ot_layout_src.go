@@ -52,44 +52,89 @@ type tagOffsetRecord struct {
 
 type scriptList struct {
 	records []tagOffsetRecord `arrayCount:"FirstUint16"` // Array of ScriptRecords, listed alphabetically by script tag
-	rawData []byte            `subsliceStart:"AtStart" arrayCount:"ToEnd"`
+	Scripts []Script          `isOpaque:""`
+}
+
+func (sl *scriptList) customParseScripts(src []byte) (int, error) {
+	sl.Scripts = make([]Script, len(sl.records))
+	for i, rec := range sl.records {
+		var err error
+		if L := len(src); L < int(rec.Offset) {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+		}
+		sl.Scripts[i], _, err = ParseScript(src[rec.Offset:])
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(src), nil
 }
 
 type Script struct {
-	defaultLangSysOffset uint16            // Offset to default LangSys table, from beginning of Script table — may be NULL
-	langSysRecords       []tagOffsetRecord `arrayCount:"FirstUint16"` // [langSysCount]	Array of LangSysRecords, listed alphabetically by LangSys tag
-	rawData              []byte            `subsliceStart:"AtStart" arrayCount:"ToEnd"`
+	DefaultLangSys LangSys           `offsetSize:"Offset16"`    // Offset to default LangSys table, from beginning of Script table — may be NULL
+	langSysRecords []tagOffsetRecord `arrayCount:"FirstUint16"` // [langSysCount]	Array of LangSysRecords, listed alphabetically by LangSys tag
+	LangSys        []LangSys         `isOpaque:""`
+}
+
+func (sc *Script) customParseLangSys(src []byte) (int, error) {
+	sc.LangSys = make([]LangSys, len(sc.langSysRecords))
+	for i, rec := range sc.langSysRecords {
+		var err error
+		if L := len(src); L < int(rec.Offset) {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+		}
+		sc.LangSys[i], _, err = ParseLangSys(src[rec.Offset:])
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(src), nil
 }
 
 type LangSys struct {
 	lookupOrderOffset    uint16   // = NULL (reserved for an offset to a reordering table)
-	requiredFeatureIndex uint16   // Index of a feature required for this language system; if no required features = 0xFFFF
-	featureIndices       []uint16 `arrayCount:"FirstUint16"` // [featureIndexCount]	Array of indices into the FeatureList, in arbitrary order
+	RequiredFeatureIndex uint16   // Index of a feature required for this language system; if no required features = 0xFFFF
+	FeatureIndices       []uint16 `arrayCount:"FirstUint16"` // [featureIndexCount]	Array of indices into the FeatureList, in arbitrary order
 }
 
 type featureList struct {
-	records []tagOffsetRecord `arrayCount:"FirstUint16"` // Array of FeatureRecords — zero-based (first feature has FeatureIndex = 0), listed alphabetically by feature tag
-	rawData []byte            `subsliceStart:"AtStart" arrayCount:"ToEnd"`
+	records  []tagOffsetRecord `arrayCount:"FirstUint16"` // Array of FeatureRecords — zero-based (first feature has FeatureIndex = 0), listed alphabetically by feature tag
+	Features []Feature         `isOpaque:""`
+}
+
+func (fl *featureList) customParseFeatures(src []byte) (int, error) {
+	fl.Features = make([]Feature, len(fl.records))
+	for i, rec := range fl.records {
+		var err error
+		if L := len(src); L < int(rec.Offset) {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+		}
+		fl.Features[i], _, err = ParseFeature(src[rec.Offset:])
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(src), nil
 }
 
 type Feature struct {
 	featureParamsOffset uint16   // Offset from start of Feature table to FeatureParams table, if defined for the feature and present, else NULL
-	lookupListIndices   []uint16 `arrayCount:"FirstUint16"` // [lookupIndexCount]	Array of indices into the LookupList — zero-based (first lookup is LookupListIndex = 0)
+	LookupListIndices   []uint16 `arrayCount:"FirstUint16"` // [lookupIndexCount]	Array of indices into the LookupList — zero-based (first lookup is LookupListIndex = 0)
 }
 
 type lookupList struct {
 	records []Offset16 `arrayCount:"FirstUint16"` // Array of offsets to Lookup tables, from beginning of LookupList — zero based (first lookup is Lookup index = 0)
-	lookups []Lookup   `isOpaque:""`
+	Lookups []Lookup   `isOpaque:""`
 }
 
 func (ll *lookupList) customParseLookups(src []byte) (int, error) {
 	var err error
-	ll.lookups = make([]Lookup, len(ll.records))
+	ll.Lookups = make([]Lookup, len(ll.records))
 	for i, offset := range ll.records {
 		if L := len(src); L < int(offset) {
 			return 0, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
 		}
-		ll.lookups[i], _, err = ParseLookup(src[offset:])
+		ll.Lookups[i], _, err = ParseLookup(src[offset:])
 		if err != nil {
 			return 0, err
 		}

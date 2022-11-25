@@ -34,9 +34,9 @@ func ParseFeature(src []byte) (Feature, int, error) {
 			return item, 0, fmt.Errorf("reading Feature: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
 		}
 
-		item.lookupListIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
-		for i := range item.lookupListIndices {
-			item.lookupListIndices[i] = binary.BigEndian.Uint16(src[4+i*2:])
+		item.LookupListIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
+		for i := range item.LookupListIndices {
+			item.LookupListIndices[i] = binary.BigEndian.Uint16(src[4+i*2:])
 		}
 		n += arrayLength * 2
 	}
@@ -100,7 +100,7 @@ func ParseLangSys(src []byte) (LangSys, int, error) {
 		}
 		_ = src[3] // early bound checking
 		item.lookupOrderOffset = binary.BigEndian.Uint16(src[0:])
-		item.requiredFeatureIndex = binary.BigEndian.Uint16(src[2:])
+		item.RequiredFeatureIndex = binary.BigEndian.Uint16(src[2:])
 		n += 4
 	}
 	{
@@ -114,9 +114,9 @@ func ParseLangSys(src []byte) (LangSys, int, error) {
 			return item, 0, fmt.Errorf("reading LangSys: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
-		item.featureIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
-		for i := range item.featureIndices {
-			item.featureIndices[i] = binary.BigEndian.Uint16(src[6+i*2:])
+		item.FeatureIndices = make([]uint16, arrayLength) // allocation guarded by the previous check
+		for i := range item.FeatureIndices {
+			item.FeatureIndices[i] = binary.BigEndian.Uint16(src[6+i*2:])
 		}
 		n += arrayLength * 2
 	}
@@ -141,19 +141,22 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		}
 		offset := int(binary.BigEndian.Uint16(src[4:]))
 		n += 2
-		if L := len(src); L < offset {
-			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
-		}
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			}
 
-		var (
-			err  error
-			read int
-		)
-		item.scriptList, read, err = parseScriptList(src[offset:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Layout: %s", err)
+			var (
+				err  error
+				read int
+			)
+			item.scriptList, read, err = parseScriptList(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Layout: %s", err)
+			}
+			offset += read
+
 		}
-		offset += read
 	}
 	{
 		if L := len(src); L < 8 {
@@ -161,19 +164,22 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		}
 		offset := int(binary.BigEndian.Uint16(src[6:]))
 		n += 2
-		if L := len(src); L < offset {
-			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
-		}
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			}
 
-		var (
-			err  error
-			read int
-		)
-		item.featureList, read, err = parseFeatureList(src[offset:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Layout: %s", err)
+			var (
+				err  error
+				read int
+			)
+			item.featureList, read, err = parseFeatureList(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Layout: %s", err)
+			}
+			offset += read
+
 		}
-		offset += read
 	}
 	{
 		if L := len(src); L < 10 {
@@ -181,19 +187,22 @@ func ParseLayout(src []byte) (Layout, int, error) {
 		}
 		offset := int(binary.BigEndian.Uint16(src[8:]))
 		n += 2
-		if L := len(src); L < offset {
-			return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
-		}
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offset, L)
+			}
 
-		var (
-			err  error
-			read int
-		)
-		item.lookupList, read, err = parseLookupList(src[offset:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Layout: %s", err)
+			var (
+				err  error
+				read int
+			)
+			item.lookupList, read, err = parseLookupList(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Layout: %s", err)
+			}
+			offset += read
+
 		}
-		offset += read
 	}
 	{
 
@@ -257,8 +266,24 @@ func ParseScript(src []byte) (Script, int, error) {
 		if L := len(src); L < 2 {
 			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: 2, got %d", L)
 		}
-		item.defaultLangSysOffset = binary.BigEndian.Uint16(src[0:])
+		offset := int(binary.BigEndian.Uint16(src[0:]))
 		n += 2
+		if offset != 0 { // ignore null offset
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", offset, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.DefaultLangSys, read, err = ParseLangSys(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Script: %s", err)
+			}
+			offset += read
+
+		}
 	}
 	{
 		if L := len(src); L < 4 {
@@ -279,8 +304,11 @@ func ParseScript(src []byte) (Script, int, error) {
 	}
 	{
 
-		item.rawData = src[0:]
-		n = len(src)
+		read, err := item.customParseLangSys(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading Script: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
@@ -307,8 +335,11 @@ func parseFeatureList(src []byte) (featureList, int, error) {
 	}
 	{
 
-		item.rawData = src[0:]
-		n = len(src)
+		read, err := item.customParseFeatures(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading featureList: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
@@ -366,8 +397,11 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 	}
 	{
 
-		item.rawData = src[0:]
-		n = len(src)
+		read, err := item.customParseScripts(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading scriptList: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
