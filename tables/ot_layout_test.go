@@ -20,8 +20,13 @@ func TestParseOTLayout(t *testing.T) {
 		assertNoErr(t, err)
 		assert(t, len(gpos.lookupList.Lookups) == len(gpos.lookupList.Lookups))
 		assert(t, len(gpos.lookupList.Lookups) > 0)
-	}
 
+		_, _, err = ParseGDEF(readTable(t, fp, "GDEF"))
+		assertNoErr(t, err)
+	}
+}
+
+func TestGSUB(t *testing.T) {
 	for _, filename := range filenames(t, "toys/gsub") {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
@@ -35,7 +40,9 @@ func TestParseOTLayout(t *testing.T) {
 			assertNoErr(t, err)
 		}
 	}
+}
 
+func TestGPOS(t *testing.T) {
 	for _, filename := range filenames(t, "toys/gpos") {
 		fp := readFontFile(t, filename)
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
@@ -275,5 +282,45 @@ func TestBits(t *testing.T) {
 	uint16As8Bits(buf2[:], 0x123F)
 	if exp := [2]int8{18, 63}; buf2 != exp {
 		t.Fatalf("expected %v, got %v", exp, buf2)
+	}
+}
+
+func TestGDEFCaretList3(t *testing.T) {
+	filepath := "toys/GDEFCaretList3.ttf"
+	fp := readFontFile(t, filepath)
+	gdef, _, err := ParseGDEF(readTable(t, fp, "GDEF"))
+	assertNoErr(t, err)
+
+	expectedLigGlyphs := [][]CaretValue3{ //  LigGlyphCount=4
+		// CaretCount=1
+		{
+			CaretValue3{Coordinate: 620, Device: DeviceVariation{DeltaSetOuter: 3, DeltaSetInner: 205}},
+		},
+		// CaretCount=1
+		{
+			CaretValue3{Coordinate: 675, Device: DeviceVariation{DeltaSetOuter: 3, DeltaSetInner: 193}},
+		},
+		// CaretCount=2
+		{
+			CaretValue3{Coordinate: 696, Device: DeviceVariation{DeltaSetOuter: 3, DeltaSetInner: 173}},
+			CaretValue3{Coordinate: 1351, Device: DeviceVariation{DeltaSetOuter: 6, DeltaSetInner: 14}},
+		},
+		// CaretCount=2
+		{
+			CaretValue3{Coordinate: 702, Device: DeviceVariation{DeltaSetOuter: 3, DeltaSetInner: 179}},
+			CaretValue3{Coordinate: 1392, Device: DeviceVariation{DeltaSetOuter: 6, DeltaSetInner: 11}},
+		},
+	}
+
+	for i := range expectedLigGlyphs {
+		expL, gotL := expectedLigGlyphs[i], gdef.LigCaretList.LigGlyphs[i]
+		assert(t, len(expL) == len(gotL.CaretValues))
+		for j := range expL {
+			exp, got := expL[j], gotL.CaretValues[j]
+			asFormat3, ok := got.(CaretValue3)
+			assert(t, ok)
+			assert(t, exp.Coordinate == asFormat3.Coordinate)
+			assert(t, exp.Device == asFormat3.Device)
+		}
 	}
 }
