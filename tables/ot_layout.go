@@ -274,7 +274,7 @@ func (lk Lookup) AsGPOSLookups() ([]GPOSLookup, error) {
 		case 9: // Extension positioning	Extension mechanism for other positionings
 			out[i], _, err = ParseExtensionPos(lk.rawData[offset:])
 		default:
-			err = fmt.Errorf("invalid GSUB Loopkup type %d", lk.lookupType)
+			err = fmt.Errorf("invalid GPOS Loopkup type %d", lk.lookupType)
 		}
 		if err != nil {
 			return nil, err
