@@ -15,10 +15,10 @@ import (
 type Layout struct {
 	majorVersion      uint16            // Major version of the GPOS table, = 1
 	minorVersion      uint16            // Minor version of the GPOS table, = 0 or 1
-	scriptList        scriptList        `offsetSize:"Offset16"`               // Offset to ScriptList table, from beginning of GPOS table
-	featureList       featureList       `offsetSize:"Offset16"`               // Offset to FeatureList table, from beginning of GPOS table
-	lookupList        lookupList        `offsetSize:"Offset16"`               // Offset to LookupList table, from beginning of GPOS table
-	featureVariations *FeatureVariation `isOpaque:"" subsliceStart:"AtStart"` // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
+	scriptList        scriptList        `offsetSize:"Offset16"` // Offset to ScriptList table, from beginning of GPOS table
+	featureList       featureList       `offsetSize:"Offset16"` // Offset to FeatureList table, from beginning of GPOS table
+	lookupList        lookupList        `offsetSize:"Offset16"` // Offset to LookupList table, from beginning of GPOS table
+	featureVariations *FeatureVariation `isOpaque:""`           // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
 }
 
 func (lt *Layout) customParseFeatureVariations(src []byte) (int, error) {
@@ -79,7 +79,7 @@ type Feature struct {
 
 type lookupList struct {
 	records []Offset16 `arrayCount:"FirstUint16"` // Array of offsets to Lookup tables, from beginning of LookupList — zero based (first lookup is Lookup index = 0)
-	lookups []Lookup   `isOpaque:"" subsliceStart:"AtStart"`
+	lookups []Lookup   `isOpaque:""`
 }
 
 func (ll *lookupList) customParseLookups(src []byte) (int, error) {

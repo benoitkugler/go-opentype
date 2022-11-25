@@ -130,12 +130,7 @@ func (ChainedContextualSubs1) isChainedContextualSubs() {}
 func (ChainedContextualSubs2) isChainedContextualSubs() {}
 func (ChainedContextualSubs3) isChainedContextualSubs() {}
 
-type ExtensionSubstitution struct {
-	substFormat         uint16   //	Format identifier. Set to 1.
-	ExtensionLookupType uint16   //	Lookup type of subtable referenced by extensionOffset (that is, the extension subtable).
-	ExtensionOffset     Offset32 //	Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable.
-	RawData             []byte   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
-}
+type ExtensionSubs Extension
 
 type ReverseChainSingleSubstitution struct {
 	substFormat              uint16     // Format identifier: format = 1

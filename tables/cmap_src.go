@@ -11,7 +11,7 @@ type Cmap struct {
 	version   uint16           // Table version number (0).
 	numTables uint16           // Number of encoding tables that follow.
 	records   []encodingRecord `arrayCount:"ComputedField-numTables"`
-	subtables cmapSubtables    `isOpaque:"" subsliceStart:"AtStart"`
+	subtables cmapSubtables    `isOpaque:""`
 }
 
 type cmapSubtables []cmapSubtable

@@ -165,6 +165,13 @@ type ChainedSequenceContextFormat3 struct {
 	SeqLookupRecords   []SequenceLookupRecord `arrayCount:"FirstUint16"`                         //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
+type Extension struct {
+	substFormat         uint16   //	Format identifier. Set to 1.
+	ExtensionLookupType uint16   //	Lookup type of subtable referenced by extensionOffset (that is, the extension subtable).
+	ExtensionOffset     Offset32 //	Offset to the extension subtable, of lookup type extensionLookupType, relative to the start of the ExtensionSubstFormat1 subtable.
+	RawData             []byte   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
+}
+
 // GSUB is the Glyph Substitution (GSUB) table.
 // It provides data for substition of glyphs for appropriate rendering of scripts,
 // such as cursively-connecting forms in Arabic script,
@@ -182,7 +189,7 @@ func (AlternateSubstitution) isGSUBLookup()          {}
 func (LigatureSubstitution) isGSUBLookup()           {}
 func (ContextualSubstitution) isGSUBLookup()         {}
 func (ChainedContextualSubstitution) isGSUBLookup()  {}
-func (ExtensionSubstitution) isGSUBLookup()          {}
+func (ExtensionSubs) isGSUBLookup()                  {}
 func (ReverseChainSingleSubstitution) isGSUBLookup() {}
 
 // AsGSUBLookups returns the GSUB lookup subtables
@@ -447,8 +454,8 @@ type AnchorFormat3 struct {
 	YCoordinate   int16       // Vertical value, in design units
 	xDeviceOffset Offset16    // Offset to Device table (non-variable font) / VariationIndex table (variable font) for X coordinate, from beginning of Anchor table (may be NULL)
 	yDeviceOffset Offset16    // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
-	XDevice       DeviceTable `isOpaque:"" subsliceStart:"AtStart"` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for X coordinate, from beginning of Anchor table (may be NULL)
-	YDevice       DeviceTable `isOpaque:"" subsliceStart:"AtStart"` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
+	XDevice       DeviceTable `isOpaque:""` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for X coordinate, from beginning of Anchor table (may be NULL)
+	YDevice       DeviceTable `isOpaque:""` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
 }
 
 func (af AnchorFormat3) customParseXDevice(src []byte) (int, error) {
@@ -476,8 +483,8 @@ func (af AnchorFormat3) customParseYDevice(src []byte) (int, error) {
 }
 
 type MarkArray struct {
-	MarkRecords []MarkRecord `arrayCount:"FirstUint16"`            //[markCount]	Array of MarkRecords, ordered by corresponding glyphs in the associated mark Coverage table.
-	MarkAnchors []Anchor     `isOpaque:"" subsliceStart:"AtStart"` // with same length as MarkRecords
+	MarkRecords []MarkRecord `arrayCount:"FirstUint16"` //[markCount]	Array of MarkRecords, ordered by corresponding glyphs in the associated mark Coverage table.
+	MarkAnchors []Anchor     `isOpaque:""`              // with same length as MarkRecords
 }
 
 func (ma *MarkArray) customParseMarkAnchors(src []byte) (int, error) {

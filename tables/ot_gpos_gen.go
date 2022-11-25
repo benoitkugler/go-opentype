@@ -126,7 +126,7 @@ func ParseAnchorFormat3(src []byte) (AnchorFormat3, int, error) {
 	return item, n, nil
 }
 
-func ParseBaseArray(src []byte, baseAnchorOffsetsCount int) (BaseArray, int, error) {
+func ParseBaseArray(src []byte, offsetsCount int) (BaseArray, int, error) {
 	var item BaseArray
 	n := 0
 	{
@@ -138,7 +138,7 @@ func ParseBaseArray(src []byte, baseAnchorOffsetsCount int) (BaseArray, int, err
 
 		offset := 2
 		for i := 0; i < arrayLength; i++ {
-			elem, read, err := ParseBaseRecord(src[offset:], baseAnchorOffsetsCount)
+			elem, read, err := parseAnchorOffsets(src[offset:], offsetsCount)
 			if err != nil {
 				return item, 0, fmt.Errorf("reading BaseArray: %s", err)
 			}
@@ -149,29 +149,11 @@ func ParseBaseArray(src []byte, baseAnchorOffsetsCount int) (BaseArray, int, err
 	}
 	{
 
-		read, err := item.customParseBaseAnchors(src[:], baseAnchorOffsetsCount)
+		read, err := item.customParseBaseAnchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading BaseArray: %s", err)
 		}
 		n = read
-	}
-	return item, n, nil
-}
-
-func ParseBaseRecord(src []byte, baseAnchorOffsetsCount int) (BaseRecord, int, error) {
-	var item BaseRecord
-	n := 0
-	{
-
-		if L := len(src); L < baseAnchorOffsetsCount*2 {
-			return item, 0, fmt.Errorf("reading BaseRecord: "+"EOF: expected length: %d, got %d", baseAnchorOffsetsCount*2, L)
-		}
-
-		item.baseAnchorOffsets = make([]Offset16, baseAnchorOffsetsCount) // allocation guarded by the previous check
-		for i := range item.baseAnchorOffsets {
-			item.baseAnchorOffsets[i] = Offset16(binary.BigEndian.Uint16(src[i*2:]))
-		}
-		n += baseAnchorOffsetsCount * 2
 	}
 	return item, n, nil
 }
@@ -458,6 +440,108 @@ func ParseEntryExit(src []byte) (EntryExit, int, error) {
 	return item, n, nil
 }
 
+func ParseLigatureArray(src []byte, offsetsCount int) (LigatureArray, int, error) {
+	var item LigatureArray
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading LigatureArray: "+"EOF: expected length: 2, got %d", L)
+		}
+		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
+		n += 2
+
+		if L := len(src); L < 2+arrayLength*2 {
+			return item, 0, fmt.Errorf("reading LigatureArray: "+"EOF: expected length: %d, got %d", 2+arrayLength*2, L)
+		}
+
+		item.LigatureAttachs = make([]LigatureAttach, arrayLength) // allocation guarded by the previous check
+		for i := range item.LigatureAttachs {
+			offset := int(binary.BigEndian.Uint16(src[2+i*2:]))
+			// ignore null offsets
+			if offset == 0 {
+				continue
+			}
+
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading LigatureArray: "+"EOF: expected length: %d, got %d", offset, L)
+			}
+
+			var err error
+			item.LigatureAttachs[i], _, err = ParseLigatureAttach(src[offset:], offsetsCount)
+			if err != nil {
+				return item, 0, fmt.Errorf("reading LigatureArray: %s", err)
+			}
+
+		}
+		n += arrayLength * 2
+	}
+	return item, n, nil
+}
+
+func ParseLigatureAttach(src []byte, offsetsCount int) (LigatureAttach, int, error) {
+	var item LigatureAttach
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading LigatureAttach: "+"EOF: expected length: 2, got %d", L)
+		}
+		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
+		n += 2
+
+		offset := 2
+		for i := 0; i < arrayLength; i++ {
+			elem, read, err := parseAnchorOffsets(src[offset:], offsetsCount)
+			if err != nil {
+				return item, 0, fmt.Errorf("reading LigatureAttach: %s", err)
+			}
+			item.componentRecords = append(item.componentRecords, elem)
+			offset += read
+		}
+		n = offset
+	}
+	{
+
+		read, err := item.customParseComponentAnchors(src[:], offsetsCount)
+		if err != nil {
+			return item, 0, fmt.Errorf("reading LigatureAttach: %s", err)
+		}
+		n = read
+	}
+	return item, n, nil
+}
+
+func ParseMark2Array(src []byte, offsetsCount int) (Mark2Array, int, error) {
+	var item Mark2Array
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading Mark2Array: "+"EOF: expected length: 2, got %d", L)
+		}
+		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
+		n += 2
+
+		offset := 2
+		for i := 0; i < arrayLength; i++ {
+			elem, read, err := parseAnchorOffsets(src[offset:], offsetsCount)
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Mark2Array: %s", err)
+			}
+			item.mark2Records = append(item.mark2Records, elem)
+			offset += read
+		}
+		n = offset
+	}
+	{
+
+		read, err := item.customParseMark2Anchors(src[:], offsetsCount)
+		if err != nil {
+			return item, 0, fmt.Errorf("reading Mark2Array: %s", err)
+		}
+		n = read
+	}
+	return item, n, nil
+}
+
 func ParseMarkArray(src []byte) (MarkArray, int, error) {
 	var item MarkArray
 	n := 0
@@ -589,6 +673,206 @@ func ParseMarkBasePos(src []byte) (MarkBasePos, int, error) {
 	return item, n, nil
 }
 
+func ParseMarkLigPos(src []byte) (MarkLigPos, int, error) {
+	var item MarkLigPos
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 2, got %d", L)
+		}
+		item.posFormat = binary.BigEndian.Uint16(src[0:])
+		n += 2
+	}
+	{
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 4, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[2:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.MarkCoverage, read, err = ParseCoverage(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 6 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 6, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[4:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.LigatureCoverage, read, err = ParseCoverage(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 8 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 8, got %d", L)
+		}
+		item.MarkClassCount = binary.BigEndian.Uint16(src[6:])
+		n += 2
+	}
+	{
+		if L := len(src); L < 10 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 10, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[8:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.MarkArray, read, err = ParseMarkArray(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 12 {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: 12, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[10:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.LigatureArray, read, err = ParseLigatureArray(src[offset:], int(item.MarkClassCount))
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
+		}
+		offset += read
+	}
+	return item, n, nil
+}
+
+func ParseMarkMarkPos(src []byte) (MarkMarkPos, int, error) {
+	var item MarkMarkPos
+	n := 0
+	{
+		if L := len(src); L < 2 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 2, got %d", L)
+		}
+		item.PosFormat = binary.BigEndian.Uint16(src[0:])
+		n += 2
+	}
+	{
+		if L := len(src); L < 4 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 4, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[2:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.Mark1Coverage, read, err = ParseCoverage(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 6 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 6, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[4:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.Mark2Coverage, read, err = ParseCoverage(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 8 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 8, got %d", L)
+		}
+		item.MarkClassCount = binary.BigEndian.Uint16(src[6:])
+		n += 2
+	}
+	{
+		if L := len(src); L < 10 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 10, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[8:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.Mark1Array, read, err = ParseMarkArray(src[offset:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
+		}
+		offset += read
+	}
+	{
+		if L := len(src); L < 12 {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: 12, got %d", L)
+		}
+		offset := int(binary.BigEndian.Uint16(src[10:]))
+		n += 2
+		if L := len(src); L < offset {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offset, L)
+		}
+
+		var (
+			err  error
+			read int
+		)
+		item.Mark2Array, read, err = ParseMark2Array(src[offset:], int(item.MarkClassCount))
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
+		}
+		offset += read
+	}
+	return item, n, nil
+}
+
 func ParseMarkRecord(src []byte) (MarkRecord, int, error) {
 	var item MarkRecord
 	n := 0
@@ -600,7 +884,7 @@ func ParseMarkRecord(src []byte) (MarkRecord, int, error) {
 	return item, n, nil
 }
 
-func ParsePairPos(src []byte) (PairPos, int, error) {
+func ParsePairPos(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat) (PairPos, int, error) {
 	var item PairPos
 	n := 0
 	{
@@ -617,7 +901,7 @@ func ParsePairPos(src []byte) (PairPos, int, error) {
 		)
 		switch item.posFormat {
 		case pairPosVersion1:
-			item.Data, read, err = ParsePairPosData1(src[:])
+			item.Data, read, err = ParsePairPosData1(src[:], valueFormat1, valueFormat2)
 		case pairPosVersion2:
 			item.Data, read, err = ParsePairPosData2(src[:])
 		default:
@@ -632,7 +916,7 @@ func ParsePairPos(src []byte) (PairPos, int, error) {
 }
 
 // the actual data starts at src[2:]
-func ParsePairPosData1(src []byte) (PairPosData1, int, error) {
+func ParsePairPosData1(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat) (PairPosData1, int, error) {
 	var item PairPosData1
 	n := 2
 	{
@@ -952,4 +1236,22 @@ func (item *entryExitRecord) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.entryAnchorOffset = Offset16(binary.BigEndian.Uint16(src[0:]))
 	item.exitAnchorOffset = Offset16(binary.BigEndian.Uint16(src[2:]))
+}
+
+func parseAnchorOffsets(src []byte, offsetsCount int) (anchorOffsets, int, error) {
+	var item anchorOffsets
+	n := 0
+	{
+
+		if L := len(src); L < offsetsCount*2 {
+			return item, 0, fmt.Errorf("reading anchorOffsets: "+"EOF: expected length: %d, got %d", offsetsCount*2, L)
+		}
+
+		item.offsets = make([]Offset16, offsetsCount) // allocation guarded by the previous check
+		for i := range item.offsets {
+			item.offsets[i] = Offset16(binary.BigEndian.Uint16(src[i*2:]))
+		}
+		n += offsetsCount * 2
+	}
+	return item, n, nil
 }

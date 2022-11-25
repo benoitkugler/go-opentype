@@ -28,7 +28,7 @@ func (SinglePosData2) isSinglePosData() {}
 type SinglePosData1 struct {
 	Coverage    Coverage    `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of SinglePos subtable.
 	valueFormat ValueFormat //	Defines the types of data in the ValueRecord.
-	ValueRecord ValueRecord `isOpaque:"" subsliceStart:"AtStart"` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
+	ValueRecord ValueRecord `isOpaque:""` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
 }
 
 func (sp *SinglePosData1) customParseValueRecord(src []byte) (read int, err error) {
@@ -41,7 +41,7 @@ type SinglePosData2 struct {
 	Coverage     Coverage      `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of SinglePos subtable.
 	valueFormat  ValueFormat   // Defines the types of data in the ValueRecords.
 	valueCount   uint16        // Number of ValueRecords — must equal glyphCount in the Coverage table.
-	ValueRecords []ValueRecord `isOpaque:"" subsliceStart:"AtStart"` //[valueCount]	Array of ValueRecords — positioning values applied to glyphs.
+	ValueRecords []ValueRecord `isOpaque:""` //[valueCount]	Array of ValueRecords — positioning values applied to glyphs.
 }
 
 func (sp *SinglePosData2) customParseValueRecords(src []byte) (read int, err error) {
@@ -89,7 +89,7 @@ type PairPosData1 struct {
 // binarygen: argument=valueFormat2  ValueFormat
 type PairSet struct {
 	pairValueCount   uint16            // Number of PairValueRecords
-	PairValueRecords []PairValueRecord `isOpaque:"" subsliceStart:"AtStart"` // [pairValueCount] Array of PairValueRecords, ordered by glyph ID of the second glyph.
+	PairValueRecords []PairValueRecord `isOpaque:""` // [pairValueCount] Array of PairValueRecords, ordered by glyph ID of the second glyph.
 }
 
 func (ps *PairSet) customParsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) (int, error) {
@@ -124,7 +124,7 @@ type PairPosData2 struct {
 	classDef2     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the second glyph of the pair.
 	class1Count   uint16         //	Number of classes in classDef1 table — includes Class 0.
 	class2Count   uint16         //	Number of classes in classDef2 table — includes Class 0.
-	class1Records []Class1Record `isOpaque:"" subsliceStart:"AtStart"` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
+	class1Records []Class1Record `isOpaque:""` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
 }
 
 func (pp *PairPosData2) customParseClass1Records(src []byte) (int, error) {
@@ -172,7 +172,7 @@ type CursivePos struct {
 	posFormat        uint16            //	Format identifier: format = 1
 	coverage         Coverage          `offsetSize:"Offset16"`    //	Offset to Coverage table, from beginning of CursivePos subtable.
 	entryExitRecords []entryExitRecord `arrayCount:"FirstUint16"` //[entryExitCount]	Array of EntryExit records, in Coverage index order.
-	EntryExits       []EntryExit       `isOpaque:"" subsliceStart:"AtStart"`
+	EntryExits       []EntryExit       `isOpaque:""`
 }
 
 type entryExitRecord struct {
@@ -216,29 +216,86 @@ type MarkBasePos struct {
 }
 
 type BaseArray struct {
-	baseRecords []BaseRecord `arrayCount:"FirstUint16"`
-	BaseAnchors [][]Anchor   `isOpaque:"" subsliceStart:"AtStart"`
+	baseRecords []anchorOffsets `arrayCount:"FirstUint16"` //  [markClassCount] Array of offsets (one per mark class) to Anchor tables. Offsets are from beginning of BaseArray table, ordered by class (offsets may be NULL).
+	BaseAnchors [][]Anchor      `isOpaque:""`
 }
 
 func (ba *BaseArray) customParseBaseAnchors(src []byte, _ int) (int, error) {
-	ba.BaseAnchors = make([][]Anchor, len(ba.baseRecords))
 	var err error
-	for i, rec := range ba.baseRecords {
-		bi := make([]Anchor, len(rec.baseAnchorOffsets))
-		for j, offset := range rec.baseAnchorOffsets {
+	ba.BaseAnchors, err = resolveAnchorOffsets(ba.baseRecords, src)
+	return len(src), err
+}
+
+type anchorOffsets struct {
+	offsets []Offset16 // Array of offsets to Anchor tables, with external length
+}
+
+// resolveAnchorOffsets resolve the offsset using the given input slice
+func resolveAnchorOffsets(offsets []anchorOffsets, src []byte) ([][]Anchor, error) {
+	out := make([][]Anchor, len(offsets))
+	var err error
+	for i, list := range offsets {
+		bi := make([]Anchor, len(list.offsets))
+		for j, offset := range list.offsets {
 			if L := len(src); L < int(offset) {
-				return 0, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
+				return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
 			}
 			bi[j], _, err = ParseAnchor(src[offset:])
 			if err != nil {
-				return 0, err
+				return nil, err
 			}
 		}
-		ba.BaseAnchors[i] = bi
+		out[i] = bi
 	}
-	return len(src), nil
+	return out, nil
 }
 
-type BaseRecord struct {
-	baseAnchorOffsets []Offset16 // [markClassCount] // Array of offsets (one per mark class) to Anchor tables. Offsets are from beginning of BaseArray table, ordered by class (offsets may be NULL).
+type MarkLigPos struct {
+	posFormat        uint16        // Format identifier: format = 1
+	MarkCoverage     Coverage      `offsetSize:"Offset16"` // Offset to markCoverage table, from beginning of MarkLigPos subtable.
+	LigatureCoverage Coverage      `offsetSize:"Offset16"` // Offset to ligatureCoverage table, from beginning of MarkLigPos subtable.
+	MarkClassCount   uint16        // Number of defined mark classes
+	MarkArray        MarkArray     `offsetSize:"Offset16"`                            // Offset to MarkArray table, from beginning of MarkLigPos subtable.
+	LigatureArray    LigatureArray `offsetSize:"Offset16" arguments:"MarkClassCount"` // Offset to LigatureArray table, from beginning of MarkLigPos subtable.
 }
+
+type LigatureArray struct {
+	LigatureAttachs []LigatureAttach `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // [ligatureCount]	Array of offsets to LigatureAttach tables. Offsets are from beginning of LigatureArray table, ordered by ligatureCoverage index.
+}
+
+type LigatureAttach struct {
+	// [componentCount]	Array of Component records, ordered in writing direction.
+	// Each element is an array of offsets (one per class, length = [markClassCount]) to Anchor tables. Offsets are from beginning of LigatureAttach table, ordered by class (offsets may be NULL).
+	componentRecords []anchorOffsets `arrayCount:"FirstUint16"`
+	ComponentAnchors [][]Anchor      `isOpaque:""`
+}
+
+func (la *LigatureAttach) customParseComponentAnchors(src []byte, _ int) (int, error) {
+	var err error
+	la.ComponentAnchors, err = resolveAnchorOffsets(la.componentRecords, src)
+	return len(src), err
+}
+
+type MarkMarkPos struct {
+	PosFormat      uint16     //	Format identifier: format = 1
+	Mark1Coverage  Coverage   `offsetSize:"Offset16"` // Offset to Combining Mark Coverage table, from beginning of MarkMarkPos subtable.
+	Mark2Coverage  Coverage   `offsetSize:"Offset16"` // Offset to Base Mark Coverage table, from beginning of MarkMarkPos subtable.
+	MarkClassCount uint16     //	Number of Combining Mark classes defined
+	Mark1Array     MarkArray  `offsetSize:"Offset16"`                            //	Offset to MarkArray table for mark1, from beginning of MarkMarkPos subtable.
+	Mark2Array     Mark2Array `offsetSize:"Offset16" arguments:"MarkClassCount"` //	Offset to Mark2Array table for mark2, from beginning of MarkMarkPos subtable.
+}
+
+type Mark2Array struct {
+	// [mark2Count]	Array of Mark2Records, in Coverage order.
+	// Each element if an array of offsets (one per class, length = [markClassCount]) to Anchor tables. Offsets are from beginning of Mark2Array table, in class order (offsets may be NULL).
+	mark2Records []anchorOffsets `arrayCount:"FirstUint16"`
+	Mark2Anchors [][]Anchor      `isOpaque:""`
+}
+
+func (ma *Mark2Array) customParseMark2Anchors(src []byte, _ int) (int, error) {
+	var err error
+	ma.Mark2Anchors, err = resolveAnchorOffsets(ma.mark2Records, src)
+	return len(src), err
+}
+
+type ExtensionPos Extension

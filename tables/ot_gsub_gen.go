@@ -953,8 +953,8 @@ func ParseContextualSubstitution(src []byte) (ContextualSubstitution, int, error
 	return item, n, nil
 }
 
-func ParseExtensionSubstitution(src []byte) (ExtensionSubstitution, int, error) {
-	var item ExtensionSubstitution
+func ParseExtensionSubstitution(src []byte) (ExtensionSubs, int, error) {
+	var item ExtensionSubs
 	n := 0
 	{
 		if L := len(src); L < 6 {
