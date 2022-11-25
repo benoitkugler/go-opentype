@@ -10,22 +10,21 @@ import (
 func ParsePost(src []byte) (Post, int, error) {
 	var item Post
 	n := 0
-	{
-		if L := len(src); L < 32 {
-			return item, 0, fmt.Errorf("reading Post: "+"EOF: expected length: 32, got %d", L)
-		}
-		_ = src[31] // early bound checking
-		item.version = postVersion(binary.BigEndian.Uint32(src[0:]))
-		item.italicAngle = binary.BigEndian.Uint32(src[4:])
-		item.underlinePosition = int16(binary.BigEndian.Uint16(src[8:]))
-		item.underlineThickness = int16(binary.BigEndian.Uint16(src[10:]))
-		item.isFixedPitch = binary.BigEndian.Uint32(src[12:])
-		item.memoryUsage[0] = binary.BigEndian.Uint32(src[16:])
-		item.memoryUsage[1] = binary.BigEndian.Uint32(src[20:])
-		item.memoryUsage[2] = binary.BigEndian.Uint32(src[24:])
-		item.memoryUsage[3] = binary.BigEndian.Uint32(src[28:])
-		n += 32
+	if L := len(src); L < 32 {
+		return item, 0, fmt.Errorf("reading Post: "+"EOF: expected length: 32, got %d", L)
 	}
+	_ = src[31] // early bound checking
+	item.version = postVersion(binary.BigEndian.Uint32(src[0:]))
+	item.italicAngle = binary.BigEndian.Uint32(src[4:])
+	item.underlinePosition = int16(binary.BigEndian.Uint16(src[8:]))
+	item.underlineThickness = int16(binary.BigEndian.Uint16(src[10:]))
+	item.isFixedPitch = binary.BigEndian.Uint32(src[12:])
+	item.memoryUsage[0] = binary.BigEndian.Uint32(src[16:])
+	item.memoryUsage[1] = binary.BigEndian.Uint32(src[20:])
+	item.memoryUsage[2] = binary.BigEndian.Uint32(src[24:])
+	item.memoryUsage[3] = binary.BigEndian.Uint32(src[28:])
+	n += 32
+
 	{
 		var (
 			read int
@@ -58,22 +57,23 @@ func parsePostNames10([]byte) (postNames10, int, error) {
 func parsePostNames20(src []byte) (postNames20, int, error) {
 	var item postNames20
 	n := 0
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: 2, got %d", L)
+	}
+	arrayLengthItemglyphNameIndexes := int(binary.BigEndian.Uint16(src[0:]))
+	n += 2
+
 	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: 2, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[0:]))
-		n += 2
 
-		if L := len(src); L < 2+arrayLength*2 {
-			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: %d, got %d", 2+arrayLength*2, L)
+		if L := len(src); L < 2+arrayLengthItemglyphNameIndexes*2 {
+			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemglyphNameIndexes*2, L)
 		}
 
-		item.glyphNameIndexes = make([]uint16, arrayLength) // allocation guarded by the previous check
+		item.glyphNameIndexes = make([]uint16, arrayLengthItemglyphNameIndexes) // allocation guarded by the previous check
 		for i := range item.glyphNameIndexes {
 			item.glyphNameIndexes[i] = binary.BigEndian.Uint16(src[2+i*2:])
 		}
-		n += arrayLength * 2
+		n += arrayLengthItemglyphNameIndexes * 2
 	}
 	{
 

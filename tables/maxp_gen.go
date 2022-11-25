@@ -10,15 +10,14 @@ import (
 func ParseMaxp(src []byte) (Maxp, int, error) {
 	var item Maxp
 	n := 0
-	{
-		if L := len(src); L < 6 {
-			return item, 0, fmt.Errorf("reading Maxp: "+"EOF: expected length: 6, got %d", L)
-		}
-		_ = src[5] // early bound checking
-		item.version = maxpVersion(binary.BigEndian.Uint32(src[0:]))
-		item.numGlyphs = binary.BigEndian.Uint16(src[4:])
-		n += 6
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading Maxp: "+"EOF: expected length: 6, got %d", L)
 	}
+	_ = src[5] // early bound checking
+	item.version = maxpVersion(binary.BigEndian.Uint32(src[0:]))
+	item.numGlyphs = binary.BigEndian.Uint16(src[4:])
+	n += 6
+
 	{
 		var (
 			read int

@@ -10,16 +10,15 @@ import (
 func ParseKerx(src []byte) (Kerx, int, error) {
 	var item Kerx
 	n := 0
-	{
-		if L := len(src); L < 8 {
-			return item, 0, fmt.Errorf("reading Kerx: "+"EOF: expected length: 8, got %d", L)
-		}
-		_ = src[7] // early bound checking
-		item.version = binary.BigEndian.Uint16(src[0:])
-		item.padding = binary.BigEndian.Uint16(src[2:])
-		item.nTables = binary.BigEndian.Uint32(src[4:])
-		n += 8
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading Kerx: "+"EOF: expected length: 8, got %d", L)
 	}
+	_ = src[7] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.padding = binary.BigEndian.Uint16(src[2:])
+	item.nTables = binary.BigEndian.Uint32(src[4:])
+	n += 8
+
 	{
 
 		item.rawData = src[8:]
@@ -46,29 +45,25 @@ func (item *kernx0Record) mustParse(src []byte) {
 func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 	var item aatLookupTable8
 	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 2, got %d", L)
-		}
-		item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-		n += 2
+	if L := len(src); L < 4 {
+		return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 4, got %d", L)
 	}
+	_ = src[3] // early bound checking
+	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthItemvalues := int(binary.BigEndian.Uint16(src[2:]))
+	n += 4
+
 	{
-		if L := len(src); L < 4 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 4, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[2:]))
-		n += 2
 
-		if L := len(src); L < 4+arrayLength*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 4+arrayLength*2, L)
+		if L := len(src); L < 4+arrayLengthItemvalues*2 {
+			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemvalues*2, L)
 		}
 
-		item.values = make([]uint16, arrayLength) // allocation guarded by the previous check
+		item.values = make([]uint16, arrayLengthItemvalues) // allocation guarded by the previous check
 		for i := range item.values {
 			item.values[i] = binary.BigEndian.Uint16(src[4+i*2:])
 		}
-		n += arrayLength * 2
+		n += arrayLengthItemvalues * 2
 	}
 	return item, n, nil
 }
@@ -76,17 +71,16 @@ func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 func parseKernSubtable0(src []byte) (kernSubtable0, int, error) {
 	var item kernSubtable0
 	n := 0
-	{
-		if L := len(src); L < 8 {
-			return item, 0, fmt.Errorf("reading kernSubtable0: "+"EOF: expected length: 8, got %d", L)
-		}
-		_ = src[7] // early bound checking
-		item.nPairs = binary.BigEndian.Uint16(src[0:])
-		item.searchRange = binary.BigEndian.Uint16(src[2:])
-		item.entrySelector = binary.BigEndian.Uint16(src[4:])
-		item.rangeShift = binary.BigEndian.Uint16(src[6:])
-		n += 8
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading kernSubtable0: "+"EOF: expected length: 8, got %d", L)
 	}
+	_ = src[7] // early bound checking
+	item.nPairs = binary.BigEndian.Uint16(src[0:])
+	item.searchRange = binary.BigEndian.Uint16(src[2:])
+	item.entrySelector = binary.BigEndian.Uint16(src[4:])
+	item.rangeShift = binary.BigEndian.Uint16(src[6:])
+	n += 8
+
 	{
 		arrayLength := int(item.nPairs)
 
@@ -111,15 +105,14 @@ func parseKernSubtable0(src []byte) (kernSubtable0, int, error) {
 func parseKernSubtable1(src []byte) (kernSubtable1, int, error) {
 	var item kernSubtable1
 	n := 0
-	{
-		if L := len(src); L < 10 {
-			return item, 0, fmt.Errorf("reading kernSubtable1: "+"EOF: expected length: 10, got %d", L)
-		}
-		_ = src[9] // early bound checking
-		item.aatSTHeader.mustParse(src[0:])
-		item.valueTable = binary.BigEndian.Uint16(src[8:])
-		n += 10
+	if L := len(src); L < 10 {
+		return item, 0, fmt.Errorf("reading kernSubtable1: "+"EOF: expected length: 10, got %d", L)
 	}
+	_ = src[9] // early bound checking
+	item.aatSTHeader.mustParse(src[0:])
+	item.valueTable = binary.BigEndian.Uint16(src[8:])
+	n += 10
+
 	{
 
 		item.rawData = src[0:]
@@ -131,70 +124,58 @@ func parseKernSubtable1(src []byte) (kernSubtable1, int, error) {
 func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 	var item kernSubtable2
 	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: 2, got %d", L)
-		}
-		item.rowWidth = binary.BigEndian.Uint16(src[0:])
-		n += 2
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: 8, got %d", L)
 	}
-	{
-		if L := len(src); L < 4 {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: 4, got %d", L)
-		}
-		offset := int(binary.BigEndian.Uint16(src[2:]))
-		n += 2
-		if offset != 0 { // ignore null offset
-			if L := len(src); L < offset {
-				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
-			}
+	_ = src[7] // early bound checking
+	item.rowWidth = binary.BigEndian.Uint16(src[0:])
+	offsetItemleft := int(binary.BigEndian.Uint16(src[2:]))
+	offsetItemright := int(binary.BigEndian.Uint16(src[4:]))
+	item.kerningArrayOffset = binary.BigEndian.Uint16(src[6:])
+	n += 8
 
-			var (
-				err  error
-				read int
-			)
-			item.left, read, err = parseAatLookupTable8(src[offset:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
-			}
-			offset += read
-
-		}
-	}
-	{
-		if L := len(src); L < 6 {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: 6, got %d", L)
-		}
-		offset := int(binary.BigEndian.Uint16(src[4:]))
-		n += 2
-		if offset != 0 { // ignore null offset
-			if L := len(src); L < offset {
-				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offset, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.right, read, err = parseAatLookupTable8(src[offset:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
-			}
-			offset += read
-
-		}
-	}
-	{
-		if L := len(src); L < 8 {
-			return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: 8, got %d", L)
-		}
-		item.kerningArrayOffset = binary.BigEndian.Uint16(src[6:])
-		n += 2
-	}
 	{
 
 		item.rawData = src[0:]
 		n = len(src)
+	}
+	{
+
+		if offsetItemleft != 0 { // ignore null offset
+			if L := len(src); L < offsetItemleft {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetItemleft, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.left, read, err = parseAatLookupTable8(src[offsetItemleft:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offsetItemleft += read
+
+		}
+	}
+	{
+
+		if offsetItemright != 0 { // ignore null offset
+			if L := len(src); L < offsetItemright {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetItemright, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.right, read, err = parseAatLookupTable8(src[offsetItemright:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offsetItemright += read
+
+		}
 	}
 	return item, n, nil
 }
@@ -202,17 +183,16 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 func parseKerxSubtable0(src []byte) (kerxSubtable0, int, error) {
 	var item kerxSubtable0
 	n := 0
-	{
-		if L := len(src); L < 16 {
-			return item, 0, fmt.Errorf("reading kerxSubtable0: "+"EOF: expected length: 16, got %d", L)
-		}
-		_ = src[15] // early bound checking
-		item.nPairs = binary.BigEndian.Uint32(src[0:])
-		item.searchRange = binary.BigEndian.Uint32(src[4:])
-		item.entrySelector = binary.BigEndian.Uint32(src[8:])
-		item.rangeShift = binary.BigEndian.Uint32(src[12:])
-		n += 16
+	if L := len(src); L < 16 {
+		return item, 0, fmt.Errorf("reading kerxSubtable0: "+"EOF: expected length: 16, got %d", L)
 	}
+	_ = src[15] // early bound checking
+	item.nPairs = binary.BigEndian.Uint32(src[0:])
+	item.searchRange = binary.BigEndian.Uint32(src[4:])
+	item.entrySelector = binary.BigEndian.Uint32(src[8:])
+	item.rangeShift = binary.BigEndian.Uint32(src[12:])
+	n += 16
+
 	{
 		arrayLength := int(item.nPairs)
 

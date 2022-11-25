@@ -10,30 +10,15 @@ import (
 func ParseName(src []byte) (Name, int, error) {
 	var item Name
 	n := 0
-	{
-		if L := len(src); L < 4 {
-			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 4, got %d", L)
-		}
-		_ = src[3] // early bound checking
-		item.version = binary.BigEndian.Uint16(src[0:])
-		item.count = binary.BigEndian.Uint16(src[2:])
-		n += 4
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 6, got %d", L)
 	}
-	{
-		if L := len(src); L < 6 {
-			return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: 6, got %d", L)
-		}
-		offset := int(binary.BigEndian.Uint16(src[4:]))
-		n += 2
-		if offset != 0 { // ignore null offset
-			if L := len(src); L < offset {
-				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offset, L)
-			}
+	_ = src[5] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.count = binary.BigEndian.Uint16(src[2:])
+	offsetItemstringData := int(binary.BigEndian.Uint16(src[4:]))
+	n += 6
 
-			item.stringData = src[offset:]
-			offset = len(src)
-		}
-	}
 	{
 		arrayLength := int(item.count)
 
@@ -46,6 +31,17 @@ func ParseName(src []byte) (Name, int, error) {
 			item.nameRecords[i].mustParse(src[6+i*12:])
 		}
 		n += arrayLength * 12
+	}
+	{
+
+		if offsetItemstringData != 0 { // ignore null offset
+			if L := len(src); L < offsetItemstringData {
+				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offsetItemstringData, L)
+			}
+
+			item.stringData = src[offsetItemstringData:]
+			offsetItemstringData = len(src)
+		}
 	}
 	return item, n, nil
 }

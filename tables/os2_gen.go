@@ -10,52 +10,51 @@ import (
 func ParseOs2(src []byte) (Os2, int, error) {
 	var item Os2
 	n := 0
-	{
-		if L := len(src); L < 78 {
-			return item, 0, fmt.Errorf("reading Os2: "+"EOF: expected length: 78, got %d", L)
-		}
-		_ = src[77] // early bound checking
-		item.version = binary.BigEndian.Uint16(src[0:])
-		item.xAvgCharWidth = binary.BigEndian.Uint16(src[2:])
-		item.uSWeightClass = binary.BigEndian.Uint16(src[4:])
-		item.uSWidthClass = binary.BigEndian.Uint16(src[6:])
-		item.fSType = binary.BigEndian.Uint16(src[8:])
-		item.ySubscriptXSize = int16(binary.BigEndian.Uint16(src[10:]))
-		item.ySubscriptYSize = int16(binary.BigEndian.Uint16(src[12:]))
-		item.ySubscriptXOffset = int16(binary.BigEndian.Uint16(src[14:]))
-		item.ySubscriptYOffset = int16(binary.BigEndian.Uint16(src[16:]))
-		item.ySuperscriptXSize = int16(binary.BigEndian.Uint16(src[18:]))
-		item.ySuperscriptYSize = int16(binary.BigEndian.Uint16(src[20:]))
-		item.ySuperscriptXOffset = int16(binary.BigEndian.Uint16(src[22:]))
-		item.ySuperscriptYOffset = int16(binary.BigEndian.Uint16(src[24:]))
-		item.yStrikeoutSize = int16(binary.BigEndian.Uint16(src[26:]))
-		item.yStrikeoutPosition = int16(binary.BigEndian.Uint16(src[28:]))
-		item.sFamilyClass = int16(binary.BigEndian.Uint16(src[30:]))
-		item.panose[0] = src[32]
-		item.panose[1] = src[33]
-		item.panose[2] = src[34]
-		item.panose[3] = src[35]
-		item.panose[4] = src[36]
-		item.panose[5] = src[37]
-		item.panose[6] = src[38]
-		item.panose[7] = src[39]
-		item.panose[8] = src[40]
-		item.panose[9] = src[41]
-		item.ulCharRange[0] = binary.BigEndian.Uint32(src[42:])
-		item.ulCharRange[1] = binary.BigEndian.Uint32(src[46:])
-		item.ulCharRange[2] = binary.BigEndian.Uint32(src[50:])
-		item.ulCharRange[3] = binary.BigEndian.Uint32(src[54:])
-		item.achVendID = Tag(binary.BigEndian.Uint32(src[58:]))
-		item.fsSelection = binary.BigEndian.Uint16(src[62:])
-		item.uSFirstCharIndex = binary.BigEndian.Uint16(src[64:])
-		item.uSLastCharIndex = binary.BigEndian.Uint16(src[66:])
-		item.sTypoAscender = int16(binary.BigEndian.Uint16(src[68:]))
-		item.sTypoDescender = int16(binary.BigEndian.Uint16(src[70:]))
-		item.sTypoLineGap = int16(binary.BigEndian.Uint16(src[72:]))
-		item.usWinAscent = binary.BigEndian.Uint16(src[74:])
-		item.usWinDescent = binary.BigEndian.Uint16(src[76:])
-		n += 78
+	if L := len(src); L < 78 {
+		return item, 0, fmt.Errorf("reading Os2: "+"EOF: expected length: 78, got %d", L)
 	}
+	_ = src[77] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.xAvgCharWidth = binary.BigEndian.Uint16(src[2:])
+	item.uSWeightClass = binary.BigEndian.Uint16(src[4:])
+	item.uSWidthClass = binary.BigEndian.Uint16(src[6:])
+	item.fSType = binary.BigEndian.Uint16(src[8:])
+	item.ySubscriptXSize = int16(binary.BigEndian.Uint16(src[10:]))
+	item.ySubscriptYSize = int16(binary.BigEndian.Uint16(src[12:]))
+	item.ySubscriptXOffset = int16(binary.BigEndian.Uint16(src[14:]))
+	item.ySubscriptYOffset = int16(binary.BigEndian.Uint16(src[16:]))
+	item.ySuperscriptXSize = int16(binary.BigEndian.Uint16(src[18:]))
+	item.ySuperscriptYSize = int16(binary.BigEndian.Uint16(src[20:]))
+	item.ySuperscriptXOffset = int16(binary.BigEndian.Uint16(src[22:]))
+	item.ySuperscriptYOffset = int16(binary.BigEndian.Uint16(src[24:]))
+	item.yStrikeoutSize = int16(binary.BigEndian.Uint16(src[26:]))
+	item.yStrikeoutPosition = int16(binary.BigEndian.Uint16(src[28:]))
+	item.sFamilyClass = int16(binary.BigEndian.Uint16(src[30:]))
+	item.panose[0] = src[32]
+	item.panose[1] = src[33]
+	item.panose[2] = src[34]
+	item.panose[3] = src[35]
+	item.panose[4] = src[36]
+	item.panose[5] = src[37]
+	item.panose[6] = src[38]
+	item.panose[7] = src[39]
+	item.panose[8] = src[40]
+	item.panose[9] = src[41]
+	item.ulCharRange[0] = binary.BigEndian.Uint32(src[42:])
+	item.ulCharRange[1] = binary.BigEndian.Uint32(src[46:])
+	item.ulCharRange[2] = binary.BigEndian.Uint32(src[50:])
+	item.ulCharRange[3] = binary.BigEndian.Uint32(src[54:])
+	item.achVendID = Tag(binary.BigEndian.Uint32(src[58:]))
+	item.fsSelection = binary.BigEndian.Uint16(src[62:])
+	item.uSFirstCharIndex = binary.BigEndian.Uint16(src[64:])
+	item.uSLastCharIndex = binary.BigEndian.Uint16(src[66:])
+	item.sTypoAscender = int16(binary.BigEndian.Uint16(src[68:]))
+	item.sTypoDescender = int16(binary.BigEndian.Uint16(src[70:]))
+	item.sTypoLineGap = int16(binary.BigEndian.Uint16(src[72:]))
+	item.usWinAscent = binary.BigEndian.Uint16(src[74:])
+	item.usWinDescent = binary.BigEndian.Uint16(src[76:])
+	n += 78
+
 	{
 
 		item.higherVersionData = src[78:]

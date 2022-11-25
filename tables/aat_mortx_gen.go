@@ -10,16 +10,15 @@ import (
 func ParseMorx(src []byte) (Morx, int, error) {
 	var item Morx
 	n := 0
-	{
-		if L := len(src); L < 8 {
-			return item, 0, fmt.Errorf("reading Morx: "+"EOF: expected length: 8, got %d", L)
-		}
-		_ = src[7] // early bound checking
-		item.version = binary.BigEndian.Uint16(src[0:])
-		item.unused = binary.BigEndian.Uint16(src[2:])
-		item.nChains = binary.BigEndian.Uint32(src[4:])
-		n += 8
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading Morx: "+"EOF: expected length: 8, got %d", L)
 	}
+	_ = src[7] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.unused = binary.BigEndian.Uint16(src[2:])
+	item.nChains = binary.BigEndian.Uint32(src[4:])
+	n += 8
+
 	{
 		arrayLength := int(item.nChains)
 
@@ -40,19 +39,18 @@ func ParseMorx(src []byte) (Morx, int, error) {
 func ParseMorxChainSubtable(src []byte, valuesCount int) (MorxChainSubtable, int, error) {
 	var item MorxChainSubtable
 	n := 0
-	{
-		if L := len(src); L < 12 {
-			return item, 0, fmt.Errorf("reading MorxChainSubtable: "+"EOF: expected length: 12, got %d", L)
-		}
-		_ = src[11] // early bound checking
-		item.length = binary.BigEndian.Uint32(src[0:])
-		item.coverage = src[4]
-		item.ignored[0] = src[5]
-		item.ignored[1] = src[6]
-		item.version = morxSubtableVersion(src[7])
-		item.subFeatureFlags = binary.BigEndian.Uint32(src[8:])
-		n += 12
+	if L := len(src); L < 12 {
+		return item, 0, fmt.Errorf("reading MorxChainSubtable: "+"EOF: expected length: 12, got %d", L)
 	}
+	_ = src[11] // early bound checking
+	item.length = binary.BigEndian.Uint32(src[0:])
+	item.coverage = src[4]
+	item.ignored[0] = src[5]
+	item.ignored[1] = src[6]
+	item.version = morxSubtableVersion(src[7])
+	item.subFeatureFlags = binary.BigEndian.Uint32(src[8:])
+	n += 12
+
 	{
 		var (
 			read int
@@ -128,13 +126,12 @@ func (item *loopkupRecord6) mustParse(src []byte) {
 func parseAatLookup(src []byte, valuesCount int) (aatLookup, int, error) {
 	var item aatLookup
 	n := 0
-	{
-		if L := len(src); L < 2 {
-			return item, 0, fmt.Errorf("reading aatLookup: "+"EOF: expected length: 2, got %d", L)
-		}
-		item.version = aatLookupVersion(binary.BigEndian.Uint16(src[0:]))
-		n += 2
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading aatLookup: "+"EOF: expected length: 2, got %d", L)
 	}
+	item.version = aatLookupVersion(binary.BigEndian.Uint16(src[0:]))
+	n += 2
+
 	{
 		var (
 			read int
@@ -185,31 +182,26 @@ func parseAatLookupTable0(src []byte, valuesCount int) (aatLookupTable0, int, er
 func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	var item aatLookupTable10
 	n := 0
-	{
-		if L := len(src); L < 4 {
-			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 4, got %d", L)
-		}
-		_ = src[3] // early bound checking
-		item.unitSize = binary.BigEndian.Uint16(src[0:])
-		item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-		n += 4
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 6, got %d", L)
 	}
+	_ = src[5] // early bound checking
+	item.unitSize = binary.BigEndian.Uint16(src[0:])
+	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthItemvalues := int(binary.BigEndian.Uint16(src[4:]))
+	n += 6
+
 	{
-		if L := len(src); L < 6 {
-			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 6, got %d", L)
-		}
-		arrayLength := int(binary.BigEndian.Uint16(src[4:]))
-		n += 2
 
-		if L := len(src); L < 6+arrayLength*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
+		if L := len(src); L < 6+arrayLengthItemvalues*2 {
+			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemvalues*2, L)
 		}
 
-		item.values = make([]uint16, arrayLength) // allocation guarded by the previous check
+		item.values = make([]uint16, arrayLengthItemvalues) // allocation guarded by the previous check
 		for i := range item.values {
 			item.values[i] = binary.BigEndian.Uint16(src[6+i*2:])
 		}
-		n += arrayLength * 2
+		n += arrayLengthItemvalues * 2
 	}
 	return item, n, nil
 }
@@ -217,13 +209,12 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 	var item aatLookupTable2
 	n := 0
-	{
-		if L := len(src); L < 10 {
-			return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: 10, got %d", L)
-		}
-		item.binSearchHeader.mustParse(src[0:])
-		n += 10
+	if L := len(src); L < 10 {
+		return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: 10, got %d", L)
 	}
+	item.binSearchHeader.mustParse(src[0:])
+	n += 10
+
 	{
 		arrayLength := int(item.nUnits)
 
@@ -243,13 +234,12 @@ func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
 func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 	var item aatLookupTable4
 	n := 0
-	{
-		if L := len(src); L < 10 {
-			return item, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: 10, got %d", L)
-		}
-		item.binSearchHeader.mustParse(src[0:])
-		n += 10
+	if L := len(src); L < 10 {
+		return item, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: 10, got %d", L)
 	}
+	item.binSearchHeader.mustParse(src[0:])
+	n += 10
+
 	{
 		arrayLength := int(item.nUnits)
 
@@ -274,13 +264,12 @@ func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
 func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 	var item aatLookupTable6
 	n := 0
-	{
-		if L := len(src); L < 10 {
-			return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: 10, got %d", L)
-		}
-		item.binSearchHeader.mustParse(src[0:])
-		n += 10
+	if L := len(src); L < 10 {
+		return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: 10, got %d", L)
 	}
+	item.binSearchHeader.mustParse(src[0:])
+	n += 10
+
 	{
 		arrayLength := int(item.nUnits)
 
@@ -300,17 +289,16 @@ func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
 func parseMorxChain(src []byte) (morxChain, int, error) {
 	var item morxChain
 	n := 0
-	{
-		if L := len(src); L < 16 {
-			return item, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: 16, got %d", L)
-		}
-		_ = src[15] // early bound checking
-		item.flags = binary.BigEndian.Uint32(src[0:])
-		item.chainLength = binary.BigEndian.Uint32(src[4:])
-		item.nFeatureEntries = binary.BigEndian.Uint32(src[8:])
-		item.nSubtable = binary.BigEndian.Uint32(src[12:])
-		n += 16
+	if L := len(src); L < 16 {
+		return item, 0, fmt.Errorf("reading morxChain: "+"EOF: expected length: 16, got %d", L)
 	}
+	_ = src[15] // early bound checking
+	item.flags = binary.BigEndian.Uint32(src[0:])
+	item.chainLength = binary.BigEndian.Uint32(src[4:])
+	item.nFeatureEntries = binary.BigEndian.Uint32(src[8:])
+	item.nSubtable = binary.BigEndian.Uint32(src[12:])
+	n += 16
+
 	{
 		arrayLength := int(item.nFeatureEntries)
 
@@ -339,15 +327,14 @@ func parseMorxChain(src []byte) (morxChain, int, error) {
 func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error) {
 	var item morxSubtableContextual
 	n := 0
-	{
-		if L := len(src); L < 20 {
-			return item, 0, fmt.Errorf("reading morxSubtableContextual: "+"EOF: expected length: 20, got %d", L)
-		}
-		_ = src[19] // early bound checking
-		item.aatSTXHeader.mustParse(src[0:])
-		item.substitutionTableOffset = binary.BigEndian.Uint32(src[16:])
-		n += 20
+	if L := len(src); L < 20 {
+		return item, 0, fmt.Errorf("reading morxSubtableContextual: "+"EOF: expected length: 20, got %d", L)
 	}
+	_ = src[19] // early bound checking
+	item.aatSTXHeader.mustParse(src[0:])
+	item.substitutionTableOffset = binary.BigEndian.Uint32(src[16:])
+	n += 20
+
 	{
 
 		item.rawData = src[20:]
@@ -359,15 +346,14 @@ func parseMorxSubtableContextual(src []byte) (morxSubtableContextual, int, error
 func parseMorxSubtableInsertion(src []byte) (morxSubtableInsertion, int, error) {
 	var item morxSubtableInsertion
 	n := 0
-	{
-		if L := len(src); L < 20 {
-			return item, 0, fmt.Errorf("reading morxSubtableInsertion: "+"EOF: expected length: 20, got %d", L)
-		}
-		_ = src[19] // early bound checking
-		item.aatSTXHeader.mustParse(src[0:])
-		item.insertionActionOffset = binary.BigEndian.Uint32(src[16:])
-		n += 20
+	if L := len(src); L < 20 {
+		return item, 0, fmt.Errorf("reading morxSubtableInsertion: "+"EOF: expected length: 20, got %d", L)
 	}
+	_ = src[19] // early bound checking
+	item.aatSTXHeader.mustParse(src[0:])
+	item.insertionActionOffset = binary.BigEndian.Uint32(src[16:])
+	n += 20
+
 	{
 
 		item.rawData = src[20:]
@@ -379,17 +365,16 @@ func parseMorxSubtableInsertion(src []byte) (morxSubtableInsertion, int, error) 
 func parseMorxSubtableLigature(src []byte) (morxSubtableLigature, int, error) {
 	var item morxSubtableLigature
 	n := 0
-	{
-		if L := len(src); L < 28 {
-			return item, 0, fmt.Errorf("reading morxSubtableLigature: "+"EOF: expected length: 28, got %d", L)
-		}
-		_ = src[27] // early bound checking
-		item.aatSTXHeader.mustParse(src[0:])
-		item.ligActionOffset = binary.BigEndian.Uint32(src[16:])
-		item.componentOffset = binary.BigEndian.Uint32(src[20:])
-		item.ligatureOffset = binary.BigEndian.Uint32(src[24:])
-		n += 28
+	if L := len(src); L < 28 {
+		return item, 0, fmt.Errorf("reading morxSubtableLigature: "+"EOF: expected length: 28, got %d", L)
 	}
+	_ = src[27] // early bound checking
+	item.aatSTXHeader.mustParse(src[0:])
+	item.ligActionOffset = binary.BigEndian.Uint32(src[16:])
+	item.componentOffset = binary.BigEndian.Uint32(src[20:])
+	item.ligatureOffset = binary.BigEndian.Uint32(src[24:])
+	n += 28
+
 	{
 
 		item.rawData = src[28:]
@@ -418,13 +403,12 @@ func parseMorxSubtableNonContextual(src []byte, valuesCount int) (morxSubtableNo
 func parseMorxSubtableRearrangement(src []byte) (morxSubtableRearrangement, int, error) {
 	var item morxSubtableRearrangement
 	n := 0
-	{
-		if L := len(src); L < 16 {
-			return item, 0, fmt.Errorf("reading morxSubtableRearrangement: "+"EOF: expected length: 16, got %d", L)
-		}
-		item.aatSTXHeader.mustParse(src[0:])
-		n += 16
+	if L := len(src); L < 16 {
+		return item, 0, fmt.Errorf("reading morxSubtableRearrangement: "+"EOF: expected length: 16, got %d", L)
 	}
+	item.aatSTXHeader.mustParse(src[0:])
+	n += 16
+
 	{
 
 		item.rawData = src[16:]
