@@ -60,7 +60,7 @@ type Glyph struct {
 	Data             GlyphData `isOpaque:"" subsliceStart:"AtCurrent"`
 }
 
-func (gl *Glyph) customParseData(src []byte) (read int, err error) {
+func (gl *Glyph) parseData(src []byte) (read int, err error) {
 	if gl.numberOfContours >= 0 { // simple glyph
 		gl.Data, read, err = ParseSimpleGlyph(src)
 	} else { // composite glyph

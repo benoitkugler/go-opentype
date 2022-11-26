@@ -23,7 +23,7 @@ type SinglePosData1 struct {
 	ValueRecord ValueRecord `isOpaque:""` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
 }
 
-func (sp *SinglePosData1) customParseValueRecord(src []byte) (read int, err error) {
+func (sp *SinglePosData1) parseValueRecord(src []byte) (read int, err error) {
 	sp.ValueRecord, read, err = parseValueRecord(sp.valueFormat, src, 6)
 	return read, err
 }
@@ -36,7 +36,7 @@ type SinglePosData2 struct {
 	ValueRecords []ValueRecord `isOpaque:""` //[valueCount]	Array of ValueRecords — positioning values applied to glyphs.
 }
 
-func (sp *SinglePosData2) customParseValueRecords(src []byte) (read int, err error) {
+func (sp *SinglePosData2) parseValueRecords(src []byte) (read int, err error) {
 	offset := 8
 	sp.ValueRecords = make([]ValueRecord, sp.valueCount)
 	for i := range sp.ValueRecords {
@@ -76,7 +76,7 @@ type PairSet struct {
 	PairValueRecords []PairValueRecord `isOpaque:""` // [pairValueCount] Array of PairValueRecords, ordered by glyph ID of the second glyph.
 }
 
-func (ps *PairSet) customParsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) (int, error) {
+func (ps *PairSet) parsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) (int, error) {
 	out := make([]PairValueRecord, ps.pairValueCount)
 	offsetR := 2
 	var err error
@@ -111,7 +111,7 @@ type PairPosData2 struct {
 	class1Records []Class1Record `isOpaque:""` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
 }
 
-func (pp *PairPosData2) customParseClass1Records(src []byte) (int, error) {
+func (pp *PairPosData2) parseClass1Records(src []byte) (int, error) {
 	const headerSize = 16 // including posFormat and coverageOffset
 
 	pp.class1Records = make([]Class1Record, pp.class1Count)
@@ -164,7 +164,7 @@ type entryExitRecord struct {
 	exitAnchorOffset  Offset16 // Offset to exitAnchor table, from beginning of CursivePos subtable (may be NULL).
 }
 
-func (cp *CursivePos) customParseEntryExits(src []byte) (int, error) {
+func (cp *CursivePos) parseEntryExits(src []byte) (int, error) {
 	cp.EntryExits = make([]EntryExit, len(cp.entryExitRecords))
 	var err error
 	for i, rec := range cp.entryExitRecords {
@@ -204,7 +204,7 @@ type BaseArray struct {
 	BaseAnchors [][]Anchor      `isOpaque:""`
 }
 
-func (ba *BaseArray) customParseBaseAnchors(src []byte, _ int) (int, error) {
+func (ba *BaseArray) parseBaseAnchors(src []byte, _ int) (int, error) {
 	var err error
 	ba.BaseAnchors, err = resolveAnchorOffsets(ba.baseRecords, src)
 	return len(src), err
@@ -254,7 +254,7 @@ type LigatureAttach struct {
 	ComponentAnchors [][]Anchor      `isOpaque:""`
 }
 
-func (la *LigatureAttach) customParseComponentAnchors(src []byte, _ int) (int, error) {
+func (la *LigatureAttach) parseComponentAnchors(src []byte, _ int) (int, error) {
 	var err error
 	la.ComponentAnchors, err = resolveAnchorOffsets(la.componentRecords, src)
 	return len(src), err
@@ -276,7 +276,7 @@ type Mark2Array struct {
 	Mark2Anchors [][]Anchor      `isOpaque:""`
 }
 
-func (ma *Mark2Array) customParseMark2Anchors(src []byte, _ int) (int, error) {
+func (ma *Mark2Array) parseMark2Anchors(src []byte, _ int) (int, error) {
 	var err error
 	ma.Mark2Anchors, err = resolveAnchorOffsets(ma.mark2Records, src)
 	return len(src), err

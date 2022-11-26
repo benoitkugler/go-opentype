@@ -173,7 +173,7 @@ func ParseCaretValue3(src []byte) (CaretValue3, int, error) {
 
 	{
 
-		read, err := item.customParseDevice(src[:])
+		read, err := item.parseDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CaretValue3: %s", err)
 		}
@@ -367,7 +367,7 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 
 	{
 
-		read, err := item.customParseMarkGlyphSetsDef(src[:])
+		read, err := item.parseMarkGlyphSetsDef(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading GDEF: %s", err)
 		}
@@ -375,7 +375,7 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 	}
 	{
 
-		read, err := item.customParseItemVarStore(src[:])
+		read, err := item.parseItemVarStore(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading GDEF: %s", err)
 		}
@@ -455,12 +455,6 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 			offsetItemMarkAttachClass += read
 		}
 	}
-	return item, n, nil
-}
-
-func ParseItemVarStore([]byte) (ItemVarStore, int, error) {
-	var item ItemVarStore
-	n := 0
 	return item, n, nil
 }
 

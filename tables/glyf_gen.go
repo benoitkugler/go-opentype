@@ -34,7 +34,7 @@ func ParseGlyph(src []byte) (Glyph, int, error) {
 
 	{
 
-		read, err := item.customParseData(src[10:])
+		read, err := item.parseData(src[10:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Glyph: %s", err)
 		}

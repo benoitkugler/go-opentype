@@ -24,6 +24,18 @@ func Float1616ToUint(f Float1616) uint32 {
 	return uint32(int32(f * (1 << 16)))
 }
 
+// Float214 is a float32, represented in fixed 2.14 format in font files.
+type Float214 = float32
+
+func Float214FromUint(v uint16) Float214 {
+	// value are actually signed integers
+	return float32(int16(v)) / (1 << 14)
+}
+
+func Float214ToUint(f Float214) uint16 {
+	return uint16(int16(f * (1 << 14)))
+}
+
 // Number of seconds since 12:00 midnight that started January 1st 1904 in GMT/UTC time zone.
 type longdatetime = uint64
 
@@ -48,4 +60,4 @@ func parseUint24(b []byte) rune {
 type Offset16 uint16
 
 // Offset32 is an offset into the input byte slice
-type Offset32 uint16
+type Offset32 uint32

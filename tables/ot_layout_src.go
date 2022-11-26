@@ -21,7 +21,7 @@ type Layout struct {
 	featureVariations *FeatureVariation `isOpaque:""`           // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
 }
 
-func (lt *Layout) customParseFeatureVariations(src []byte) (int, error) {
+func (lt *Layout) parseFeatureVariations(src []byte) (int, error) {
 	const layoutHeaderSize = 2 + 2 + 2 + 2 + 2
 	if lt.minorVersion != 1 {
 		return 0, nil
@@ -55,7 +55,7 @@ type scriptList struct {
 	Scripts []Script          `isOpaque:""`
 }
 
-func (sl *scriptList) customParseScripts(src []byte) (int, error) {
+func (sl *scriptList) parseScripts(src []byte) (int, error) {
 	sl.Scripts = make([]Script, len(sl.records))
 	for i, rec := range sl.records {
 		var err error
@@ -76,7 +76,7 @@ type Script struct {
 	LangSys        []LangSys         `isOpaque:""`
 }
 
-func (sc *Script) customParseLangSys(src []byte) (int, error) {
+func (sc *Script) parseLangSys(src []byte) (int, error) {
 	sc.LangSys = make([]LangSys, len(sc.langSysRecords))
 	for i, rec := range sc.langSysRecords {
 		var err error
@@ -102,7 +102,7 @@ type featureList struct {
 	Features []Feature         `isOpaque:""`
 }
 
-func (fl *featureList) customParseFeatures(src []byte) (int, error) {
+func (fl *featureList) parseFeatures(src []byte) (int, error) {
 	fl.Features = make([]Feature, len(fl.records))
 	for i, rec := range fl.records {
 		var err error
@@ -127,7 +127,7 @@ type lookupList struct {
 	Lookups []Lookup   `isOpaque:""`
 }
 
-func (ll *lookupList) customParseLookups(src []byte) (int, error) {
+func (ll *lookupList) parseLookups(src []byte) (int, error) {
 	var err error
 	ll.Lookups = make([]Lookup, len(ll.records))
 	for i, offset := range ll.records {

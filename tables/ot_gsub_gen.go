@@ -681,14 +681,14 @@ func ParseContextualSubsITF(src []byte) (ContextualSubsITF, int, error) {
 func ParseExtensionSubs(src []byte) (ExtensionSubs, int, error) {
 	var item ExtensionSubs
 	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading ExtensionSubs: "+"EOF: expected length: 6, got %d", L)
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading ExtensionSubs: "+"EOF: expected length: 8, got %d", L)
 	}
-	_ = src[5] // early bound checking
+	_ = src[7] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
 	item.ExtensionLookupType = binary.BigEndian.Uint16(src[2:])
-	item.ExtensionOffset = Offset32(binary.BigEndian.Uint16(src[4:]))
-	n += 6
+	item.ExtensionOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
+	n += 8
 
 	{
 

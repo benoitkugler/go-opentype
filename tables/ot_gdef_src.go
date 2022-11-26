@@ -17,7 +17,7 @@ type GDEF struct {
 	ItemVarStore     ItemVarStore  `isOpaque:""` // Offset to the Item Variation Store table, from beginning of GDEF header (may be NULL)
 }
 
-func (gdef *GDEF) customParseMarkGlyphSetsDef(src []byte) (int, error) {
+func (gdef *GDEF) parseMarkGlyphSetsDef(src []byte) (int, error) {
 	const headerSize = 12
 	if gdef.minorVersion < 2 {
 		return 0, nil
@@ -36,7 +36,7 @@ func (gdef *GDEF) customParseMarkGlyphSetsDef(src []byte) (int, error) {
 	return headerSize + 2, nil
 }
 
-func (gdef *GDEF) customParseItemVarStore(src []byte) (int, error) {
+func (gdef *GDEF) parseItemVarStore(src []byte) (int, error) {
 	const headerSize = 12 + 2
 	if gdef.minorVersion < 3 {
 		return 0, nil
@@ -98,7 +98,7 @@ type CaretValue3 struct {
 	Device           DeviceTable `isOpaque:""`
 }
 
-func (cv *CaretValue3) customParseDevice(src []byte) (read int, err error) {
+func (cv *CaretValue3) parseDevice(src []byte) (read int, err error) {
 	cv.Device, err = parseDeviceTable(src, uint16(cv.deviceOffset))
 	return len(src), err
 }
@@ -107,6 +107,3 @@ type MarkGlyphSets struct {
 	format    uint16     // Format identifier == 1
 	Coverages []Coverage `arrayCount:"FirstUint16" offsetsArray:"Offset32"` // [markGlyphSetCount] Array of offsets to mark glyph set coverage tables, from the start of the MarkGlyphSets table.
 }
-
-// TODO:
-type ItemVarStore struct{}

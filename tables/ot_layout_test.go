@@ -324,3 +324,13 @@ func TestGDEFCaretList3(t *testing.T) {
 		}
 	}
 }
+
+func TestGDEFVarStore(t *testing.T) {
+	filepath := "common/Commissioner-VF.ttf"
+	fp := readFontFile(t, filepath)
+	gdef, _, err := ParseGDEF(readTable(t, fp, "GDEF"))
+	assertNoErr(t, err)
+
+	assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
+	assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
+}

@@ -125,7 +125,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 
 	{
 
-		read, err := item.customParseFeatureVariations(src[:])
+		read, err := item.parseFeatureVariations(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Layout: %s", err)
 		}
@@ -254,7 +254,7 @@ func ParseScript(src []byte) (Script, int, error) {
 	}
 	{
 
-		read, err := item.customParseLangSys(src[:])
+		read, err := item.parseLangSys(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Script: %s", err)
 		}
@@ -305,7 +305,7 @@ func parseFeatureList(src []byte) (featureList, int, error) {
 	}
 	{
 
-		read, err := item.customParseFeatures(src[:])
+		read, err := item.parseFeatures(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading featureList: %s", err)
 		}
@@ -337,7 +337,7 @@ func parseLookupList(src []byte) (lookupList, int, error) {
 	}
 	{
 
-		read, err := item.customParseLookups(src[:])
+		read, err := item.parseLookups(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading lookupList: %s", err)
 		}
@@ -369,7 +369,7 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 	}
 	{
 
-		read, err := item.customParseScripts(src[:])
+		read, err := item.parseScripts(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading scriptList: %s", err)
 		}

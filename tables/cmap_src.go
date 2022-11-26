@@ -16,7 +16,7 @@ type Cmap struct {
 
 type cmapSubtables []cmapSubtable
 
-func (cm *Cmap) customParseSubtables(src []byte) (int, error) {
+func (cm *Cmap) parseSubtables(src []byte) (int, error) {
 	var err error
 	cm.subtables = make(cmapSubtables, len(cm.records))
 	for i, rec := range cm.records {

@@ -505,7 +505,7 @@ type AnchorFormat3 struct {
 	YDevice       DeviceTable `isOpaque:""` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
 }
 
-func (af AnchorFormat3) customParseXDevice(src []byte) (int, error) {
+func (af AnchorFormat3) parseXDevice(src []byte) (int, error) {
 	if af.xDeviceOffset == 0 {
 		return 0, nil
 	}
@@ -517,7 +517,7 @@ func (af AnchorFormat3) customParseXDevice(src []byte) (int, error) {
 	return 0, nil
 }
 
-func (af AnchorFormat3) customParseYDevice(src []byte) (int, error) {
+func (af AnchorFormat3) parseYDevice(src []byte) (int, error) {
 	if af.yDeviceOffset == 0 {
 		return 0, nil
 	}
@@ -534,7 +534,7 @@ type MarkArray struct {
 	MarkAnchors []Anchor     `isOpaque:""`              // with same length as MarkRecords
 }
 
-func (ma *MarkArray) customParseMarkAnchors(src []byte) (int, error) {
+func (ma *MarkArray) parseMarkAnchors(src []byte) (int, error) {
 	ma.MarkAnchors = make([]Anchor, len(ma.MarkRecords))
 	var err error
 	for i, rec := range ma.MarkRecords {

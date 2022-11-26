@@ -101,7 +101,7 @@ func ParseAnchorFormat3(src []byte) (AnchorFormat3, int, error) {
 
 	{
 
-		read, err := item.customParseXDevice(src[:])
+		read, err := item.parseXDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AnchorFormat3: %s", err)
 		}
@@ -109,7 +109,7 @@ func ParseAnchorFormat3(src []byte) (AnchorFormat3, int, error) {
 	}
 	{
 
-		read, err := item.customParseYDevice(src[:])
+		read, err := item.parseYDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AnchorFormat3: %s", err)
 		}
@@ -142,7 +142,7 @@ func ParseBaseArray(src []byte, offsetsCount int) (BaseArray, int, error) {
 	}
 	{
 
-		read, err := item.customParseBaseAnchors(src[:], offsetsCount)
+		read, err := item.parseBaseAnchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading BaseArray: %s", err)
 		}
@@ -1063,7 +1063,7 @@ func ParseCursivePos(src []byte) (CursivePos, int, error) {
 	}
 	{
 
-		read, err := item.customParseEntryExits(src[:])
+		read, err := item.parseEntryExits(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CursivePos: %s", err)
 		}
@@ -1132,14 +1132,14 @@ func ParseEntryExit(src []byte) (EntryExit, int, error) {
 func ParseExtensionPos(src []byte) (ExtensionPos, int, error) {
 	var item ExtensionPos
 	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading ExtensionPos: "+"EOF: expected length: 6, got %d", L)
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading ExtensionPos: "+"EOF: expected length: 8, got %d", L)
 	}
-	_ = src[5] // early bound checking
+	_ = src[7] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
 	item.ExtensionLookupType = binary.BigEndian.Uint16(src[2:])
-	item.ExtensionOffset = Offset32(binary.BigEndian.Uint16(src[4:]))
-	n += 6
+	item.ExtensionOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
+	n += 8
 
 	{
 
@@ -1212,7 +1212,7 @@ func ParseLigatureAttach(src []byte, offsetsCount int) (LigatureAttach, int, err
 	}
 	{
 
-		read, err := item.customParseComponentAnchors(src[:], offsetsCount)
+		read, err := item.parseComponentAnchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading LigatureAttach: %s", err)
 		}
@@ -1245,7 +1245,7 @@ func ParseMark2Array(src []byte, offsetsCount int) (Mark2Array, int, error) {
 	}
 	{
 
-		read, err := item.customParseMark2Anchors(src[:], offsetsCount)
+		read, err := item.parseMark2Anchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Mark2Array: %s", err)
 		}
@@ -1277,7 +1277,7 @@ func ParseMarkArray(src []byte) (MarkArray, int, error) {
 	}
 	{
 
-		read, err := item.customParseMarkAnchors(src[:])
+		read, err := item.parseMarkAnchors(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MarkArray: %s", err)
 		}
@@ -1697,7 +1697,7 @@ func ParsePairPosData2(src []byte) (PairPosData2, int, error) {
 
 	{
 
-		read, err := item.customParseClass1Records(src[:])
+		read, err := item.parseClass1Records(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading PairPosData2: %s", err)
 		}
@@ -1771,7 +1771,7 @@ func ParsePairSet(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat
 
 	{
 
-		read, err := item.customParsePairValueRecords(src[:], valueFormat1, valueFormat2)
+		read, err := item.parsePairValueRecords(src[:], valueFormat1, valueFormat2)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading PairSet: %s", err)
 		}
@@ -1927,7 +1927,7 @@ func ParseSinglePosData1(src []byte) (SinglePosData1, int, error) {
 
 	{
 
-		read, err := item.customParseValueRecord(src[:])
+		read, err := item.parseValueRecord(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading SinglePosData1: %s", err)
 		}
@@ -1969,7 +1969,7 @@ func ParseSinglePosData2(src []byte) (SinglePosData2, int, error) {
 
 	{
 
-		read, err := item.customParseValueRecords(src[:])
+		read, err := item.parseValueRecords(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading SinglePosData2: %s", err)
 		}

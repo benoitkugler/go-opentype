@@ -296,7 +296,7 @@ func ParseCmap(src []byte) (Cmap, int, error) {
 	}
 	{
 
-		read, err := item.customParseSubtables(src[:])
+		read, err := item.parseSubtables(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Cmap: %s", err)
 		}
