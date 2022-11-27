@@ -24,3 +24,18 @@ func TestParseGlyf(t *testing.T) {
 		assert(t, len(glyphs) == file.GlyphNumber)
 	}
 }
+
+func TestParseSbix(t *testing.T) {
+	for _, file := range td.WithSbix {
+		fp := readFontFile(t, file.Path)
+
+		maxp, _, err := ParseMaxp(readTable(t, fp, "maxp"))
+		assertNoErr(t, err)
+
+		sbix, _, err := ParseSbix(readTable(t, fp, "sbix"), int(maxp.numGlyphs))
+		assertNoErr(t, err)
+
+		assertNoErr(t, err)
+		assert(t, len(sbix.Strikes) == file.StrikesNumber)
+	}
+}
