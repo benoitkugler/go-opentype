@@ -14,7 +14,7 @@ func assert(t *testing.T, b bool) {
 	assertC(t, b, "assertion error")
 }
 
-func assertNoErr(t *testing.T, err error) {
+func assertNoErr(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func assertC(t *testing.T, b bool, context string) {
 
 // filenames return the "absolute" file names of the given directory
 // excluding directories, and not recursing
-func filenames(t *testing.T, dir string) []string {
+func filenames(t testing.TB, dir string) []string {
 	t.Helper()
 
 	files, err := td.Files.ReadDir(dir)
@@ -48,7 +48,7 @@ func filenames(t *testing.T, dir string) []string {
 }
 
 // wrap td.Files.ReadFile
-func readFontFile(t *testing.T, filepath string) *opentype.Loader {
+func readFontFile(t testing.TB, filepath string) *opentype.Loader {
 	t.Helper()
 
 	file, err := td.Files.ReadFile(filepath)
@@ -60,7 +60,7 @@ func readFontFile(t *testing.T, filepath string) *opentype.Loader {
 	return fp
 }
 
-func readTable(t *testing.T, fl *opentype.Loader, tag string) []byte {
+func readTable(t testing.TB, fl *opentype.Loader, tag string) []byte {
 	t.Helper()
 
 	table, err := fl.RawTable(opentype.MustNewTag(tag))
