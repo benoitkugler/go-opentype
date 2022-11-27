@@ -42,17 +42,6 @@ func ParseAvar(src []byte) (Avar, int, error) {
 	return item, n, nil
 }
 
-func ParseAxisValueMap(src []byte) (AxisValueMap, int, error) {
-	var item AxisValueMap
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading AxisValueMap: "+"EOF: expected length: 4, got %d", L)
-	}
-	item.mustParse(src)
-	n += 4
-	return item, n, nil
-}
-
 func ParseDeltaSetMapping(src []byte) (DeltaSetMapping, int, error) {
 	var item DeltaSetMapping
 	n := 0
@@ -493,17 +482,6 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 	return item, n, nil
 }
 
-func ParseRegionAxisCoordinates(src []byte) (RegionAxisCoordinates, int, error) {
-	var item RegionAxisCoordinates
-	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading RegionAxisCoordinates: "+"EOF: expected length: 6, got %d", L)
-	}
-	item.mustParse(src)
-	n += 6
-	return item, n, nil
-}
-
 func ParseSegmentMaps(src []byte) (SegmentMaps, int, error) {
 	var item SegmentMaps
 	n := 0
@@ -606,17 +584,6 @@ func ParseVarValueRecord(src []byte) (VarValueRecord, int, error) {
 	return item, n, nil
 }
 
-func ParseVariationAxisRecord(src []byte) (VariationAxisRecord, int, error) {
-	var item VariationAxisRecord
-	n := 0
-	if L := len(src); L < 20 {
-		return item, 0, fmt.Errorf("reading VariationAxisRecord: "+"EOF: expected length: 20, got %d", L)
-	}
-	item.mustParse(src)
-	n += 20
-	return item, n, nil
-}
-
 func ParseVariationRegion(src []byte, regionAxesCount int) (VariationRegion, int, error) {
 	var item VariationRegion
 	n := 0
@@ -659,17 +626,6 @@ func ParseVariationRegionList(src []byte) (VariationRegionList, int, error) {
 		}
 		n = offset
 	}
-	return item, n, nil
-}
-
-func ParseVariationStoreIndex(src []byte) (VariationStoreIndex, int, error) {
-	var item VariationStoreIndex
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading VariationStoreIndex: "+"EOF: expected length: 4, got %d", L)
-	}
-	item.mustParse(src)
-	n += 4
 	return item, n, nil
 }
 

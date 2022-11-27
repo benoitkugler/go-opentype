@@ -1562,17 +1562,6 @@ func ParseMarkMarkPos(src []byte) (MarkMarkPos, int, error) {
 	return item, n, nil
 }
 
-func ParseMarkRecord(src []byte) (MarkRecord, int, error) {
-	var item MarkRecord
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading MarkRecord: "+"EOF: expected length: 4, got %d", L)
-	}
-	item.mustParse(src)
-	n += 4
-	return item, n, nil
-}
-
 func ParsePairPos(src []byte) (PairPos, int, error) {
 	var item PairPos
 	n := 0
@@ -1777,17 +1766,6 @@ func ParsePairSet(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat
 		}
 		n = read
 	}
-	return item, n, nil
-}
-
-func ParseSequenceLookupRecord(src []byte) (SequenceLookupRecord, int, error) {
-	var item SequenceLookupRecord
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading SequenceLookupRecord: "+"EOF: expected length: 4, got %d", L)
-	}
-	item.mustParse(src)
-	n += 4
 	return item, n, nil
 }
 

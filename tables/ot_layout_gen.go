@@ -71,17 +71,6 @@ func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 	return item, n, nil
 }
 
-func ParseFeatureVariationRecord(src []byte) (FeatureVariationRecord, int, error) {
-	var item FeatureVariationRecord
-	n := 0
-	if L := len(src); L < 8 {
-		return item, 0, fmt.Errorf("reading FeatureVariationRecord: "+"EOF: expected length: 8, got %d", L)
-	}
-	item.mustParse(src)
-	n += 8
-	return item, n, nil
-}
-
 func ParseLangSys(src []byte) (LangSys, int, error) {
 	var item LangSys
 	n := 0

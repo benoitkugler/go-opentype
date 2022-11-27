@@ -261,17 +261,6 @@ func ParseClassDef2(src []byte) (ClassDef2, int, error) {
 	return item, n, nil
 }
 
-func ParseClassRangeRecord(src []byte) (ClassRangeRecord, int, error) {
-	var item ClassRangeRecord
-	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading ClassRangeRecord: "+"EOF: expected length: 6, got %d", L)
-	}
-	item.mustParse(src)
-	n += 6
-	return item, n, nil
-}
-
 func ParseCoverage(src []byte) (Coverage, int, error) {
 	var item Coverage
 
@@ -594,17 +583,6 @@ func ParseMarkGlyphSets(src []byte) (MarkGlyphSets, int, error) {
 		}
 		n += arrayLengthItemCoverages * 4
 	}
-	return item, n, nil
-}
-
-func ParseRangeRecord(src []byte) (RangeRecord, int, error) {
-	var item RangeRecord
-	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading RangeRecord: "+"EOF: expected length: 6, got %d", L)
-	}
-	item.mustParse(src)
-	n += 6
 	return item, n, nil
 }
 
