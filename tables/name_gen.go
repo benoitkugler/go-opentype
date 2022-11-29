@@ -20,6 +20,17 @@ func ParseName(src []byte) (Name, int, error) {
 	n += 6
 
 	{
+
+		if offsetItemstringData != 0 { // ignore null offset
+			if L := len(src); L < offsetItemstringData {
+				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offsetItemstringData, L)
+			}
+
+			item.stringData = src[offsetItemstringData:]
+			offsetItemstringData = len(src)
+		}
+	}
+	{
 		arrayLength := int(item.count)
 
 		if L := len(src); L < 6+arrayLength*12 {
@@ -31,17 +42,6 @@ func ParseName(src []byte) (Name, int, error) {
 			item.nameRecords[i].mustParse(src[6+i*12:])
 		}
 		n += arrayLength * 12
-	}
-	{
-
-		if offsetItemstringData != 0 { // ignore null offset
-			if L := len(src); L < offsetItemstringData {
-				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offsetItemstringData, L)
-			}
-
-			item.stringData = src[offsetItemstringData:]
-			offsetItemstringData = len(src)
-		}
 	}
 	return item, n, nil
 }

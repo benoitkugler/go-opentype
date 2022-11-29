@@ -300,6 +300,24 @@ func ParseChainedContextualPos1(src []byte) (ChainedContextualPos1, int, error) 
 
 	{
 
+		if offsetItemCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemCoverage {
+				return item, 0, fmt.Errorf("reading ChainedContextualPos1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading ChainedContextualPos1: %s", err)
+			}
+			offsetItemCoverage += read
+		}
+	}
+	{
+
 		if L := len(src); L < 6+arrayLengthItemChainedSeqRuleSet*2 {
 			return item, 0, fmt.Errorf("reading ChainedContextualPos1: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemChainedSeqRuleSet*2, L)
 		}
@@ -325,24 +343,6 @@ func ParseChainedContextualPos1(src []byte) (ChainedContextualPos1, int, error) 
 		}
 		n += arrayLengthItemChainedSeqRuleSet * 2
 	}
-	{
-
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ChainedContextualPos1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading ChainedContextualPos1: %s", err)
-			}
-			offsetItemCoverage += read
-		}
-	}
 	return item, n, nil
 }
 
@@ -361,33 +361,6 @@ func ParseChainedContextualPos2(src []byte) (ChainedContextualPos2, int, error) 
 	arrayLengthItemChainedClassSeqRuleSet := int(binary.BigEndian.Uint16(src[10:]))
 	n += 12
 
-	{
-
-		if L := len(src); L < 12+arrayLengthItemChainedClassSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualPos2: "+"EOF: expected length: %d, got %d", 12+arrayLengthItemChainedClassSeqRuleSet*2, L)
-		}
-
-		item.ChainedClassSeqRuleSet = make([]ChainedClassSequenceRuleSet, arrayLengthItemChainedClassSeqRuleSet) // allocation guarded by the previous check
-		for i := range item.ChainedClassSeqRuleSet {
-			offset := int(binary.BigEndian.Uint16(src[12+i*2:]))
-			// ignore null offsets
-			if offset == 0 {
-				continue
-			}
-
-			if L := len(src); L < offset {
-				return item, 0, fmt.Errorf("reading ChainedContextualPos2: "+"EOF: expected length: %d, got %d", offset, L)
-			}
-
-			var err error
-			item.ChainedClassSeqRuleSet[i], _, err = ParseChainedClassSequenceRuleSet(src[offset:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading ChainedContextualPos2: %s", err)
-			}
-
-		}
-		n += arrayLengthItemChainedClassSeqRuleSet * 2
-	}
 	{
 
 		if offsetItemCoverage != 0 { // ignore null offset
@@ -459,6 +432,33 @@ func ParseChainedContextualPos2(src []byte) (ChainedContextualPos2, int, error) 
 			}
 			offsetItemLookaheadClassDef += read
 		}
+	}
+	{
+
+		if L := len(src); L < 12+arrayLengthItemChainedClassSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualPos2: "+"EOF: expected length: %d, got %d", 12+arrayLengthItemChainedClassSeqRuleSet*2, L)
+		}
+
+		item.ChainedClassSeqRuleSet = make([]ChainedClassSequenceRuleSet, arrayLengthItemChainedClassSeqRuleSet) // allocation guarded by the previous check
+		for i := range item.ChainedClassSeqRuleSet {
+			offset := int(binary.BigEndian.Uint16(src[12+i*2:]))
+			// ignore null offsets
+			if offset == 0 {
+				continue
+			}
+
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading ChainedContextualPos2: "+"EOF: expected length: %d, got %d", offset, L)
+			}
+
+			var err error
+			item.ChainedClassSeqRuleSet[i], _, err = ParseChainedClassSequenceRuleSet(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading ChainedContextualPos2: %s", err)
+			}
+
+		}
+		n += arrayLengthItemChainedClassSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -828,6 +828,24 @@ func ParseContextualPos1(src []byte) (ContextualPos1, int, error) {
 
 	{
 
+		if offsetItemCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemCoverage {
+				return item, 0, fmt.Errorf("reading ContextualPos1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading ContextualPos1: %s", err)
+			}
+			offsetItemCoverage += read
+		}
+	}
+	{
+
 		if L := len(src); L < 6+arrayLengthItemSeqRuleSet*2 {
 			return item, 0, fmt.Errorf("reading ContextualPos1: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemSeqRuleSet*2, L)
 		}
@@ -853,24 +871,6 @@ func ParseContextualPos1(src []byte) (ContextualPos1, int, error) {
 		}
 		n += arrayLengthItemSeqRuleSet * 2
 	}
-	{
-
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ContextualPos1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading ContextualPos1: %s", err)
-			}
-			offsetItemCoverage += read
-		}
-	}
 	return item, n, nil
 }
 
@@ -887,33 +887,6 @@ func ParseContextualPos2(src []byte) (ContextualPos2, int, error) {
 	arrayLengthItemClassSeqRuleSet := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
-	{
-
-		if L := len(src); L < 8+arrayLengthItemClassSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ContextualPos2: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemClassSeqRuleSet*2, L)
-		}
-
-		item.ClassSeqRuleSet = make([]ClassSequenceRuleSet, arrayLengthItemClassSeqRuleSet) // allocation guarded by the previous check
-		for i := range item.ClassSeqRuleSet {
-			offset := int(binary.BigEndian.Uint16(src[8+i*2:]))
-			// ignore null offsets
-			if offset == 0 {
-				continue
-			}
-
-			if L := len(src); L < offset {
-				return item, 0, fmt.Errorf("reading ContextualPos2: "+"EOF: expected length: %d, got %d", offset, L)
-			}
-
-			var err error
-			item.ClassSeqRuleSet[i], _, err = ParseClassSequenceRuleSet(src[offset:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading ContextualPos2: %s", err)
-			}
-
-		}
-		n += arrayLengthItemClassSeqRuleSet * 2
-	}
 	{
 
 		if offsetItemCoverage != 0 { // ignore null offset
@@ -949,6 +922,33 @@ func ParseContextualPos2(src []byte) (ContextualPos2, int, error) {
 			}
 			offsetItemClassDef += read
 		}
+	}
+	{
+
+		if L := len(src); L < 8+arrayLengthItemClassSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ContextualPos2: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemClassSeqRuleSet*2, L)
+		}
+
+		item.ClassSeqRuleSet = make([]ClassSequenceRuleSet, arrayLengthItemClassSeqRuleSet) // allocation guarded by the previous check
+		for i := range item.ClassSeqRuleSet {
+			offset := int(binary.BigEndian.Uint16(src[8+i*2:]))
+			// ignore null offsets
+			if offset == 0 {
+				continue
+			}
+
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading ContextualPos2: "+"EOF: expected length: %d, got %d", offset, L)
+			}
+
+			var err error
+			item.ClassSeqRuleSet[i], _, err = ParseClassSequenceRuleSet(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading ContextualPos2: %s", err)
+			}
+
+		}
+		n += arrayLengthItemClassSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -1051,6 +1051,24 @@ func ParseCursivePos(src []byte) (CursivePos, int, error) {
 
 	{
 
+		if offsetItemcoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemcoverage {
+				return item, 0, fmt.Errorf("reading CursivePos: "+"EOF: expected length: %d, got %d", offsetItemcoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.coverage, read, err = ParseCoverage(src[offsetItemcoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading CursivePos: %s", err)
+			}
+			offsetItemcoverage += read
+		}
+	}
+	{
+
 		if L := len(src); L < 6+arrayLengthItementryExitRecords*4 {
 			return item, 0, fmt.Errorf("reading CursivePos: "+"EOF: expected length: %d, got %d", 6+arrayLengthItementryExitRecords*4, L)
 		}
@@ -1068,24 +1086,6 @@ func ParseCursivePos(src []byte) (CursivePos, int, error) {
 			return item, 0, fmt.Errorf("reading CursivePos: %s", err)
 		}
 		n = read
-	}
-	{
-
-		if offsetItemcoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemcoverage {
-				return item, 0, fmt.Errorf("reading CursivePos: "+"EOF: expected length: %d, got %d", offsetItemcoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.coverage, read, err = ParseCoverage(src[offsetItemcoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading CursivePos: %s", err)
-			}
-			offsetItemcoverage += read
-		}
 	}
 	return item, n, nil
 }
@@ -1621,6 +1621,24 @@ func ParsePairPosData1(src []byte) (PairPosData1, int, error) {
 
 	{
 
+		if offsetItemCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemCoverage {
+				return item, 0, fmt.Errorf("reading PairPosData1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading PairPosData1: %s", err)
+			}
+			offsetItemCoverage += read
+		}
+	}
+	{
+
 		if L := len(src); L < 10+arrayLengthItemPairSetOffset*2 {
 			return item, 0, fmt.Errorf("reading PairPosData1: "+"EOF: expected length: %d, got %d", 10+arrayLengthItemPairSetOffset*2, L)
 		}
@@ -1646,24 +1664,6 @@ func ParsePairPosData1(src []byte) (PairPosData1, int, error) {
 		}
 		n += arrayLengthItemPairSetOffset * 2
 	}
-	{
-
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading PairPosData1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading PairPosData1: %s", err)
-			}
-			offsetItemCoverage += read
-		}
-	}
 	return item, n, nil
 }
 
@@ -1684,14 +1684,6 @@ func ParsePairPosData2(src []byte) (PairPosData2, int, error) {
 	item.class2Count = binary.BigEndian.Uint16(src[14:])
 	n += 16
 
-	{
-
-		read, err := item.parseClass1Records(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading PairPosData2: %s", err)
-		}
-		n = read
-	}
 	{
 
 		if offsetItemCoverage != 0 { // ignore null offset
@@ -1745,6 +1737,14 @@ func ParsePairPosData2(src []byte) (PairPosData2, int, error) {
 			}
 			offsetItemclassDef2 += read
 		}
+	}
+	{
+
+		read, err := item.parseClass1Records(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading PairPosData2: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
@@ -1905,14 +1905,6 @@ func ParseSinglePosData1(src []byte) (SinglePosData1, int, error) {
 
 	{
 
-		read, err := item.parseValueRecord(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading SinglePosData1: %s", err)
-		}
-		n = read
-	}
-	{
-
 		if offsetItemCoverage != 0 { // ignore null offset
 			if L := len(src); L < offsetItemCoverage {
 				return item, 0, fmt.Errorf("reading SinglePosData1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
@@ -1928,6 +1920,14 @@ func ParseSinglePosData1(src []byte) (SinglePosData1, int, error) {
 			}
 			offsetItemCoverage += read
 		}
+	}
+	{
+
+		read, err := item.parseValueRecord(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading SinglePosData1: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
@@ -1947,14 +1947,6 @@ func ParseSinglePosData2(src []byte) (SinglePosData2, int, error) {
 
 	{
 
-		read, err := item.parseValueRecords(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading SinglePosData2: %s", err)
-		}
-		n = read
-	}
-	{
-
 		if offsetItemCoverage != 0 { // ignore null offset
 			if L := len(src); L < offsetItemCoverage {
 				return item, 0, fmt.Errorf("reading SinglePosData2: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
@@ -1970,6 +1962,14 @@ func ParseSinglePosData2(src []byte) (SinglePosData2, int, error) {
 			}
 			offsetItemCoverage += read
 		}
+	}
+	{
+
+		read, err := item.parseValueRecords(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading SinglePosData2: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }

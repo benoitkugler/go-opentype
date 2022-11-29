@@ -114,14 +114,6 @@ func ParseLayout(src []byte) (Layout, int, error) {
 
 	{
 
-		read, err := item.parseFeatureVariations(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Layout: %s", err)
-		}
-		n = read
-	}
-	{
-
 		if offsetItemscriptList != 0 { // ignore null offset
 			if L := len(src); L < offsetItemscriptList {
 				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offsetItemscriptList, L)
@@ -177,6 +169,14 @@ func ParseLayout(src []byte) (Layout, int, error) {
 
 		}
 	}
+	{
+
+		read, err := item.parseFeatureVariations(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading Layout: %s", err)
+		}
+		n = read
+	}
 	return item, n, nil
 }
 
@@ -231,6 +231,25 @@ func ParseScript(src []byte) (Script, int, error) {
 
 	{
 
+		if offsetItemDefaultLangSys != 0 { // ignore null offset
+			if L := len(src); L < offsetItemDefaultLangSys {
+				return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", offsetItemDefaultLangSys, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.DefaultLangSys, read, err = ParseLangSys(src[offsetItemDefaultLangSys:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading Script: %s", err)
+			}
+			offsetItemDefaultLangSys += read
+
+		}
+	}
+	{
+
 		if L := len(src); L < 4+arrayLengthItemlangSysRecords*6 {
 			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemlangSysRecords*6, L)
 		}
@@ -248,25 +267,6 @@ func ParseScript(src []byte) (Script, int, error) {
 			return item, 0, fmt.Errorf("reading Script: %s", err)
 		}
 		n = read
-	}
-	{
-
-		if offsetItemDefaultLangSys != 0 { // ignore null offset
-			if L := len(src); L < offsetItemDefaultLangSys {
-				return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", offsetItemDefaultLangSys, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.DefaultLangSys, read, err = ParseLangSys(src[offsetItemDefaultLangSys:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading Script: %s", err)
-			}
-			offsetItemDefaultLangSys += read
-
-		}
 	}
 	return item, n, nil
 }

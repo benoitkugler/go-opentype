@@ -39,6 +39,24 @@ func ParseAttachList(src []byte) (AttachList, int, error) {
 
 	{
 
+		if offsetItemCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemCoverage {
+				return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading AttachList: %s", err)
+			}
+			offsetItemCoverage += read
+		}
+	}
+	{
+
 		if L := len(src); L < 4+arrayLengthItemAttachPoints*2 {
 			return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemAttachPoints*2, L)
 		}
@@ -63,24 +81,6 @@ func ParseAttachList(src []byte) (AttachList, int, error) {
 
 		}
 		n += arrayLengthItemAttachPoints * 2
-	}
-	{
-
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading AttachList: %s", err)
-			}
-			offsetItemCoverage += read
-		}
 	}
 	return item, n, nil
 }
@@ -356,22 +356,6 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 
 	{
 
-		read, err := item.parseMarkGlyphSetsDef(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading GDEF: %s", err)
-		}
-		n = read
-	}
-	{
-
-		read, err := item.parseItemVarStore(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading GDEF: %s", err)
-		}
-		n = read
-	}
-	{
-
 		if offsetItemGlyphClassDef != 0 { // ignore null offset
 			if L := len(src); L < offsetItemGlyphClassDef {
 				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetItemGlyphClassDef, L)
@@ -444,6 +428,22 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 			offsetItemMarkAttachClass += read
 		}
 	}
+	{
+
+		read, err := item.parseMarkGlyphSetsDef(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading GDEF: %s", err)
+		}
+		n = read
+	}
+	{
+
+		read, err := item.parseItemVarStore(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading GDEF: %s", err)
+		}
+		n = read
+	}
 	return item, n, nil
 }
 
@@ -458,6 +458,24 @@ func ParseLigCaretList(src []byte) (LigCaretList, int, error) {
 	arrayLengthItemLigGlyphs := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
+	{
+
+		if offsetItemCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetItemCoverage {
+				return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading LigCaretList: %s", err)
+			}
+			offsetItemCoverage += read
+		}
+	}
 	{
 
 		if L := len(src); L < 4+arrayLengthItemLigGlyphs*2 {
@@ -484,24 +502,6 @@ func ParseLigCaretList(src []byte) (LigCaretList, int, error) {
 
 		}
 		n += arrayLengthItemLigGlyphs * 2
-	}
-	{
-
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading LigCaretList: %s", err)
-			}
-			offsetItemCoverage += read
-		}
 	}
 	return item, n, nil
 }

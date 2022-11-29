@@ -130,6 +130,17 @@ func ParseGlyphVariationData(src []byte, axisCount int) (GlyphVariationData, int
 	n += 4
 
 	{
+
+		if offsetItemSerializedData != 0 { // ignore null offset
+			if L := len(src); L < offsetItemSerializedData {
+				return item, 0, fmt.Errorf("reading GlyphVariationData: "+"EOF: expected length: %d, got %d", offsetItemSerializedData, L)
+			}
+
+			item.SerializedData = src[offsetItemSerializedData:]
+			offsetItemSerializedData = len(src)
+		}
+	}
+	{
 		arrayLength := int(item.tupleVariationCount & 0x0FFF)
 
 		offset := 4
@@ -142,17 +153,6 @@ func ParseGlyphVariationData(src []byte, axisCount int) (GlyphVariationData, int
 			offset += read
 		}
 		n = offset
-	}
-	{
-
-		if offsetItemSerializedData != 0 { // ignore null offset
-			if L := len(src); L < offsetItemSerializedData {
-				return item, 0, fmt.Errorf("reading GlyphVariationData: "+"EOF: expected length: %d, got %d", offsetItemSerializedData, L)
-			}
-
-			item.SerializedData = src[offsetItemSerializedData:]
-			offsetItemSerializedData = len(src)
-		}
 	}
 	return item, n, nil
 }
@@ -176,22 +176,6 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 
 	{
 
-		read, err := item.parseGlyphVariationDataOffsets(src[20:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Gvar: %s", err)
-		}
-		n += read
-	}
-	{
-
-		read, err := item.parseGlyphVariationDatas(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading Gvar: %s", err)
-		}
-		n = read
-	}
-	{
-
 		if offsetItemSharedTuples != 0 { // ignore null offset
 			if L := len(src); L < offsetItemSharedTuples {
 				return item, 0, fmt.Errorf("reading Gvar: "+"EOF: expected length: %d, got %d", offsetItemSharedTuples, L)
@@ -208,6 +192,22 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 			offsetItemSharedTuples += read
 
 		}
+	}
+	{
+
+		read, err := item.parseGlyphVariationDataOffsets(src[20:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading Gvar: %s", err)
+		}
+		n += read
+	}
+	{
+
+		read, err := item.parseGlyphVariationDatas(src[:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading Gvar: %s", err)
+		}
+		n = read
 	}
 	return item, n, nil
 }
@@ -354,6 +354,25 @@ func ParseItemVarStore(src []byte) (ItemVarStore, int, error) {
 
 	{
 
+		if offsetItemVariationRegionList != 0 { // ignore null offset
+			if L := len(src); L < offsetItemVariationRegionList {
+				return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", offsetItemVariationRegionList, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.VariationRegionList, read, err = ParseVariationRegionList(src[offsetItemVariationRegionList:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading ItemVarStore: %s", err)
+			}
+			offsetItemVariationRegionList += read
+
+		}
+	}
+	{
+
 		if L := len(src); L < 8+arrayLengthItemItemVariationDatas*4 {
 			return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemItemVariationDatas*4, L)
 		}
@@ -378,25 +397,6 @@ func ParseItemVarStore(src []byte) (ItemVarStore, int, error) {
 
 		}
 		n += arrayLengthItemItemVariationDatas * 4
-	}
-	{
-
-		if offsetItemVariationRegionList != 0 { // ignore null offset
-			if L := len(src); L < offsetItemVariationRegionList {
-				return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", offsetItemVariationRegionList, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.VariationRegionList, read, err = ParseVariationRegionList(src[offsetItemVariationRegionList:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading ItemVarStore: %s", err)
-			}
-			offsetItemVariationRegionList += read
-
-		}
 	}
 	return item, n, nil
 }
@@ -454,14 +454,6 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 
 	{
 
-		read, err := item.parseValueRecords(src[12:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading MVAR: %s", err)
-		}
-		n += read
-	}
-	{
-
 		if offsetItemItemVariationStore != 0 { // ignore null offset
 			if L := len(src); L < offsetItemItemVariationStore {
 				return item, 0, fmt.Errorf("reading MVAR: "+"EOF: expected length: %d, got %d", offsetItemItemVariationStore, L)
@@ -478,6 +470,14 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 			offsetItemItemVariationStore += read
 
 		}
+	}
+	{
+
+		read, err := item.parseValueRecords(src[12:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading MVAR: %s", err)
+		}
+		n += read
 	}
 	return item, n, nil
 }

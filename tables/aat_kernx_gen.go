@@ -136,11 +136,6 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 
 	{
 
-		item.rawData = src[0:]
-		n = len(src)
-	}
-	{
-
 		if offsetItemleft != 0 { // ignore null offset
 			if L := len(src); L < offsetItemleft {
 				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetItemleft, L)
@@ -176,6 +171,11 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 			offsetItemright += read
 
 		}
+	}
+	{
+
+		item.rawData = src[0:]
+		n = len(src)
 	}
 	return item, n, nil
 }
