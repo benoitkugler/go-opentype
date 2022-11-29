@@ -70,10 +70,44 @@ func ParseSVGDocumentList(src []byte) (SVGDocumentList, int, error) {
 	return item, n, nil
 }
 
+func ParseVORG(src []byte) (VORG, int, error) {
+	var item VORG
+	n := 0
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading VORG: "+"EOF: expected length: 8, got %d", L)
+	}
+	_ = src[7] // early bound checking
+	item.majorVersion = binary.BigEndian.Uint16(src[0:])
+	item.minorVersion = binary.BigEndian.Uint16(src[2:])
+	item.DefaultVertOriginY = int16(binary.BigEndian.Uint16(src[4:]))
+	arrayLengthItemVertOriginYMetrics := int(binary.BigEndian.Uint16(src[6:]))
+	n += 8
+
+	{
+
+		if L := len(src); L < 8+arrayLengthItemVertOriginYMetrics*4 {
+			return item, 0, fmt.Errorf("reading VORG: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemVertOriginYMetrics*4, L)
+		}
+
+		item.VertOriginYMetrics = make([]VertOriginYMetric, arrayLengthItemVertOriginYMetrics) // allocation guarded by the previous check
+		for i := range item.VertOriginYMetrics {
+			item.VertOriginYMetrics[i].mustParse(src[8+i*4:])
+		}
+		n += arrayLengthItemVertOriginYMetrics * 4
+	}
+	return item, n, nil
+}
+
 func (item *SVGDocumentRecord) mustParse(src []byte) {
 	_ = src[11] // early bound checking
 	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
 	item.SvgDocOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
 	item.SvgDocLength = binary.BigEndian.Uint32(src[8:])
+}
+
+func (item *VertOriginYMetric) mustParse(src []byte) {
+	_ = src[3] // early bound checking
+	item.GlyphIndex = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.VertOriginY = int16(binary.BigEndian.Uint16(src[2:]))
 }

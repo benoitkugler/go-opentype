@@ -1,9 +1,12 @@
 package tables
 
 import (
+	"bytes"
+	"encoding/base64"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
+	"github.com/benoitkugler/go-opentype/opentype"
 )
 
 func TestParseGlyf(t *testing.T) {
@@ -37,5 +40,55 @@ func TestParseSbix(t *testing.T) {
 
 		assertNoErr(t, err)
 		assert(t, len(sbix.Strikes) == file.StrikesNumber)
+	}
+}
+
+func TestParseCBLC(t *testing.T) {
+	for _, file := range td.WithCBLC {
+		fp := readFontFile(t, file.Path)
+
+		cblc, _, err := ParseCBLC(readTable(t, fp, "CBLC"))
+		assertNoErr(t, err)
+
+		assertNoErr(t, err)
+		assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
+	}
+
+	// The following sample has subtable format 3, and is copied from
+	// https://github.com/fonttools/fonttools/blob/main/Tests/ttLib/tables/C_B_L_C_test.py
+	cblcSample, err := base64.StdEncoding.DecodeString("AAMAAAAAAAEAAAA4AAAALAAAAAIAAAAAZeWIAAAAAAAAAAAAZeWIAAAAAAAAAAAAAAEAA" +
+		"21tIAEAAQACAAAAEAADAAMAAAAgAAMAEQAAAAQAAAOmEQ0AAAADABEAABERAAAIUg==")
+	assertNoErr(t, err)
+	cblc, _, err := ParseCBLC(cblcSample)
+	assertNoErr(t, err)
+	assert(t, len(cblc.BitmapSizes) == 1)
+}
+
+func TestParseEBLC(t *testing.T) {
+	for _, file := range td.WithEBLC {
+		fp := readFontFile(t, file.Path)
+
+		cblc, _, err := ParseCBLC(readTable(t, fp, "EBLC"))
+		assertNoErr(t, err)
+
+		assertNoErr(t, err)
+		assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
+	}
+}
+
+func TestParseVORG(t *testing.T) {
+	filename := "collections/NotoSansCJK-Bold.ttc"
+
+	file, err := td.Files.ReadFile(filename)
+	assertNoErr(t, err)
+
+	fonts, err := opentype.NewLoaders(bytes.NewReader(file))
+	assertNoErr(t, err)
+
+	for _, fp := range fonts {
+		vorg, _, err := ParseVORG(readTable(t, fp, "VORG"))
+		assertNoErr(t, err)
+		assert(t, len(vorg.VertOriginYMetrics) == 233)
+		assert(t, vorg.DefaultVertOriginY == 880)
 	}
 }

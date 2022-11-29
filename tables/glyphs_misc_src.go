@@ -26,3 +26,17 @@ type SVGDocumentRecord struct {
 // its interpretation is handled externally (see font/cff).
 // See also https://learn.microsoft.com/fr-fr/typography/opentype/spec/cff
 type CFF = []byte
+
+// VORG is the Vertical Origin Table
+// See - https://learn.microsoft.com/fr-fr/typography/opentype/spec/vorg
+type VORG struct {
+	majorVersion       uint16              //	Major version (starting at 1). Set to 1.
+	minorVersion       uint16              //	Minor version (starting at 0). Set to 0.
+	DefaultVertOriginY int16               //	The y coordinate of a glyph’s vertical origin, in the font’s design coordinate system, to be used if no entry is present for the glyph in the vertOriginYMetrics array.
+	VertOriginYMetrics []VertOriginYMetric `arrayCount:"FirstUint16"`
+}
+
+type VertOriginYMetric struct {
+	GlyphIndex  GlyphID //  Glyph index.
+	VertOriginY int16   //  Y coordinate, in the font’s design coordinate system, of the vertical origin of glyph with index glyphIndex.
+}
