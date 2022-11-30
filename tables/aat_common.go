@@ -10,12 +10,7 @@ type binSearchHeader struct {
 	rangeShift    uint16 // The value of unitSize times the difference of the value of nUnits minus the largest power of 2 less than or equal to the value of nUnits.
 }
 
-type aatLookup struct {
-	version aatLookupVersion
-	table   aatLookupTable `unionField:"version"`
-}
-
-type aatLookupTable interface {
+type aatLookup interface {
 	isAATLookupTable()
 }
 
@@ -26,78 +21,65 @@ func (aatLookupTable6) isAATLookupTable()  {}
 func (aatLookupTable8) isAATLookupTable()  {}
 func (aatLookupTable10) isAATLookupTable() {}
 
-type aatLookupVersion uint16
-
-const (
-	aatLookupTableVersion0  aatLookupVersion = 0
-	aatLookupTableVersion2  aatLookupVersion = 2
-	aatLookupTableVersion4  aatLookupVersion = 4
-	aatLookupTableVersion6  aatLookupVersion = 6
-	aatLookupTableVersion8  aatLookupVersion = 8
-	aatLookupTableVersion10 aatLookupVersion = 10
-)
-
 type aatLookupTable0 struct {
-	values []uint16 `arrayCount:""`
+	version uint16   `unionTag:"0"`
+	Values  []uint16 `arrayCount:""`
 }
 
 type aatLookupTable2 struct {
+	version uint16 `unionTag:"2"`
 	binSearchHeader
-	records []lookupRecord2 `arrayCount:"ComputedField-nUnits"`
+	Records []lookupRecord2 `arrayCount:"ComputedField-nUnits"`
 }
 
 type lookupRecord2 struct {
-	lastGlyph  GlyphID
-	firstGlyph GlyphID
-	value      uint16
+	LastGlyph  GlyphID
+	FirstGlyph GlyphID
+	Value      uint16
 }
 
 type aatLookupTable4 struct {
+	version uint16 `unionTag:"4"`
 	binSearchHeader
-	records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
-	rawData []byte           `arrayCount:"ToEnd"`
+	Records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
 }
 
 type loopkupRecord4 struct {
-	lastGlyph  GlyphID
-	firstGlyph GlyphID
+	LastGlyph  GlyphID
+	FirstGlyph GlyphID
 	// offset to an array of []uint16 (or []uint32 for extended) with length last - first + 1
-	offsetToValues uint16
+	Values []uint16 `offsetSize:"Offset16" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nValues()"`
 }
 
+func (lk loopkupRecord4) nValues() int { return int(lk.LastGlyph) - int(lk.FirstGlyph) + 1 }
+
 type aatLookupTable6 struct {
+	version uint16 `unionTag:"6"`
 	binSearchHeader
-	records []loopkupRecord6 `arrayCount:"ComputedField-nUnits"`
+	Records []loopkupRecord6 `arrayCount:"ComputedField-nUnits"`
 }
 
 type loopkupRecord6 struct {
-	glyph GlyphID
-	value uint16
+	Glyph GlyphID
+	Value uint16
 }
 
 type aatLookupTable8 struct {
-	firstGlyph GlyphID
-	values     []uint16 `arrayCount:"FirstUint16"`
+	version    uint16 `unionTag:"8"`
+	FirstGlyph GlyphID
+	Values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTable10 struct {
+	version    uint16 `unionTag:"10"`
 	unitSize   uint16
-	firstGlyph GlyphID
-	values     []uint16 `arrayCount:"FirstUint16"`
-}
-
-type aatExtendedLookupTable struct {
-	version uint16
+	FirstGlyph GlyphID
+	Values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 // extended versions
 
-type aatLookupExt struct {
-	version aatLookupVersion
-	table   aatLookupTableExt `unionField:"version"`
-}
-
-type aatLookupTableExt interface {
+type aatLookupExt interface {
 	isAATLookupTableExt()
 }
 
@@ -109,44 +91,56 @@ func (aatLookupTableExt8) isAATLookupTableExt()  {}
 func (aatLookupTableExt10) isAATLookupTableExt() {}
 
 type aatLookupTableExt0 struct {
-	values []uint32 `arrayCount:""`
+	version uint16   `unionTag:"0"`
+	Values  []uint32 `arrayCount:""`
 }
 
 type aatLookupTableExt2 struct {
+	version uint16 `unionTag:"2"`
 	binSearchHeader
-	records []lookupRecordExt2 `arrayCount:"ComputedField-nUnits"`
+	Records []lookupRecordExt2 `arrayCount:"ComputedField-nUnits"`
 }
 
 type lookupRecordExt2 struct {
-	lastGlyph  GlyphID
-	firstGlyph GlyphID
-	value      uint32
+	LastGlyph  GlyphID
+	FirstGlyph GlyphID
+	Value      uint32
 }
 
 type aatLookupTableExt4 struct {
+	version uint16 `unionTag:"4"`
 	binSearchHeader
 	// the values pointed by the record are uint32
-	records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
-	rawData []byte           `arrayCount:"ToEnd"`
+	Records []loopkupRecordExt4 `arrayCount:"ComputedField-nUnits"`
+}
+
+type loopkupRecordExt4 struct {
+	LastGlyph  GlyphID
+	FirstGlyph GlyphID
+	// offset to an array of []uint16 (or []uint32 for extended) with length last - first + 1
+	Values []uint32 `offsetSize:"Offset16" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nValues()"`
 }
 
 type aatLookupTableExt6 struct {
+	version uint16 `unionTag:"6"`
 	binSearchHeader
-	records []loopkupRecordExt6 `arrayCount:"ComputedField-nUnits"`
+	Records []loopkupRecordExt6 `arrayCount:"ComputedField-nUnits"`
 }
 
 type loopkupRecordExt6 struct {
-	glyph GlyphID
-	value uint32
+	Glyph GlyphID
+	Value uint32
 }
 
 type aatLookupTableExt8 struct {
-	firstGlyph GlyphID
-	values     []uint16 `arrayCount:"FirstUint16"`
+	version    uint16 `unionTag:"8"`
+	FirstGlyph GlyphID
+	Values     []uint16 `arrayCount:"FirstUint16"`
 }
 
 type aatLookupTableExt10 struct {
+	version    uint16 `unionTag:"10"`
 	unitSize   uint16
-	firstGlyph GlyphID
-	values     []uint32 `arrayCount:"FirstUint16"`
+	FirstGlyph GlyphID
+	Values     []uint32 `arrayCount:"FirstUint16"`
 }

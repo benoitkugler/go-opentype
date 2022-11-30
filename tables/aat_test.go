@@ -51,5 +51,6 @@ func TestParseAnkr(t *testing.T) {
 	ankr, _, err := ParseAnkr(table, 1409)
 	assertNoErr(t, err)
 
-	assert(t, ankr.LookupTable.version == 4)
+	_, isFormat4 := ankr.LookupTable.(aatLookupTable4)
+	assert(t, isFormat4)
 }
