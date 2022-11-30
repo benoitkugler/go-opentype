@@ -96,23 +96,6 @@ func TestParseBasicTables(t *testing.T) {
 	}
 }
 
-func TestParseAATMorx(t *testing.T) {
-	files := filenames(t, "morx")
-	for _, filename := range files {
-		fp := readFontFile(t, filename)
-		table, _, err := ParseMorx(readTable(t, fp, "morx"))
-		assertNoErr(t, err)
-		assert(t, int(table.nChains) == len(table.chains))
-
-		ng := numGlyphs(t, fp)
-		for _, chain := range table.chains {
-			subtables, err := chain.process(ng)
-			assertNoErr(t, err)
-			assert(t, len(subtables) == int(chain.nSubtable))
-		}
-	}
-}
-
 func TestParseCmap(t *testing.T) {
 	// general parsing
 	for _, filename := range filenames(t, "common") {

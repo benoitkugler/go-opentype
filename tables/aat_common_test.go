@@ -54,3 +54,22 @@ func TestParseAnkr(t *testing.T) {
 	_, isFormat4 := ankr.LookupTable.(AATLoopkup4)
 	assert(t, isFormat4)
 }
+
+func TestParseMorx(t *testing.T) {
+	files := filenames(t, "morx")
+	for _, filename := range files {
+		fp := readFontFile(t, filename)
+		ng := numGlyphs(t, fp)
+
+		table, _, err := ParseMorx(readTable(t, fp, "morx"), ng)
+		assertNoErr(t, err)
+		assert(t, int(table.nChains) == len(table.Chains))
+		assert(t, int(table.nChains) == 1)
+
+		for _, chain := range table.Chains {
+			assertNoErr(t, err)
+			assert(t, len(chain.Subtables) == int(chain.nSubtable))
+			assert(t, chain.Flags == 1)
+		}
+	}
+}

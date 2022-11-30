@@ -115,6 +115,16 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetLeft, L)
 			}
 
+			var (
+				err  error
+				read int
+			)
+			item.left, read, err = ParseAATLoopkup8(src[offsetLeft:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offsetLeft += read
+
 		}
 	}
 	{
@@ -123,6 +133,16 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 			if L := len(src); L < offsetRight {
 				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetRight, L)
 			}
+
+			var (
+				err  error
+				read int
+			)
+			item.right, read, err = ParseAATLoopkup8(src[offsetRight:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
+			}
+			offsetRight += read
 
 		}
 	}
