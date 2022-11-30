@@ -13,6 +13,201 @@ func (item *AnrkAnchor) mustParse(src []byte) {
 	item.Y = int16(binary.BigEndian.Uint16(src[2:]))
 }
 
+func ParseAATLookup(src []byte, valuesCount int) (AATLookup, int, error) {
+	var item AATLookup
+
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading AATLookup: "+"EOF: expected length: 2, got %d", L)
+	}
+	format := uint16(binary.BigEndian.Uint16(src[0:]))
+	var (
+		read int
+		err  error
+	)
+	switch format {
+	case 0:
+		item, read, err = ParseAATLoopkup0(src[0:], valuesCount)
+	case 10:
+		item, read, err = ParseAATLoopkup10(src[0:])
+	case 2:
+		item, read, err = ParseAATLoopkup2(src[0:])
+	case 4:
+		item, read, err = ParseAATLoopkup4(src[0:])
+	case 6:
+		item, read, err = ParseAATLoopkup6(src[0:])
+	case 8:
+		item, read, err = ParseAATLoopkup8(src[0:])
+	default:
+		err = fmt.Errorf("unsupported AATLookup format %d", format)
+	}
+	if err != nil {
+		return item, 0, fmt.Errorf("reading AATLookup: %s", err)
+	}
+
+	return item, read, nil
+}
+
+func ParseAATLoopkup0(src []byte, valuesCount int) (AATLoopkup0, int, error) {
+	var item AATLoopkup0
+	n := 0
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading AATLoopkup0: "+"EOF: expected length: 2, got %d", L)
+	}
+	item.version = binary.BigEndian.Uint16(src[0:])
+	n += 2
+
+	{
+
+		if L := len(src); L < 2+valuesCount*2 {
+			return item, 0, fmt.Errorf("reading AATLoopkup0: "+"EOF: expected length: %d, got %d", 2+valuesCount*2, L)
+		}
+
+		item.Values = make([]uint16, valuesCount) // allocation guarded by the previous check
+		for i := range item.Values {
+			item.Values[i] = binary.BigEndian.Uint16(src[2+i*2:])
+		}
+		n += valuesCount * 2
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup10(src []byte) (AATLoopkup10, int, error) {
+	var item AATLoopkup10
+	n := 0
+	if L := len(src); L < 8 {
+		return item, 0, fmt.Errorf("reading AATLoopkup10: "+"EOF: expected length: 8, got %d", L)
+	}
+	_ = src[7] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.unitSize = binary.BigEndian.Uint16(src[2:])
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[4:]))
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[6:]))
+	n += 8
+
+	{
+
+		if L := len(src); L < 8+arrayLengthValues*2 {
+			return item, 0, fmt.Errorf("reading AATLoopkup10: "+"EOF: expected length: %d, got %d", 8+arrayLengthValues*2, L)
+		}
+
+		item.Values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
+		for i := range item.Values {
+			item.Values[i] = binary.BigEndian.Uint16(src[8+i*2:])
+		}
+		n += arrayLengthValues * 2
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup2(src []byte) (AATLoopkup2, int, error) {
+	var item AATLoopkup2
+	n := 0
+	if L := len(src); L < 12 {
+		return item, 0, fmt.Errorf("reading AATLoopkup2: "+"EOF: expected length: 12, got %d", L)
+	}
+	_ = src[11] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.binSearchHeader.mustParse(src[2:])
+	n += 12
+
+	{
+		arrayLength := int(item.nUnits)
+
+		if L := len(src); L < 12+arrayLength*6 {
+			return item, 0, fmt.Errorf("reading AATLoopkup2: "+"EOF: expected length: %d, got %d", 12+arrayLength*6, L)
+		}
+
+		item.Records = make([]lookupRecord2, arrayLength) // allocation guarded by the previous check
+		for i := range item.Records {
+			item.Records[i].mustParse(src[12+i*6:])
+		}
+		n += arrayLength * 6
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup4(src []byte) (AATLoopkup4, int, error) {
+	var item AATLoopkup4
+	n := 0
+	if L := len(src); L < 12 {
+		return item, 0, fmt.Errorf("reading AATLoopkup4: "+"EOF: expected length: 12, got %d", L)
+	}
+	_ = src[11] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.binSearchHeader.mustParse(src[2:])
+	n += 12
+
+	{
+		arrayLength := int(item.nUnits)
+
+		offset := 12
+		for i := 0; i < arrayLength; i++ {
+			elem, read, err := parseLoopkupRecord4(src[offset:], src)
+			if err != nil {
+				return item, 0, fmt.Errorf("reading AATLoopkup4: %s", err)
+			}
+			item.Records = append(item.Records, elem)
+			offset += read
+		}
+		n = offset
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup6(src []byte) (AATLoopkup6, int, error) {
+	var item AATLoopkup6
+	n := 0
+	if L := len(src); L < 12 {
+		return item, 0, fmt.Errorf("reading AATLoopkup6: "+"EOF: expected length: 12, got %d", L)
+	}
+	_ = src[11] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.binSearchHeader.mustParse(src[2:])
+	n += 12
+
+	{
+		arrayLength := int(item.nUnits)
+
+		if L := len(src); L < 12+arrayLength*4 {
+			return item, 0, fmt.Errorf("reading AATLoopkup6: "+"EOF: expected length: %d, got %d", 12+arrayLength*4, L)
+		}
+
+		item.Records = make([]loopkupRecord6, arrayLength) // allocation guarded by the previous check
+		for i := range item.Records {
+			item.Records[i].mustParse(src[12+i*4:])
+		}
+		n += arrayLength * 4
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup8(src []byte) (AATLoopkup8, int, error) {
+	var item AATLoopkup8
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading AATLoopkup8: "+"EOF: expected length: 6, got %d", L)
+	}
+	_ = src[5] // early bound checking
+	item.version = binary.BigEndian.Uint16(src[0:])
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[4:]))
+	n += 6
+
+	{
+
+		if L := len(src); L < 6+arrayLengthValues*2 {
+			return item, 0, fmt.Errorf("reading AATLoopkup8: "+"EOF: expected length: %d, got %d", 6+arrayLengthValues*2, L)
+		}
+
+		item.Values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
+		for i := range item.Values {
+			item.Values[i] = binary.BigEndian.Uint16(src[6+i*2:])
+		}
+		n += arrayLengthValues * 2
+	}
+	return item, n, nil
+}
+
 func ParseAnkr(src []byte, valuesCount int) (Ankr, int, error) {
 	var item Ankr
 	n := 0
@@ -37,7 +232,7 @@ func ParseAnkr(src []byte, valuesCount int) (Ankr, int, error) {
 				err  error
 				read int
 			)
-			item.LookupTable, read, err = parseAatLookup(src[offsetLookupTable:], valuesCount)
+			item.LookupTable, read, err = ParseAATLookup(src[offsetLookupTable:], valuesCount)
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Ankr: %s", err)
 			}
@@ -89,201 +284,6 @@ func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.Glyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	item.Value = binary.BigEndian.Uint16(src[2:])
-}
-
-func parseAatLookup(src []byte, valuesCount int) (aatLookup, int, error) {
-	var item aatLookup
-
-	if L := len(src); L < 2 {
-		return item, 0, fmt.Errorf("reading aatLookup: "+"EOF: expected length: 2, got %d", L)
-	}
-	format := uint16(binary.BigEndian.Uint16(src[0:]))
-	var (
-		read int
-		err  error
-	)
-	switch format {
-	case 0:
-		item, read, err = parseAatLookupTable0(src[0:], valuesCount)
-	case 10:
-		item, read, err = parseAatLookupTable10(src[0:])
-	case 2:
-		item, read, err = parseAatLookupTable2(src[0:])
-	case 4:
-		item, read, err = parseAatLookupTable4(src[0:])
-	case 6:
-		item, read, err = parseAatLookupTable6(src[0:])
-	case 8:
-		item, read, err = parseAatLookupTable8(src[0:])
-	default:
-		err = fmt.Errorf("unsupported aatLookup format %d", format)
-	}
-	if err != nil {
-		return item, 0, fmt.Errorf("reading aatLookup: %s", err)
-	}
-
-	return item, read, nil
-}
-
-func parseAatLookupTable0(src []byte, valuesCount int) (aatLookupTable0, int, error) {
-	var item aatLookupTable0
-	n := 0
-	if L := len(src); L < 2 {
-		return item, 0, fmt.Errorf("reading aatLookupTable0: "+"EOF: expected length: 2, got %d", L)
-	}
-	item.version = binary.BigEndian.Uint16(src[0:])
-	n += 2
-
-	{
-
-		if L := len(src); L < 2+valuesCount*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable0: "+"EOF: expected length: %d, got %d", 2+valuesCount*2, L)
-		}
-
-		item.Values = make([]uint16, valuesCount) // allocation guarded by the previous check
-		for i := range item.Values {
-			item.Values[i] = binary.BigEndian.Uint16(src[2+i*2:])
-		}
-		n += valuesCount * 2
-	}
-	return item, n, nil
-}
-
-func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
-	var item aatLookupTable10
-	n := 0
-	if L := len(src); L < 8 {
-		return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: 8, got %d", L)
-	}
-	_ = src[7] // early bound checking
-	item.version = binary.BigEndian.Uint16(src[0:])
-	item.unitSize = binary.BigEndian.Uint16(src[2:])
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[4:]))
-	arrayLengthValues := int(binary.BigEndian.Uint16(src[6:]))
-	n += 8
-
-	{
-
-		if L := len(src); L < 8+arrayLengthValues*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 8+arrayLengthValues*2, L)
-		}
-
-		item.Values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
-		for i := range item.Values {
-			item.Values[i] = binary.BigEndian.Uint16(src[8+i*2:])
-		}
-		n += arrayLengthValues * 2
-	}
-	return item, n, nil
-}
-
-func parseAatLookupTable2(src []byte) (aatLookupTable2, int, error) {
-	var item aatLookupTable2
-	n := 0
-	if L := len(src); L < 12 {
-		return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: 12, got %d", L)
-	}
-	_ = src[11] // early bound checking
-	item.version = binary.BigEndian.Uint16(src[0:])
-	item.binSearchHeader.mustParse(src[2:])
-	n += 12
-
-	{
-		arrayLength := int(item.nUnits)
-
-		if L := len(src); L < 12+arrayLength*6 {
-			return item, 0, fmt.Errorf("reading aatLookupTable2: "+"EOF: expected length: %d, got %d", 12+arrayLength*6, L)
-		}
-
-		item.Records = make([]lookupRecord2, arrayLength) // allocation guarded by the previous check
-		for i := range item.Records {
-			item.Records[i].mustParse(src[12+i*6:])
-		}
-		n += arrayLength * 6
-	}
-	return item, n, nil
-}
-
-func parseAatLookupTable4(src []byte) (aatLookupTable4, int, error) {
-	var item aatLookupTable4
-	n := 0
-	if L := len(src); L < 12 {
-		return item, 0, fmt.Errorf("reading aatLookupTable4: "+"EOF: expected length: 12, got %d", L)
-	}
-	_ = src[11] // early bound checking
-	item.version = binary.BigEndian.Uint16(src[0:])
-	item.binSearchHeader.mustParse(src[2:])
-	n += 12
-
-	{
-		arrayLength := int(item.nUnits)
-
-		offset := 12
-		for i := 0; i < arrayLength; i++ {
-			elem, read, err := parseLoopkupRecord4(src[offset:], src)
-			if err != nil {
-				return item, 0, fmt.Errorf("reading aatLookupTable4: %s", err)
-			}
-			item.Records = append(item.Records, elem)
-			offset += read
-		}
-		n = offset
-	}
-	return item, n, nil
-}
-
-func parseAatLookupTable6(src []byte) (aatLookupTable6, int, error) {
-	var item aatLookupTable6
-	n := 0
-	if L := len(src); L < 12 {
-		return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: 12, got %d", L)
-	}
-	_ = src[11] // early bound checking
-	item.version = binary.BigEndian.Uint16(src[0:])
-	item.binSearchHeader.mustParse(src[2:])
-	n += 12
-
-	{
-		arrayLength := int(item.nUnits)
-
-		if L := len(src); L < 12+arrayLength*4 {
-			return item, 0, fmt.Errorf("reading aatLookupTable6: "+"EOF: expected length: %d, got %d", 12+arrayLength*4, L)
-		}
-
-		item.Records = make([]loopkupRecord6, arrayLength) // allocation guarded by the previous check
-		for i := range item.Records {
-			item.Records[i].mustParse(src[12+i*4:])
-		}
-		n += arrayLength * 4
-	}
-	return item, n, nil
-}
-
-func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
-	var item aatLookupTable8
-	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 6, got %d", L)
-	}
-	_ = src[5] // early bound checking
-	item.version = binary.BigEndian.Uint16(src[0:])
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthValues := int(binary.BigEndian.Uint16(src[4:]))
-	n += 6
-
-	{
-
-		if L := len(src); L < 6+arrayLengthValues*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 6+arrayLengthValues*2, L)
-		}
-
-		item.Values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
-		for i := range item.Values {
-			item.Values[i] = binary.BigEndian.Uint16(src[6+i*2:])
-		}
-		n += arrayLengthValues * 2
-	}
-	return item, n, nil
 }
 
 func parseLoopkupRecord4(src []byte, parentSrc []byte) (loopkupRecord4, int, error) {

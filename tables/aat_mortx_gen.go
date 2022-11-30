@@ -199,7 +199,7 @@ func parseMorxSubtableNonContextual(src []byte, valuesCount int) (morxSubtableNo
 			err  error
 			read int
 		)
-		item.table, read, err = parseAatLookup(src[0:], valuesCount)
+		item.table, read, err = ParseAATLookup(src[0:], valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading morxSubtableNonContextual: %s", err)
 		}

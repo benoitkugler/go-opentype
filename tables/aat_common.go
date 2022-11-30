@@ -10,23 +10,23 @@ type binSearchHeader struct {
 	rangeShift    uint16 // The value of unitSize times the difference of the value of nUnits minus the largest power of 2 less than or equal to the value of nUnits.
 }
 
-type aatLookup interface {
-	isAATLookupTable()
+type AATLookup interface {
+	isAATLookup()
 }
 
-func (aatLookupTable0) isAATLookupTable()  {}
-func (aatLookupTable2) isAATLookupTable()  {}
-func (aatLookupTable4) isAATLookupTable()  {}
-func (aatLookupTable6) isAATLookupTable()  {}
-func (aatLookupTable8) isAATLookupTable()  {}
-func (aatLookupTable10) isAATLookupTable() {}
+func (AATLoopkup0) isAATLookup()  {}
+func (AATLoopkup2) isAATLookup()  {}
+func (AATLoopkup4) isAATLookup()  {}
+func (AATLoopkup6) isAATLookup()  {}
+func (AATLoopkup8) isAATLookup()  {}
+func (AATLoopkup10) isAATLookup() {}
 
-type aatLookupTable0 struct {
+type AATLoopkup0 struct {
 	version uint16   `unionTag:"0"`
 	Values  []uint16 `arrayCount:""`
 }
 
-type aatLookupTable2 struct {
+type AATLoopkup2 struct {
 	version uint16 `unionTag:"2"`
 	binSearchHeader
 	Records []lookupRecord2 `arrayCount:"ComputedField-nUnits"`
@@ -38,7 +38,7 @@ type lookupRecord2 struct {
 	Value      uint16
 }
 
-type aatLookupTable4 struct {
+type AATLoopkup4 struct {
 	version uint16 `unionTag:"4"`
 	binSearchHeader
 	Records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
@@ -53,7 +53,7 @@ type loopkupRecord4 struct {
 
 func (lk loopkupRecord4) nValues() int { return int(lk.LastGlyph) - int(lk.FirstGlyph) + 1 }
 
-type aatLookupTable6 struct {
+type AATLoopkup6 struct {
 	version uint16 `unionTag:"6"`
 	binSearchHeader
 	Records []loopkupRecord6 `arrayCount:"ComputedField-nUnits"`
@@ -64,13 +64,13 @@ type loopkupRecord6 struct {
 	Value uint16
 }
 
-type aatLookupTable8 struct {
+type AATLoopkup8 struct {
 	version    uint16 `unionTag:"8"`
 	FirstGlyph GlyphID
 	Values     []uint16 `arrayCount:"FirstUint16"`
 }
 
-type aatLookupTable10 struct {
+type AATLoopkup10 struct {
 	version    uint16 `unionTag:"10"`
 	unitSize   uint16
 	FirstGlyph GlyphID
@@ -79,23 +79,23 @@ type aatLookupTable10 struct {
 
 // extended versions
 
-type aatLookupExt interface {
-	isAATLookupTableExt()
+type AATLookupExt interface {
+	isAATLookupExt()
 }
 
-func (aatLookupTableExt0) isAATLookupTableExt()  {}
-func (aatLookupTableExt2) isAATLookupTableExt()  {}
-func (aatLookupTableExt4) isAATLookupTableExt()  {}
-func (aatLookupTableExt6) isAATLookupTableExt()  {}
-func (aatLookupTableExt8) isAATLookupTableExt()  {}
-func (aatLookupTableExt10) isAATLookupTableExt() {}
+func (AATLoopkupExt0) isAATLookupExt()  {}
+func (AATLoopkupExt2) isAATLookupExt()  {}
+func (AATLoopkupExt4) isAATLookupExt()  {}
+func (AATLoopkupExt6) isAATLookupExt()  {}
+func (AATLoopkupExt8) isAATLookupExt()  {}
+func (AATLoopkupExt10) isAATLookupExt() {}
 
-type aatLookupTableExt0 struct {
+type AATLoopkupExt0 struct {
 	version uint16   `unionTag:"0"`
 	Values  []uint32 `arrayCount:""`
 }
 
-type aatLookupTableExt2 struct {
+type AATLoopkupExt2 struct {
 	version uint16 `unionTag:"2"`
 	binSearchHeader
 	Records []lookupRecordExt2 `arrayCount:"ComputedField-nUnits"`
@@ -107,7 +107,7 @@ type lookupRecordExt2 struct {
 	Value      uint32
 }
 
-type aatLookupTableExt4 struct {
+type AATLoopkupExt4 struct {
 	version uint16 `unionTag:"4"`
 	binSearchHeader
 	// the values pointed by the record are uint32
@@ -121,7 +121,7 @@ type loopkupRecordExt4 struct {
 	Values []uint32 `offsetSize:"Offset16" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nValues()"`
 }
 
-type aatLookupTableExt6 struct {
+type AATLoopkupExt6 struct {
 	version uint16 `unionTag:"6"`
 	binSearchHeader
 	Records []loopkupRecordExt6 `arrayCount:"ComputedField-nUnits"`
@@ -132,13 +132,13 @@ type loopkupRecordExt6 struct {
 	Value uint32
 }
 
-type aatLookupTableExt8 struct {
+type AATLoopkupExt8 struct {
 	version    uint16 `unionTag:"8"`
 	FirstGlyph GlyphID
 	Values     []uint16 `arrayCount:"FirstUint16"`
 }
 
-type aatLookupTableExt10 struct {
+type AATLoopkupExt10 struct {
 	version    uint16 `unionTag:"10"`
 	unitSize   uint16
 	FirstGlyph GlyphID

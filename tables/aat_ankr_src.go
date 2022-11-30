@@ -7,7 +7,7 @@ type Ankr struct {
 	flags   uint16 // Flags (currently unused; set to zero)
 	// Offset to the table's lookup table; currently this is always 0x0000000C
 	// The lookup table returns uint16 offset from the beginning of the glyph data table, not indices.
-	LookupTable aatLookup `offsetSize:"Offset32"`
+	LookupTable AATLookup `offsetSize:"Offset32"`
 	// Offset to the glyph data table
 	GlyphDataTable []byte `offsetSize:"Offset32" arrayCount:"ToEnd"`
 }

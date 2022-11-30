@@ -50,9 +50,9 @@ type kernSubtable1 struct {
 }
 
 type kernSubtable2 struct {
-	rowWidth           uint16          // The width, in bytes, of a row in the subtable.
-	left               aatLookupTable8 `offsetSize:"Offset16"`
-	right              aatLookupTable8 `offsetSize:"Offset16"`
+	rowWidth           uint16      // The width, in bytes, of a row in the subtable.
+	left               AATLoopkup8 `offsetSize:"Offset16"`
+	right              AATLoopkup8 `offsetSize:"Offset16"`
 	kerningArrayOffset uint16
 	rawData            []byte `arrayCount:"ToEnd" subsliceStart:"AtStart"` // used to resolve kerning pairs
 }

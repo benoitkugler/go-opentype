@@ -85,7 +85,7 @@ type morxSubtableLigature struct {
 }
 
 type morxSubtableNonContextual struct {
-	table aatLookup
+	table AATLookup
 }
 
 type morxSubtableInsertion struct {
