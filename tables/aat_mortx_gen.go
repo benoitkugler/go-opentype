@@ -188,20 +188,20 @@ func parseAatLookupTable10(src []byte) (aatLookupTable10, int, error) {
 	_ = src[5] // early bound checking
 	item.unitSize = binary.BigEndian.Uint16(src[0:])
 	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemvalues := int(binary.BigEndian.Uint16(src[4:]))
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if L := len(src); L < 6+arrayLengthItemvalues*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemvalues*2, L)
+		if L := len(src); L < 6+arrayLengthValues*2 {
+			return item, 0, fmt.Errorf("reading aatLookupTable10: "+"EOF: expected length: %d, got %d", 6+arrayLengthValues*2, L)
 		}
 
-		item.values = make([]uint16, arrayLengthItemvalues) // allocation guarded by the previous check
+		item.values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
 		for i := range item.values {
 			item.values[i] = binary.BigEndian.Uint16(src[6+i*2:])
 		}
-		n += arrayLengthItemvalues * 2
+		n += arrayLengthValues * 2
 	}
 	return item, n, nil
 }

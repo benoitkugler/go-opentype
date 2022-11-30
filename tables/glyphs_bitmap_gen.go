@@ -56,20 +56,20 @@ func ParseCBLC(src []byte) (CBLC, int, error) {
 	_ = src[7] // early bound checking
 	item.majorVersion = binary.BigEndian.Uint16(src[0:])
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
-	arrayLengthItemBitmapSizes := int(binary.BigEndian.Uint32(src[4:]))
+	arrayLengthBitmapSizes := int(binary.BigEndian.Uint32(src[4:]))
 	n += 8
 
 	{
 
-		if L := len(src); L < 8+arrayLengthItemBitmapSizes*48 {
-			return item, 0, fmt.Errorf("reading CBLC: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemBitmapSizes*48, L)
+		if L := len(src); L < 8+arrayLengthBitmapSizes*48 {
+			return item, 0, fmt.Errorf("reading CBLC: "+"EOF: expected length: %d, got %d", 8+arrayLengthBitmapSizes*48, L)
 		}
 
-		item.BitmapSizes = make([]BitmapSize, arrayLengthItemBitmapSizes) // allocation guarded by the previous check
+		item.BitmapSizes = make([]BitmapSize, arrayLengthBitmapSizes) // allocation guarded by the previous check
 		for i := range item.BitmapSizes {
 			item.BitmapSizes[i].mustParse(src[8+i*48:])
 		}
-		n += arrayLengthItemBitmapSizes * 48
+		n += arrayLengthBitmapSizes * 48
 	}
 	{
 
@@ -163,20 +163,20 @@ func ParseIndexData5(src []byte) (IndexData5, int, error) {
 	_ = src[13] // early bound checking
 	item.ImageSize = binary.BigEndian.Uint32(src[0:])
 	item.BigMetrics.mustParse(src[4:])
-	arrayLengthItemGlyphIdArray := int(binary.BigEndian.Uint16(src[12:]))
+	arrayLengthGlyphIdArray := int(binary.BigEndian.Uint16(src[12:]))
 	n += 14
 
 	{
 
-		if L := len(src); L < 14+arrayLengthItemGlyphIdArray*2 {
-			return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: %d, got %d", 14+arrayLengthItemGlyphIdArray*2, L)
+		if L := len(src); L < 14+arrayLengthGlyphIdArray*2 {
+			return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: %d, got %d", 14+arrayLengthGlyphIdArray*2, L)
 		}
 
-		item.GlyphIdArray = make([]GlyphID, arrayLengthItemGlyphIdArray) // allocation guarded by the previous check
+		item.GlyphIdArray = make([]GlyphID, arrayLengthGlyphIdArray) // allocation guarded by the previous check
 		for i := range item.GlyphIdArray {
 			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[14+i*2:]))
 		}
-		n += arrayLengthItemGlyphIdArray * 2
+		n += arrayLengthGlyphIdArray * 2
 	}
 	return item, n, nil
 }

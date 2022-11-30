@@ -13,20 +13,20 @@ func ParseAlternateSet(src []byte) (AlternateSet, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading AlternateSet: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemAlternateGlyphIDs := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthAlternateGlyphIDs := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemAlternateGlyphIDs*2 {
-			return item, 0, fmt.Errorf("reading AlternateSet: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemAlternateGlyphIDs*2, L)
+		if L := len(src); L < 2+arrayLengthAlternateGlyphIDs*2 {
+			return item, 0, fmt.Errorf("reading AlternateSet: "+"EOF: expected length: %d, got %d", 2+arrayLengthAlternateGlyphIDs*2, L)
 		}
 
-		item.AlternateGlyphIDs = make([]GlyphID, arrayLengthItemAlternateGlyphIDs) // allocation guarded by the previous check
+		item.AlternateGlyphIDs = make([]GlyphID, arrayLengthAlternateGlyphIDs) // allocation guarded by the previous check
 		for i := range item.AlternateGlyphIDs {
 			item.AlternateGlyphIDs[i] = GlyphID(binary.BigEndian.Uint16(src[2+i*2:]))
 		}
-		n += arrayLengthItemAlternateGlyphIDs * 2
+		n += arrayLengthAlternateGlyphIDs * 2
 	}
 	return item, n, nil
 }
@@ -39,35 +39,35 @@ func ParseAlternateSubs(src []byte) (AlternateSubs, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemAlternateSets := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthAlternateSets := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverageOffset != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverageOffset {
-				return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", offsetItemCoverageOffset, L)
+		if offsetCoverageOffset != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverageOffset {
+				return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", offsetCoverageOffset, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.CoverageOffset, read, err = ParseCoverage(src[offsetItemCoverageOffset:])
+			item.CoverageOffset, read, err = ParseCoverage(src[offsetCoverageOffset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AlternateSubs: %s", err)
 			}
-			offsetItemCoverageOffset += read
+			offsetCoverageOffset += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemAlternateSets*2 {
-			return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemAlternateSets*2, L)
+		if L := len(src); L < 6+arrayLengthAlternateSets*2 {
+			return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthAlternateSets*2, L)
 		}
 
-		item.AlternateSets = make([]AlternateSet, arrayLengthItemAlternateSets) // allocation guarded by the previous check
+		item.AlternateSets = make([]AlternateSet, arrayLengthAlternateSets) // allocation guarded by the previous check
 		for i := range item.AlternateSets {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -84,9 +84,8 @@ func ParseAlternateSubs(src []byte) (AlternateSubs, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AlternateSubs: %s", err)
 			}
-
 		}
-		n += arrayLengthItemAlternateSets * 2
+		n += arrayLengthAlternateSets * 2
 	}
 	return item, n, nil
 }
@@ -116,35 +115,35 @@ func ParseChainedContextualSubs1(src []byte) (ChainedContextualSubs1, int, error
 	}
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemChainedSeqRuleSet := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthChainedSeqRuleSet := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ChainedContextualSubs1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading ChainedContextualSubs1: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs1: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemChainedSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs1: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemChainedSeqRuleSet*2, L)
+		if L := len(src); L < 6+arrayLengthChainedSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs1: "+"EOF: expected length: %d, got %d", 6+arrayLengthChainedSeqRuleSet*2, L)
 		}
 
-		item.ChainedSeqRuleSet = make([]ChainedSequenceRuleSet, arrayLengthItemChainedSeqRuleSet) // allocation guarded by the previous check
+		item.ChainedSeqRuleSet = make([]ChainedSequenceRuleSet, arrayLengthChainedSeqRuleSet) // allocation guarded by the previous check
 		for i := range item.ChainedSeqRuleSet {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -161,9 +160,8 @@ func ParseChainedContextualSubs1(src []byte) (ChainedContextualSubs1, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs1: %s", err)
 			}
-
 		}
-		n += arrayLengthItemChainedSeqRuleSet * 2
+		n += arrayLengthChainedSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -176,92 +174,92 @@ func ParseChainedContextualSubs2(src []byte) (ChainedContextualSubs2, int, error
 	}
 	_ = src[11] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	offsetItemBacktrackClassDef := int(binary.BigEndian.Uint16(src[4:]))
-	offsetItemInputClassDef := int(binary.BigEndian.Uint16(src[6:]))
-	offsetItemLookaheadClassDef := int(binary.BigEndian.Uint16(src[8:]))
-	arrayLengthItemChainedClassSeqRuleSet := int(binary.BigEndian.Uint16(src[10:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	offsetBacktrackClassDef := int(binary.BigEndian.Uint16(src[4:]))
+	offsetInputClassDef := int(binary.BigEndian.Uint16(src[6:]))
+	offsetLookaheadClassDef := int(binary.BigEndian.Uint16(src[8:]))
+	arrayLengthChainedClassSeqRuleSet := int(binary.BigEndian.Uint16(src[10:]))
 	n += 12
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if offsetItemBacktrackClassDef != 0 { // ignore null offset
-			if L := len(src); L < offsetItemBacktrackClassDef {
-				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemBacktrackClassDef, L)
+		if offsetBacktrackClassDef != 0 { // ignore null offset
+			if L := len(src); L < offsetBacktrackClassDef {
+				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetBacktrackClassDef, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.BacktrackClassDef, read, err = ParseClassDef(src[offsetItemBacktrackClassDef:])
+			item.BacktrackClassDef, read, err = ParseClassDef(src[offsetBacktrackClassDef:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
-			offsetItemBacktrackClassDef += read
+			offsetBacktrackClassDef += read
 		}
 	}
 	{
 
-		if offsetItemInputClassDef != 0 { // ignore null offset
-			if L := len(src); L < offsetItemInputClassDef {
-				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemInputClassDef, L)
+		if offsetInputClassDef != 0 { // ignore null offset
+			if L := len(src); L < offsetInputClassDef {
+				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetInputClassDef, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.InputClassDef, read, err = ParseClassDef(src[offsetItemInputClassDef:])
+			item.InputClassDef, read, err = ParseClassDef(src[offsetInputClassDef:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
-			offsetItemInputClassDef += read
+			offsetInputClassDef += read
 		}
 	}
 	{
 
-		if offsetItemLookaheadClassDef != 0 { // ignore null offset
-			if L := len(src); L < offsetItemLookaheadClassDef {
-				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemLookaheadClassDef, L)
+		if offsetLookaheadClassDef != 0 { // ignore null offset
+			if L := len(src); L < offsetLookaheadClassDef {
+				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", offsetLookaheadClassDef, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.LookaheadClassDef, read, err = ParseClassDef(src[offsetItemLookaheadClassDef:])
+			item.LookaheadClassDef, read, err = ParseClassDef(src[offsetLookaheadClassDef:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
-			offsetItemLookaheadClassDef += read
+			offsetLookaheadClassDef += read
 		}
 	}
 	{
 
-		if L := len(src); L < 12+arrayLengthItemChainedClassSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", 12+arrayLengthItemChainedClassSeqRuleSet*2, L)
+		if L := len(src); L < 12+arrayLengthChainedClassSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs2: "+"EOF: expected length: %d, got %d", 12+arrayLengthChainedClassSeqRuleSet*2, L)
 		}
 
-		item.ChainedClassSeqRuleSet = make([]ChainedClassSequenceRuleSet, arrayLengthItemChainedClassSeqRuleSet) // allocation guarded by the previous check
+		item.ChainedClassSeqRuleSet = make([]ChainedClassSequenceRuleSet, arrayLengthChainedClassSeqRuleSet) // allocation guarded by the previous check
 		for i := range item.ChainedClassSeqRuleSet {
 			offset := int(binary.BigEndian.Uint16(src[12+i*2:]))
 			// ignore null offsets
@@ -278,9 +276,8 @@ func ParseChainedContextualSubs2(src []byte) (ChainedContextualSubs2, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
-
 		}
-		n += arrayLengthItemChainedClassSeqRuleSet * 2
+		n += arrayLengthChainedClassSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -293,16 +290,16 @@ func ParseChainedContextualSubs3(src []byte) (ChainedContextualSubs3, int, error
 	}
 	_ = src[3] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemBacktrackCoverages := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthBacktrackCoverages := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemBacktrackCoverages*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemBacktrackCoverages*2, L)
+		if L := len(src); L < 4+arrayLengthBacktrackCoverages*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", 4+arrayLengthBacktrackCoverages*2, L)
 		}
 
-		item.BacktrackCoverages = make([]Coverage, arrayLengthItemBacktrackCoverages) // allocation guarded by the previous check
+		item.BacktrackCoverages = make([]Coverage, arrayLengthBacktrackCoverages) // allocation guarded by the previous check
 		for i := range item.BacktrackCoverages {
 			offset := int(binary.BigEndian.Uint16(src[4+i*2:]))
 			// ignore null offsets
@@ -319,23 +316,22 @@ func ParseChainedContextualSubs3(src []byte) (ChainedContextualSubs3, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs3: %s", err)
 			}
-
 		}
-		n += arrayLengthItemBacktrackCoverages * 2
+		n += arrayLengthBacktrackCoverages * 2
 	}
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	arrayLengthItemInputCoverages := int(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthInputCoverages := int(binary.BigEndian.Uint16(src[n:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < n+arrayLengthItemInputCoverages*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthItemInputCoverages*2, L)
+		if L := len(src); L < n+arrayLengthInputCoverages*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthInputCoverages*2, L)
 		}
 
-		item.InputCoverages = make([]Coverage, arrayLengthItemInputCoverages) // allocation guarded by the previous check
+		item.InputCoverages = make([]Coverage, arrayLengthInputCoverages) // allocation guarded by the previous check
 		for i := range item.InputCoverages {
 			offset := int(binary.BigEndian.Uint16(src[n+i*2:]))
 			// ignore null offsets
@@ -352,23 +348,22 @@ func ParseChainedContextualSubs3(src []byte) (ChainedContextualSubs3, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs3: %s", err)
 			}
-
 		}
-		n += arrayLengthItemInputCoverages * 2
+		n += arrayLengthInputCoverages * 2
 	}
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	arrayLengthItemLookaheadCoverages := int(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthLookaheadCoverages := int(binary.BigEndian.Uint16(src[n:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < n+arrayLengthItemLookaheadCoverages*2 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthItemLookaheadCoverages*2, L)
+		if L := len(src); L < n+arrayLengthLookaheadCoverages*2 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthLookaheadCoverages*2, L)
 		}
 
-		item.LookaheadCoverages = make([]Coverage, arrayLengthItemLookaheadCoverages) // allocation guarded by the previous check
+		item.LookaheadCoverages = make([]Coverage, arrayLengthLookaheadCoverages) // allocation guarded by the previous check
 		for i := range item.LookaheadCoverages {
 			offset := int(binary.BigEndian.Uint16(src[n+i*2:]))
 			// ignore null offsets
@@ -385,27 +380,26 @@ func ParseChainedContextualSubs3(src []byte) (ChainedContextualSubs3, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs3: %s", err)
 			}
-
 		}
-		n += arrayLengthItemLookaheadCoverages * 2
+		n += arrayLengthLookaheadCoverages * 2
 	}
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	arrayLengthItemSeqLookupRecords := int(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthSeqLookupRecords := int(binary.BigEndian.Uint16(src[n:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < n+arrayLengthItemSeqLookupRecords*4 {
-			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthItemSeqLookupRecords*4, L)
+		if L := len(src); L < n+arrayLengthSeqLookupRecords*4 {
+			return item, 0, fmt.Errorf("reading ChainedContextualSubs3: "+"EOF: expected length: %d, got %d", n+arrayLengthSeqLookupRecords*4, L)
 		}
 
-		item.SeqLookupRecords = make([]SequenceLookupRecord, arrayLengthItemSeqLookupRecords) // allocation guarded by the previous check
+		item.SeqLookupRecords = make([]SequenceLookupRecord, arrayLengthSeqLookupRecords) // allocation guarded by the previous check
 		for i := range item.SeqLookupRecords {
 			item.SeqLookupRecords[i].mustParse(src[n+i*4:])
 		}
-		n += arrayLengthItemSeqLookupRecords * 4
+		n += arrayLengthSeqLookupRecords * 4
 	}
 	return item, n, nil
 }
@@ -463,35 +457,35 @@ func ParseContextualSubs1(src []byte) (ContextualSubs1, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemSeqRuleSet := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthSeqRuleSet := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ContextualSubs1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading ContextualSubs1: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs1: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ContextualSubs1: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemSeqRuleSet*2, L)
+		if L := len(src); L < 6+arrayLengthSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ContextualSubs1: "+"EOF: expected length: %d, got %d", 6+arrayLengthSeqRuleSet*2, L)
 		}
 
-		item.SeqRuleSet = make([]SequenceRuleSet, arrayLengthItemSeqRuleSet) // allocation guarded by the previous check
+		item.SeqRuleSet = make([]SequenceRuleSet, arrayLengthSeqRuleSet) // allocation guarded by the previous check
 		for i := range item.SeqRuleSet {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -508,9 +502,8 @@ func ParseContextualSubs1(src []byte) (ContextualSubs1, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs1: %s", err)
 			}
-
 		}
-		n += arrayLengthItemSeqRuleSet * 2
+		n += arrayLengthSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -523,54 +516,54 @@ func ParseContextualSubs2(src []byte) (ContextualSubs2, int, error) {
 	}
 	_ = src[7] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	offsetItemClassDef := int(binary.BigEndian.Uint16(src[4:]))
-	arrayLengthItemClassSeqRuleSet := int(binary.BigEndian.Uint16(src[6:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	offsetClassDef := int(binary.BigEndian.Uint16(src[4:]))
+	arrayLengthClassSeqRuleSet := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs2: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if offsetItemClassDef != 0 { // ignore null offset
-			if L := len(src); L < offsetItemClassDef {
-				return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", offsetItemClassDef, L)
+		if offsetClassDef != 0 { // ignore null offset
+			if L := len(src); L < offsetClassDef {
+				return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", offsetClassDef, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.ClassDef, read, err = ParseClassDef(src[offsetItemClassDef:])
+			item.ClassDef, read, err = ParseClassDef(src[offsetClassDef:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs2: %s", err)
 			}
-			offsetItemClassDef += read
+			offsetClassDef += read
 		}
 	}
 	{
 
-		if L := len(src); L < 8+arrayLengthItemClassSeqRuleSet*2 {
-			return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemClassSeqRuleSet*2, L)
+		if L := len(src); L < 8+arrayLengthClassSeqRuleSet*2 {
+			return item, 0, fmt.Errorf("reading ContextualSubs2: "+"EOF: expected length: %d, got %d", 8+arrayLengthClassSeqRuleSet*2, L)
 		}
 
-		item.ClassSeqRuleSet = make([]ClassSequenceRuleSet, arrayLengthItemClassSeqRuleSet) // allocation guarded by the previous check
+		item.ClassSeqRuleSet = make([]ClassSequenceRuleSet, arrayLengthClassSeqRuleSet) // allocation guarded by the previous check
 		for i := range item.ClassSeqRuleSet {
 			offset := int(binary.BigEndian.Uint16(src[8+i*2:]))
 			// ignore null offsets
@@ -587,9 +580,8 @@ func ParseContextualSubs2(src []byte) (ContextualSubs2, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs2: %s", err)
 			}
-
 		}
-		n += arrayLengthItemClassSeqRuleSet * 2
+		n += arrayLengthClassSeqRuleSet * 2
 	}
 	return item, n, nil
 }
@@ -630,7 +622,6 @@ func ParseContextualSubs3(src []byte) (ContextualSubs3, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs3: %s", err)
 			}
-
 		}
 		n += arrayLength * 2
 	}
@@ -731,16 +722,16 @@ func ParseLigatureSet(src []byte) (LigatureSet, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading LigatureSet: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemLigatures := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthLigatures := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemLigatures*2 {
-			return item, 0, fmt.Errorf("reading LigatureSet: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemLigatures*2, L)
+		if L := len(src); L < 2+arrayLengthLigatures*2 {
+			return item, 0, fmt.Errorf("reading LigatureSet: "+"EOF: expected length: %d, got %d", 2+arrayLengthLigatures*2, L)
 		}
 
-		item.Ligatures = make([]Ligature, arrayLengthItemLigatures) // allocation guarded by the previous check
+		item.Ligatures = make([]Ligature, arrayLengthLigatures) // allocation guarded by the previous check
 		for i := range item.Ligatures {
 			offset := int(binary.BigEndian.Uint16(src[2+i*2:]))
 			// ignore null offsets
@@ -757,9 +748,8 @@ func ParseLigatureSet(src []byte) (LigatureSet, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigatureSet: %s", err)
 			}
-
 		}
-		n += arrayLengthItemLigatures * 2
+		n += arrayLengthLigatures * 2
 	}
 	return item, n, nil
 }
@@ -772,35 +762,35 @@ func ParseLigatureSubs(src []byte) (LigatureSubs, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemLigatureSets := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthLigatureSets := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading LigatureSubs: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading LigatureSubs: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigatureSubs: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemLigatureSets*2 {
-			return item, 0, fmt.Errorf("reading LigatureSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemLigatureSets*2, L)
+		if L := len(src); L < 6+arrayLengthLigatureSets*2 {
+			return item, 0, fmt.Errorf("reading LigatureSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthLigatureSets*2, L)
 		}
 
-		item.LigatureSets = make([]LigatureSet, arrayLengthItemLigatureSets) // allocation guarded by the previous check
+		item.LigatureSets = make([]LigatureSet, arrayLengthLigatureSets) // allocation guarded by the previous check
 		for i := range item.LigatureSets {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -817,9 +807,8 @@ func ParseLigatureSubs(src []byte) (LigatureSubs, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigatureSubs: %s", err)
 			}
-
 		}
-		n += arrayLengthItemLigatureSets * 2
+		n += arrayLengthLigatureSets * 2
 	}
 	return item, n, nil
 }
@@ -832,35 +821,35 @@ func ParseMultipleSubs(src []byte) (MultipleSubs, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemSequences := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthSequences := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverageOffset != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverageOffset {
-				return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", offsetItemCoverageOffset, L)
+		if offsetCoverageOffset != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverageOffset {
+				return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", offsetCoverageOffset, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.CoverageOffset, read, err = ParseCoverage(src[offsetItemCoverageOffset:])
+			item.CoverageOffset, read, err = ParseCoverage(src[offsetCoverageOffset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MultipleSubs: %s", err)
 			}
-			offsetItemCoverageOffset += read
+			offsetCoverageOffset += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemSequences*2 {
-			return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemSequences*2, L)
+		if L := len(src); L < 6+arrayLengthSequences*2 {
+			return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthSequences*2, L)
 		}
 
-		item.Sequences = make([]Sequence, arrayLengthItemSequences) // allocation guarded by the previous check
+		item.Sequences = make([]Sequence, arrayLengthSequences) // allocation guarded by the previous check
 		for i := range item.Sequences {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -877,9 +866,8 @@ func ParseMultipleSubs(src []byte) (MultipleSubs, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MultipleSubs: %s", err)
 			}
-
 		}
-		n += arrayLengthItemSequences * 2
+		n += arrayLengthSequences * 2
 	}
 	return item, n, nil
 }
@@ -892,35 +880,35 @@ func ParseReverseChainSingleSubs(src []byte) (ReverseChainSingleSubs, int, error
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemBacktrackCoverageOffsets := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthBacktrackCoverageOffsets := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemBacktrackCoverageOffsets*2 {
-			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemBacktrackCoverageOffsets*2, L)
+		if L := len(src); L < 6+arrayLengthBacktrackCoverageOffsets*2 {
+			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", 6+arrayLengthBacktrackCoverageOffsets*2, L)
 		}
 
-		item.BacktrackCoverageOffsets = make([]Coverage, arrayLengthItemBacktrackCoverageOffsets) // allocation guarded by the previous check
+		item.BacktrackCoverageOffsets = make([]Coverage, arrayLengthBacktrackCoverageOffsets) // allocation guarded by the previous check
 		for i := range item.BacktrackCoverageOffsets {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
@@ -937,23 +925,22 @@ func ParseReverseChainSingleSubs(src []byte) (ReverseChainSingleSubs, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: %s", err)
 			}
-
 		}
-		n += arrayLengthItemBacktrackCoverageOffsets * 2
+		n += arrayLengthBacktrackCoverageOffsets * 2
 	}
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	arrayLengthItemLookaheadCoverageOffsets := int(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthLookaheadCoverageOffsets := int(binary.BigEndian.Uint16(src[n:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < n+arrayLengthItemLookaheadCoverageOffsets*2 {
-			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", n+arrayLengthItemLookaheadCoverageOffsets*2, L)
+		if L := len(src); L < n+arrayLengthLookaheadCoverageOffsets*2 {
+			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", n+arrayLengthLookaheadCoverageOffsets*2, L)
 		}
 
-		item.LookaheadCoverageOffsets = make([]Coverage, arrayLengthItemLookaheadCoverageOffsets) // allocation guarded by the previous check
+		item.LookaheadCoverageOffsets = make([]Coverage, arrayLengthLookaheadCoverageOffsets) // allocation guarded by the previous check
 		for i := range item.LookaheadCoverageOffsets {
 			offset := int(binary.BigEndian.Uint16(src[n+i*2:]))
 			// ignore null offsets
@@ -970,27 +957,26 @@ func ParseReverseChainSingleSubs(src []byte) (ReverseChainSingleSubs, int, error
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: %s", err)
 			}
-
 		}
-		n += arrayLengthItemLookaheadCoverageOffsets * 2
+		n += arrayLengthLookaheadCoverageOffsets * 2
 	}
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	arrayLengthItemSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[n:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < n+arrayLengthItemSubstituteGlyphIDs*2 {
-			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", n+arrayLengthItemSubstituteGlyphIDs*2, L)
+		if L := len(src); L < n+arrayLengthSubstituteGlyphIDs*2 {
+			return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: "+"EOF: expected length: %d, got %d", n+arrayLengthSubstituteGlyphIDs*2, L)
 		}
 
-		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthItemSubstituteGlyphIDs) // allocation guarded by the previous check
+		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthSubstituteGlyphIDs) // allocation guarded by the previous check
 		for i := range item.SubstituteGlyphIDs {
 			item.SubstituteGlyphIDs[i] = GlyphID(binary.BigEndian.Uint16(src[n+i*2:]))
 		}
-		n += arrayLengthItemSubstituteGlyphIDs * 2
+		n += arrayLengthSubstituteGlyphIDs * 2
 	}
 	return item, n, nil
 }
@@ -1001,20 +987,20 @@ func ParseSequence(src []byte) (Sequence, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading Sequence: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemSubstituteGlyphIDs*2 {
-			return item, 0, fmt.Errorf("reading Sequence: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemSubstituteGlyphIDs*2, L)
+		if L := len(src); L < 2+arrayLengthSubstituteGlyphIDs*2 {
+			return item, 0, fmt.Errorf("reading Sequence: "+"EOF: expected length: %d, got %d", 2+arrayLengthSubstituteGlyphIDs*2, L)
 		}
 
-		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthItemSubstituteGlyphIDs) // allocation guarded by the previous check
+		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthSubstituteGlyphIDs) // allocation guarded by the previous check
 		for i := range item.SubstituteGlyphIDs {
 			item.SubstituteGlyphIDs[i] = GlyphID(binary.BigEndian.Uint16(src[2+i*2:]))
 		}
-		n += arrayLengthItemSubstituteGlyphIDs * 2
+		n += arrayLengthSubstituteGlyphIDs * 2
 	}
 	return item, n, nil
 }
@@ -1070,26 +1056,26 @@ func ParseSingleSubstData1(src []byte) (SingleSubstData1, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
 	item.DeltaGlyphID = int16(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading SingleSubstData1: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading SingleSubstData1: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading SingleSubstData1: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	return item, n, nil
@@ -1103,39 +1089,39 @@ func ParseSingleSubstData2(src []byte) (SingleSubstData2, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[4:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthSubstituteGlyphIDs := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading SingleSubstData2: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading SingleSubstData2: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading SingleSubstData2: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 6+arrayLengthItemSubstituteGlyphIDs*2 {
-			return item, 0, fmt.Errorf("reading SingleSubstData2: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemSubstituteGlyphIDs*2, L)
+		if L := len(src); L < 6+arrayLengthSubstituteGlyphIDs*2 {
+			return item, 0, fmt.Errorf("reading SingleSubstData2: "+"EOF: expected length: %d, got %d", 6+arrayLengthSubstituteGlyphIDs*2, L)
 		}
 
-		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthItemSubstituteGlyphIDs) // allocation guarded by the previous check
+		item.SubstituteGlyphIDs = make([]GlyphID, arrayLengthSubstituteGlyphIDs) // allocation guarded by the previous check
 		for i := range item.SubstituteGlyphIDs {
 			item.SubstituteGlyphIDs[i] = GlyphID(binary.BigEndian.Uint16(src[6+i*2:]))
 		}
-		n += arrayLengthItemSubstituteGlyphIDs * 2
+		n += arrayLengthSubstituteGlyphIDs * 2
 	}
 	return item, n, nil
 }

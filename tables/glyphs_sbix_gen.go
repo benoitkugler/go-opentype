@@ -36,16 +36,16 @@ func ParseSbix(src []byte, numGlyphs int) (Sbix, int, error) {
 	_ = src[7] // early bound checking
 	item.version = binary.BigEndian.Uint16(src[0:])
 	item.Flags = binary.BigEndian.Uint16(src[2:])
-	arrayLengthItemStrikes := int(binary.BigEndian.Uint32(src[4:]))
+	arrayLengthStrikes := int(binary.BigEndian.Uint32(src[4:]))
 	n += 8
 
 	{
 
-		if L := len(src); L < 8+arrayLengthItemStrikes*4 {
-			return item, 0, fmt.Errorf("reading Sbix: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemStrikes*4, L)
+		if L := len(src); L < 8+arrayLengthStrikes*4 {
+			return item, 0, fmt.Errorf("reading Sbix: "+"EOF: expected length: %d, got %d", 8+arrayLengthStrikes*4, L)
 		}
 
-		item.Strikes = make([]Strike, arrayLengthItemStrikes) // allocation guarded by the previous check
+		item.Strikes = make([]Strike, arrayLengthStrikes) // allocation guarded by the previous check
 		for i := range item.Strikes {
 			offset := int(binary.BigEndian.Uint32(src[8+i*4:]))
 			// ignore null offsets
@@ -62,9 +62,8 @@ func ParseSbix(src []byte, numGlyphs int) (Sbix, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Sbix: %s", err)
 			}
-
 		}
-		n += arrayLengthItemStrikes * 4
+		n += arrayLengthStrikes * 4
 	}
 	return item, n, nil
 }

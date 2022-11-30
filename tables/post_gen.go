@@ -60,20 +60,20 @@ func parsePostNames20(src []byte) (postNames20, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemglyphNameIndexes := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthGlyphNameIndexes := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemglyphNameIndexes*2 {
-			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemglyphNameIndexes*2, L)
+		if L := len(src); L < 2+arrayLengthGlyphNameIndexes*2 {
+			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: %d, got %d", 2+arrayLengthGlyphNameIndexes*2, L)
 		}
 
-		item.glyphNameIndexes = make([]uint16, arrayLengthItemglyphNameIndexes) // allocation guarded by the previous check
+		item.glyphNameIndexes = make([]uint16, arrayLengthGlyphNameIndexes) // allocation guarded by the previous check
 		for i := range item.glyphNameIndexes {
 			item.glyphNameIndexes[i] = binary.BigEndian.Uint16(src[2+i*2:])
 		}
-		n += arrayLengthItemglyphNameIndexes * 2
+		n += arrayLengthGlyphNameIndexes * 2
 	}
 	{
 

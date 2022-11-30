@@ -33,35 +33,35 @@ func ParseAttachList(src []byte) (AttachList, int, error) {
 		return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: 4, got %d", L)
 	}
 	_ = src[3] // early bound checking
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[0:]))
-	arrayLengthItemAttachPoints := int(binary.BigEndian.Uint16(src[2:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthAttachPoints := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AttachList: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 4+arrayLengthItemAttachPoints*2 {
-			return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemAttachPoints*2, L)
+		if L := len(src); L < 4+arrayLengthAttachPoints*2 {
+			return item, 0, fmt.Errorf("reading AttachList: "+"EOF: expected length: %d, got %d", 4+arrayLengthAttachPoints*2, L)
 		}
 
-		item.AttachPoints = make([]AttachPoint, arrayLengthItemAttachPoints) // allocation guarded by the previous check
+		item.AttachPoints = make([]AttachPoint, arrayLengthAttachPoints) // allocation guarded by the previous check
 		for i := range item.AttachPoints {
 			offset := int(binary.BigEndian.Uint16(src[4+i*2:]))
 			// ignore null offsets
@@ -78,9 +78,8 @@ func ParseAttachList(src []byte) (AttachList, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AttachList: %s", err)
 			}
-
 		}
-		n += arrayLengthItemAttachPoints * 2
+		n += arrayLengthAttachPoints * 2
 	}
 	return item, n, nil
 }
@@ -91,20 +90,20 @@ func ParseAttachPoint(src []byte) (AttachPoint, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading AttachPoint: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemPointIndices := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthPointIndices := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemPointIndices*2 {
-			return item, 0, fmt.Errorf("reading AttachPoint: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemPointIndices*2, L)
+		if L := len(src); L < 2+arrayLengthPointIndices*2 {
+			return item, 0, fmt.Errorf("reading AttachPoint: "+"EOF: expected length: %d, got %d", 2+arrayLengthPointIndices*2, L)
 		}
 
-		item.PointIndices = make([]uint16, arrayLengthItemPointIndices) // allocation guarded by the previous check
+		item.PointIndices = make([]uint16, arrayLengthPointIndices) // allocation guarded by the previous check
 		for i := range item.PointIndices {
 			item.PointIndices[i] = binary.BigEndian.Uint16(src[2+i*2:])
 		}
-		n += arrayLengthItemPointIndices * 2
+		n += arrayLengthPointIndices * 2
 	}
 	return item, n, nil
 }
@@ -217,20 +216,20 @@ func ParseClassDef1(src []byte) (ClassDef1, int, error) {
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
 	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthItemClassValueArray := int(binary.BigEndian.Uint16(src[4:]))
+	arrayLengthClassValueArray := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if L := len(src); L < 6+arrayLengthItemClassValueArray*2 {
-			return item, 0, fmt.Errorf("reading ClassDef1: "+"EOF: expected length: %d, got %d", 6+arrayLengthItemClassValueArray*2, L)
+		if L := len(src); L < 6+arrayLengthClassValueArray*2 {
+			return item, 0, fmt.Errorf("reading ClassDef1: "+"EOF: expected length: %d, got %d", 6+arrayLengthClassValueArray*2, L)
 		}
 
-		item.ClassValueArray = make([]uint16, arrayLengthItemClassValueArray) // allocation guarded by the previous check
+		item.ClassValueArray = make([]uint16, arrayLengthClassValueArray) // allocation guarded by the previous check
 		for i := range item.ClassValueArray {
 			item.ClassValueArray[i] = binary.BigEndian.Uint16(src[6+i*2:])
 		}
-		n += arrayLengthItemClassValueArray * 2
+		n += arrayLengthClassValueArray * 2
 	}
 	return item, n, nil
 }
@@ -243,20 +242,20 @@ func ParseClassDef2(src []byte) (ClassDef2, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemClassRangeRecords := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthClassRangeRecords := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemClassRangeRecords*6 {
-			return item, 0, fmt.Errorf("reading ClassDef2: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemClassRangeRecords*6, L)
+		if L := len(src); L < 4+arrayLengthClassRangeRecords*6 {
+			return item, 0, fmt.Errorf("reading ClassDef2: "+"EOF: expected length: %d, got %d", 4+arrayLengthClassRangeRecords*6, L)
 		}
 
-		item.ClassRangeRecords = make([]ClassRangeRecord, arrayLengthItemClassRangeRecords) // allocation guarded by the previous check
+		item.ClassRangeRecords = make([]ClassRangeRecord, arrayLengthClassRangeRecords) // allocation guarded by the previous check
 		for i := range item.ClassRangeRecords {
 			item.ClassRangeRecords[i].mustParse(src[4+i*6:])
 		}
-		n += arrayLengthItemClassRangeRecords * 6
+		n += arrayLengthClassRangeRecords * 6
 	}
 	return item, n, nil
 }
@@ -295,20 +294,20 @@ func ParseCoverage1(src []byte) (Coverage1, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemGlyphs := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthGlyphs := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemGlyphs*2 {
-			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemGlyphs*2, L)
+		if L := len(src); L < 4+arrayLengthGlyphs*2 {
+			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: %d, got %d", 4+arrayLengthGlyphs*2, L)
 		}
 
-		item.Glyphs = make([]GlyphID, arrayLengthItemGlyphs) // allocation guarded by the previous check
+		item.Glyphs = make([]GlyphID, arrayLengthGlyphs) // allocation guarded by the previous check
 		for i := range item.Glyphs {
 			item.Glyphs[i] = GlyphID(binary.BigEndian.Uint16(src[4+i*2:]))
 		}
-		n += arrayLengthItemGlyphs * 2
+		n += arrayLengthGlyphs * 2
 	}
 	return item, n, nil
 }
@@ -321,20 +320,20 @@ func ParseCoverage2(src []byte) (Coverage2, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemRanges := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthRanges := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemRanges*6 {
-			return item, 0, fmt.Errorf("reading Coverage2: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemRanges*6, L)
+		if L := len(src); L < 4+arrayLengthRanges*6 {
+			return item, 0, fmt.Errorf("reading Coverage2: "+"EOF: expected length: %d, got %d", 4+arrayLengthRanges*6, L)
 		}
 
-		item.Ranges = make([]RangeRecord, arrayLengthItemRanges) // allocation guarded by the previous check
+		item.Ranges = make([]RangeRecord, arrayLengthRanges) // allocation guarded by the previous check
 		for i := range item.Ranges {
 			item.Ranges[i].mustParse(src[4+i*6:])
 		}
-		n += arrayLengthItemRanges * 6
+		n += arrayLengthRanges * 6
 	}
 	return item, n, nil
 }
@@ -348,84 +347,84 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 	_ = src[11] // early bound checking
 	item.majorVersion = binary.BigEndian.Uint16(src[0:])
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
-	offsetItemGlyphClassDef := int(binary.BigEndian.Uint16(src[4:]))
-	offsetItemAttachList := int(binary.BigEndian.Uint16(src[6:]))
-	offsetItemLigCaretList := int(binary.BigEndian.Uint16(src[8:]))
-	offsetItemMarkAttachClass := int(binary.BigEndian.Uint16(src[10:]))
+	offsetGlyphClassDef := int(binary.BigEndian.Uint16(src[4:]))
+	offsetAttachList := int(binary.BigEndian.Uint16(src[6:]))
+	offsetLigCaretList := int(binary.BigEndian.Uint16(src[8:]))
+	offsetMarkAttachClass := int(binary.BigEndian.Uint16(src[10:]))
 	n += 12
 
 	{
 
-		if offsetItemGlyphClassDef != 0 { // ignore null offset
-			if L := len(src); L < offsetItemGlyphClassDef {
-				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetItemGlyphClassDef, L)
+		if offsetGlyphClassDef != 0 { // ignore null offset
+			if L := len(src); L < offsetGlyphClassDef {
+				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetGlyphClassDef, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.GlyphClassDef, read, err = ParseClassDef(src[offsetItemGlyphClassDef:])
+			item.GlyphClassDef, read, err = ParseClassDef(src[offsetGlyphClassDef:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading GDEF: %s", err)
 			}
-			offsetItemGlyphClassDef += read
+			offsetGlyphClassDef += read
 		}
 	}
 	{
 
-		if offsetItemAttachList != 0 { // ignore null offset
-			if L := len(src); L < offsetItemAttachList {
-				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetItemAttachList, L)
+		if offsetAttachList != 0 { // ignore null offset
+			if L := len(src); L < offsetAttachList {
+				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetAttachList, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.AttachList, read, err = ParseAttachList(src[offsetItemAttachList:])
+			item.AttachList, read, err = ParseAttachList(src[offsetAttachList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading GDEF: %s", err)
 			}
-			offsetItemAttachList += read
-
-		}
-	}
-	{
-
-		if offsetItemLigCaretList != 0 { // ignore null offset
-			if L := len(src); L < offsetItemLigCaretList {
-				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetItemLigCaretList, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.LigCaretList, read, err = ParseLigCaretList(src[offsetItemLigCaretList:])
-			if err != nil {
-				return item, 0, fmt.Errorf("reading GDEF: %s", err)
-			}
-			offsetItemLigCaretList += read
+			offsetAttachList += read
 
 		}
 	}
 	{
 
-		if offsetItemMarkAttachClass != 0 { // ignore null offset
-			if L := len(src); L < offsetItemMarkAttachClass {
-				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetItemMarkAttachClass, L)
+		if offsetLigCaretList != 0 { // ignore null offset
+			if L := len(src); L < offsetLigCaretList {
+				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetLigCaretList, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.MarkAttachClass, read, err = ParseClassDef(src[offsetItemMarkAttachClass:])
+			item.LigCaretList, read, err = ParseLigCaretList(src[offsetLigCaretList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading GDEF: %s", err)
 			}
-			offsetItemMarkAttachClass += read
+			offsetLigCaretList += read
+
+		}
+	}
+	{
+
+		if offsetMarkAttachClass != 0 { // ignore null offset
+			if L := len(src); L < offsetMarkAttachClass {
+				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetMarkAttachClass, L)
+			}
+
+			var (
+				err  error
+				read int
+			)
+			item.MarkAttachClass, read, err = ParseClassDef(src[offsetMarkAttachClass:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading GDEF: %s", err)
+			}
+			offsetMarkAttachClass += read
 		}
 	}
 	{
@@ -454,35 +453,35 @@ func ParseLigCaretList(src []byte) (LigCaretList, int, error) {
 		return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: 4, got %d", L)
 	}
 	_ = src[3] // early bound checking
-	offsetItemCoverage := int(binary.BigEndian.Uint16(src[0:]))
-	arrayLengthItemLigGlyphs := int(binary.BigEndian.Uint16(src[2:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthLigGlyphs := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if offsetItemCoverage != 0 { // ignore null offset
-			if L := len(src); L < offsetItemCoverage {
-				return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", offsetItemCoverage, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetItemCoverage:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigCaretList: %s", err)
 			}
-			offsetItemCoverage += read
+			offsetCoverage += read
 		}
 	}
 	{
 
-		if L := len(src); L < 4+arrayLengthItemLigGlyphs*2 {
-			return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemLigGlyphs*2, L)
+		if L := len(src); L < 4+arrayLengthLigGlyphs*2 {
+			return item, 0, fmt.Errorf("reading LigCaretList: "+"EOF: expected length: %d, got %d", 4+arrayLengthLigGlyphs*2, L)
 		}
 
-		item.LigGlyphs = make([]LigGlyph, arrayLengthItemLigGlyphs) // allocation guarded by the previous check
+		item.LigGlyphs = make([]LigGlyph, arrayLengthLigGlyphs) // allocation guarded by the previous check
 		for i := range item.LigGlyphs {
 			offset := int(binary.BigEndian.Uint16(src[4+i*2:]))
 			// ignore null offsets
@@ -499,9 +498,8 @@ func ParseLigCaretList(src []byte) (LigCaretList, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigCaretList: %s", err)
 			}
-
 		}
-		n += arrayLengthItemLigGlyphs * 2
+		n += arrayLengthLigGlyphs * 2
 	}
 	return item, n, nil
 }
@@ -512,16 +510,16 @@ func ParseLigGlyph(src []byte) (LigGlyph, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading LigGlyph: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemCaretValues := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthCaretValues := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemCaretValues*2 {
-			return item, 0, fmt.Errorf("reading LigGlyph: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemCaretValues*2, L)
+		if L := len(src); L < 2+arrayLengthCaretValues*2 {
+			return item, 0, fmt.Errorf("reading LigGlyph: "+"EOF: expected length: %d, got %d", 2+arrayLengthCaretValues*2, L)
 		}
 
-		item.CaretValues = make([]CaretValue, arrayLengthItemCaretValues) // allocation guarded by the previous check
+		item.CaretValues = make([]CaretValue, arrayLengthCaretValues) // allocation guarded by the previous check
 		for i := range item.CaretValues {
 			offset := int(binary.BigEndian.Uint16(src[2+i*2:]))
 			// ignore null offsets
@@ -538,9 +536,8 @@ func ParseLigGlyph(src []byte) (LigGlyph, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigGlyph: %s", err)
 			}
-
 		}
-		n += arrayLengthItemCaretValues * 2
+		n += arrayLengthCaretValues * 2
 	}
 	return item, n, nil
 }
@@ -553,16 +550,16 @@ func ParseMarkGlyphSets(src []byte) (MarkGlyphSets, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemCoverages := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthCoverages := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemCoverages*4 {
-			return item, 0, fmt.Errorf("reading MarkGlyphSets: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemCoverages*4, L)
+		if L := len(src); L < 4+arrayLengthCoverages*4 {
+			return item, 0, fmt.Errorf("reading MarkGlyphSets: "+"EOF: expected length: %d, got %d", 4+arrayLengthCoverages*4, L)
 		}
 
-		item.Coverages = make([]Coverage, arrayLengthItemCoverages) // allocation guarded by the previous check
+		item.Coverages = make([]Coverage, arrayLengthCoverages) // allocation guarded by the previous check
 		for i := range item.Coverages {
 			offset := int(binary.BigEndian.Uint32(src[4+i*4:]))
 			// ignore null offsets
@@ -579,9 +576,8 @@ func ParseMarkGlyphSets(src []byte) (MarkGlyphSets, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkGlyphSets: %s", err)
 			}
-
 		}
-		n += arrayLengthItemCoverages * 4
+		n += arrayLengthCoverages * 4
 	}
 	return item, n, nil
 }

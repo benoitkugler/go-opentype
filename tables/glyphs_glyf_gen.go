@@ -51,12 +51,12 @@ func ParseSimpleGlyph(src []byte) (SimpleGlyph, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.EndPtsOfContours = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemInstructions := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthInstructions := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		L := int(4 + arrayLengthItemInstructions)
+		L := int(4 + arrayLengthInstructions)
 		if len(src) < L {
 			return item, 0, fmt.Errorf("reading SimpleGlyph: "+"EOF: expected length: %d, got %d", L, len(src))
 		}

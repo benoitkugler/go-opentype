@@ -50,20 +50,20 @@ func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	arrayLengthItemvalues := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemvalues*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemvalues*2, L)
+		if L := len(src); L < 4+arrayLengthValues*2 {
+			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 4+arrayLengthValues*2, L)
 		}
 
-		item.values = make([]uint16, arrayLengthItemvalues) // allocation guarded by the previous check
+		item.values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
 		for i := range item.values {
 			item.values[i] = binary.BigEndian.Uint16(src[4+i*2:])
 		}
-		n += arrayLengthItemvalues * 2
+		n += arrayLengthValues * 2
 	}
 	return item, n, nil
 }
@@ -129,46 +129,46 @@ func parseKernSubtable2(src []byte) (kernSubtable2, int, error) {
 	}
 	_ = src[7] // early bound checking
 	item.rowWidth = binary.BigEndian.Uint16(src[0:])
-	offsetItemleft := int(binary.BigEndian.Uint16(src[2:]))
-	offsetItemright := int(binary.BigEndian.Uint16(src[4:]))
+	offsetLeft := int(binary.BigEndian.Uint16(src[2:]))
+	offsetRight := int(binary.BigEndian.Uint16(src[4:]))
 	item.kerningArrayOffset = binary.BigEndian.Uint16(src[6:])
 	n += 8
 
 	{
 
-		if offsetItemleft != 0 { // ignore null offset
-			if L := len(src); L < offsetItemleft {
-				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetItemleft, L)
+		if offsetLeft != 0 { // ignore null offset
+			if L := len(src); L < offsetLeft {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetLeft, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.left, read, err = parseAatLookupTable8(src[offsetItemleft:])
+			item.left, read, err = parseAatLookupTable8(src[offsetLeft:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
 			}
-			offsetItemleft += read
+			offsetLeft += read
 
 		}
 	}
 	{
 
-		if offsetItemright != 0 { // ignore null offset
-			if L := len(src); L < offsetItemright {
-				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetItemright, L)
+		if offsetRight != 0 { // ignore null offset
+			if L := len(src); L < offsetRight {
+				return item, 0, fmt.Errorf("reading kernSubtable2: "+"EOF: expected length: %d, got %d", offsetRight, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.right, read, err = parseAatLookupTable8(src[offsetItemright:])
+			item.right, read, err = parseAatLookupTable8(src[offsetRight:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading kernSubtable2: %s", err)
 			}
-			offsetItemright += read
+			offsetRight += read
 
 		}
 	}

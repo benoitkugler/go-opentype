@@ -23,13 +23,13 @@ func ParseAvar(src []byte) (Avar, int, error) {
 	item.majorVersion = binary.BigEndian.Uint16(src[0:])
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
 	item.reserved = binary.BigEndian.Uint16(src[4:])
-	arrayLengthItemAxisSegmentMaps := int(binary.BigEndian.Uint16(src[6:]))
+	arrayLengthAxisSegmentMaps := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
 	{
 
 		offset := 8
-		for i := 0; i < arrayLengthItemAxisSegmentMaps; i++ {
+		for i := 0; i < arrayLengthAxisSegmentMaps; i++ {
 			elem, read, err := ParseSegmentMaps(src[offset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Avar: %s", err)
@@ -126,18 +126,18 @@ func ParseGlyphVariationData(src []byte, axisCount int) (GlyphVariationData, int
 	}
 	_ = src[3] // early bound checking
 	item.tupleVariationCount = binary.BigEndian.Uint16(src[0:])
-	offsetItemSerializedData := int(binary.BigEndian.Uint16(src[2:]))
+	offsetSerializedData := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
-		if offsetItemSerializedData != 0 { // ignore null offset
-			if L := len(src); L < offsetItemSerializedData {
-				return item, 0, fmt.Errorf("reading GlyphVariationData: "+"EOF: expected length: %d, got %d", offsetItemSerializedData, L)
+		if offsetSerializedData != 0 { // ignore null offset
+			if L := len(src); L < offsetSerializedData {
+				return item, 0, fmt.Errorf("reading GlyphVariationData: "+"EOF: expected length: %d, got %d", offsetSerializedData, L)
 			}
 
-			item.SerializedData = src[offsetItemSerializedData:]
-			offsetItemSerializedData = len(src)
+			item.SerializedData = src[offsetSerializedData:]
+			offsetSerializedData = len(src)
 		}
 	}
 	{
@@ -168,7 +168,7 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
 	item.axisCount = binary.BigEndian.Uint16(src[4:])
 	item.sharedTupleCount = binary.BigEndian.Uint16(src[6:])
-	offsetItemSharedTuples := int(binary.BigEndian.Uint32(src[8:]))
+	offsetSharedTuples := int(binary.BigEndian.Uint32(src[8:]))
 	item.glyphCount = binary.BigEndian.Uint16(src[12:])
 	item.flags = binary.BigEndian.Uint16(src[14:])
 	item.glyphVariationDataArrayOffset = Offset32(binary.BigEndian.Uint32(src[16:]))
@@ -176,20 +176,20 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 
 	{
 
-		if offsetItemSharedTuples != 0 { // ignore null offset
-			if L := len(src); L < offsetItemSharedTuples {
-				return item, 0, fmt.Errorf("reading Gvar: "+"EOF: expected length: %d, got %d", offsetItemSharedTuples, L)
+		if offsetSharedTuples != 0 { // ignore null offset
+			if L := len(src); L < offsetSharedTuples {
+				return item, 0, fmt.Errorf("reading Gvar: "+"EOF: expected length: %d, got %d", offsetSharedTuples, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.SharedTuples, read, err = ParseSharedTuples(src[offsetItemSharedTuples:], int(item.sharedTupleCount), int(item.axisCount))
+			item.SharedTuples, read, err = ParseSharedTuples(src[offsetSharedTuples:], int(item.sharedTupleCount), int(item.axisCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Gvar: %s", err)
 			}
-			offsetItemSharedTuples += read
+			offsetSharedTuples += read
 
 		}
 	}
@@ -221,85 +221,85 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 	_ = src[19] // early bound checking
 	item.majorVersion = binary.BigEndian.Uint16(src[0:])
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
-	offsetItemItemVariationStore := int(binary.BigEndian.Uint32(src[4:]))
-	offsetItemAdvanceWidthMapping := int(binary.BigEndian.Uint32(src[8:]))
-	offsetItemLsbMapping := int(binary.BigEndian.Uint32(src[12:]))
-	offsetItemRsbMapping := int(binary.BigEndian.Uint32(src[16:]))
+	offsetItemVariationStore := int(binary.BigEndian.Uint32(src[4:]))
+	offsetAdvanceWidthMapping := int(binary.BigEndian.Uint32(src[8:]))
+	offsetLsbMapping := int(binary.BigEndian.Uint32(src[12:]))
+	offsetRsbMapping := int(binary.BigEndian.Uint32(src[16:]))
 	n += 20
 
 	{
 
-		if offsetItemItemVariationStore != 0 { // ignore null offset
-			if L := len(src); L < offsetItemItemVariationStore {
-				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemItemVariationStore, L)
+		if offsetItemVariationStore != 0 { // ignore null offset
+			if L := len(src); L < offsetItemVariationStore {
+				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemVariationStore, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemItemVariationStore:])
+			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemVariationStore:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetItemItemVariationStore += read
+			offsetItemVariationStore += read
 
 		}
 	}
 	{
 
-		if offsetItemAdvanceWidthMapping != 0 { // ignore null offset
-			if L := len(src); L < offsetItemAdvanceWidthMapping {
-				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemAdvanceWidthMapping, L)
+		if offsetAdvanceWidthMapping != 0 { // ignore null offset
+			if L := len(src); L < offsetAdvanceWidthMapping {
+				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetAdvanceWidthMapping, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.AdvanceWidthMapping, read, err = ParseDeltaSetMapping(src[offsetItemAdvanceWidthMapping:])
+			item.AdvanceWidthMapping, read, err = ParseDeltaSetMapping(src[offsetAdvanceWidthMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetItemAdvanceWidthMapping += read
+			offsetAdvanceWidthMapping += read
 
 		}
 	}
 	{
 
-		if offsetItemLsbMapping != 0 { // ignore null offset
-			if L := len(src); L < offsetItemLsbMapping {
-				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemLsbMapping, L)
+		if offsetLsbMapping != 0 { // ignore null offset
+			if L := len(src); L < offsetLsbMapping {
+				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetLsbMapping, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.LsbMapping, read, err = ParseDeltaSetMapping(src[offsetItemLsbMapping:])
+			item.LsbMapping, read, err = ParseDeltaSetMapping(src[offsetLsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetItemLsbMapping += read
+			offsetLsbMapping += read
 
 		}
 	}
 	{
 
-		if offsetItemRsbMapping != 0 { // ignore null offset
-			if L := len(src); L < offsetItemRsbMapping {
-				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemRsbMapping, L)
+		if offsetRsbMapping != 0 { // ignore null offset
+			if L := len(src); L < offsetRsbMapping {
+				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetRsbMapping, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.RsbMapping, read, err = ParseDeltaSetMapping(src[offsetItemRsbMapping:])
+			item.RsbMapping, read, err = ParseDeltaSetMapping(src[offsetRsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetItemRsbMapping += read
+			offsetRsbMapping += read
 
 		}
 	}
@@ -348,36 +348,36 @@ func ParseItemVarStore(src []byte) (ItemVarStore, int, error) {
 	}
 	_ = src[7] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	offsetItemVariationRegionList := int(binary.BigEndian.Uint32(src[2:]))
-	arrayLengthItemItemVariationDatas := int(binary.BigEndian.Uint16(src[6:]))
+	offsetVariationRegionList := int(binary.BigEndian.Uint32(src[2:]))
+	arrayLengthItemVariationDatas := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
 	{
 
-		if offsetItemVariationRegionList != 0 { // ignore null offset
-			if L := len(src); L < offsetItemVariationRegionList {
-				return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", offsetItemVariationRegionList, L)
+		if offsetVariationRegionList != 0 { // ignore null offset
+			if L := len(src); L < offsetVariationRegionList {
+				return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", offsetVariationRegionList, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.VariationRegionList, read, err = ParseVariationRegionList(src[offsetItemVariationRegionList:])
+			item.VariationRegionList, read, err = ParseVariationRegionList(src[offsetVariationRegionList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ItemVarStore: %s", err)
 			}
-			offsetItemVariationRegionList += read
+			offsetVariationRegionList += read
 
 		}
 	}
 	{
 
-		if L := len(src); L < 8+arrayLengthItemItemVariationDatas*4 {
-			return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemItemVariationDatas*4, L)
+		if L := len(src); L < 8+arrayLengthItemVariationDatas*4 {
+			return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", 8+arrayLengthItemVariationDatas*4, L)
 		}
 
-		item.ItemVariationDatas = make([]ItemVariationData, arrayLengthItemItemVariationDatas) // allocation guarded by the previous check
+		item.ItemVariationDatas = make([]ItemVariationData, arrayLengthItemVariationDatas) // allocation guarded by the previous check
 		for i := range item.ItemVariationDatas {
 			offset := int(binary.BigEndian.Uint32(src[8+i*4:]))
 			// ignore null offsets
@@ -394,9 +394,8 @@ func ParseItemVarStore(src []byte) (ItemVarStore, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ItemVarStore: %s", err)
 			}
-
 		}
-		n += arrayLengthItemItemVariationDatas * 4
+		n += arrayLengthItemVariationDatas * 4
 	}
 	return item, n, nil
 }
@@ -449,25 +448,25 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 	item.reserved = binary.BigEndian.Uint16(src[4:])
 	item.valueRecordSize = binary.BigEndian.Uint16(src[6:])
 	item.valueRecordCount = binary.BigEndian.Uint16(src[8:])
-	offsetItemItemVariationStore := int(binary.BigEndian.Uint16(src[10:]))
+	offsetItemVariationStore := int(binary.BigEndian.Uint16(src[10:]))
 	n += 12
 
 	{
 
-		if offsetItemItemVariationStore != 0 { // ignore null offset
-			if L := len(src); L < offsetItemItemVariationStore {
-				return item, 0, fmt.Errorf("reading MVAR: "+"EOF: expected length: %d, got %d", offsetItemItemVariationStore, L)
+		if offsetItemVariationStore != 0 { // ignore null offset
+			if L := len(src); L < offsetItemVariationStore {
+				return item, 0, fmt.Errorf("reading MVAR: "+"EOF: expected length: %d, got %d", offsetItemVariationStore, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemItemVariationStore:])
+			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemVariationStore:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MVAR: %s", err)
 			}
-			offsetItemItemVariationStore += read
+			offsetItemVariationStore += read
 
 		}
 	}
@@ -488,20 +487,20 @@ func ParseSegmentMaps(src []byte) (SegmentMaps, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading SegmentMaps: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthItemAxisValueMaps := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthAxisValueMaps := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthItemAxisValueMaps*4 {
-			return item, 0, fmt.Errorf("reading SegmentMaps: "+"EOF: expected length: %d, got %d", 2+arrayLengthItemAxisValueMaps*4, L)
+		if L := len(src); L < 2+arrayLengthAxisValueMaps*4 {
+			return item, 0, fmt.Errorf("reading SegmentMaps: "+"EOF: expected length: %d, got %d", 2+arrayLengthAxisValueMaps*4, L)
 		}
 
-		item.AxisValueMaps = make([]AxisValueMap, arrayLengthItemAxisValueMaps) // allocation guarded by the previous check
+		item.AxisValueMaps = make([]AxisValueMap, arrayLengthAxisValueMaps) // allocation guarded by the previous check
 		for i := range item.AxisValueMaps {
 			item.AxisValueMaps[i].mustParse(src[2+i*4:])
 		}
-		n += arrayLengthItemAxisValueMaps * 4
+		n += arrayLengthAxisValueMaps * 4
 	}
 	return item, n, nil
 }
@@ -610,13 +609,13 @@ func ParseVariationRegionList(src []byte) (VariationRegionList, int, error) {
 	}
 	_ = src[3] // early bound checking
 	item.axisCount = binary.BigEndian.Uint16(src[0:])
-	arrayLengthItemVariationRegions := int(binary.BigEndian.Uint16(src[2:]))
+	arrayLengthVariationRegions := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
 	{
 
 		offset := 4
-		for i := 0; i < arrayLengthItemVariationRegions; i++ {
+		for i := 0; i < arrayLengthVariationRegions; i++ {
 			elem, read, err := ParseVariationRegion(src[offset:], int(item.axisCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading VariationRegionList: %s", err)

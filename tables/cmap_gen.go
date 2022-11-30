@@ -575,20 +575,20 @@ func ParseDefaultUVSTable(src []byte) (DefaultUVSTable, int, error) {
 	if L := len(src); L < 4 {
 		return item, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: 4, got %d", L)
 	}
-	arrayLengthItemranges := int(binary.BigEndian.Uint32(src[0:]))
+	arrayLengthRanges := int(binary.BigEndian.Uint32(src[0:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemranges*4 {
-			return item, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemranges*4, L)
+		if L := len(src); L < 4+arrayLengthRanges*4 {
+			return item, 0, fmt.Errorf("reading DefaultUVSTable: "+"EOF: expected length: %d, got %d", 4+arrayLengthRanges*4, L)
 		}
 
-		item.ranges = make([]unicodeRange, arrayLengthItemranges) // allocation guarded by the previous check
+		item.ranges = make([]unicodeRange, arrayLengthRanges) // allocation guarded by the previous check
 		for i := range item.ranges {
 			item.ranges[i].mustParse(src[4+i*4:])
 		}
-		n += arrayLengthItemranges * 4
+		n += arrayLengthRanges * 4
 	}
 	return item, n, nil
 }
@@ -599,20 +599,20 @@ func ParseUVSMappingTable(src []byte) (UVSMappingTable, int, error) {
 	if L := len(src); L < 4 {
 		return item, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: 4, got %d", L)
 	}
-	arrayLengthItemranges := int(binary.BigEndian.Uint32(src[0:]))
+	arrayLengthRanges := int(binary.BigEndian.Uint32(src[0:]))
 	n += 4
 
 	{
 
-		if L := len(src); L < 4+arrayLengthItemranges*5 {
-			return item, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: %d, got %d", 4+arrayLengthItemranges*5, L)
+		if L := len(src); L < 4+arrayLengthRanges*5 {
+			return item, 0, fmt.Errorf("reading UVSMappingTable: "+"EOF: expected length: %d, got %d", 4+arrayLengthRanges*5, L)
 		}
 
-		item.ranges = make([]uvsMappingRecord, arrayLengthItemranges) // allocation guarded by the previous check
+		item.ranges = make([]uvsMappingRecord, arrayLengthRanges) // allocation guarded by the previous check
 		for i := range item.ranges {
 			item.ranges[i].mustParse(src[4+i*5:])
 		}
-		n += arrayLengthItemranges * 5
+		n += arrayLengthRanges * 5
 	}
 	return item, n, nil
 }

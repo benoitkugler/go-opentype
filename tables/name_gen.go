@@ -16,18 +16,18 @@ func ParseName(src []byte) (Name, int, error) {
 	_ = src[5] // early bound checking
 	item.version = binary.BigEndian.Uint16(src[0:])
 	item.count = binary.BigEndian.Uint16(src[2:])
-	offsetItemstringData := int(binary.BigEndian.Uint16(src[4:]))
+	offsetStringData := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetItemstringData != 0 { // ignore null offset
-			if L := len(src); L < offsetItemstringData {
-				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offsetItemstringData, L)
+		if offsetStringData != 0 { // ignore null offset
+			if L := len(src); L < offsetStringData {
+				return item, 0, fmt.Errorf("reading Name: "+"EOF: expected length: %d, got %d", offsetStringData, L)
 			}
 
-			item.stringData = src[offsetItemstringData:]
-			offsetItemstringData = len(src)
+			item.stringData = src[offsetStringData:]
+			offsetStringData = len(src)
 		}
 	}
 	{
