@@ -42,32 +42,6 @@ func (item *kernx0Record) mustParse(src []byte) {
 	item.value = int16(binary.BigEndian.Uint16(src[4:]))
 }
 
-func parseAatLookupTable8(src []byte) (aatLookupTable8, int, error) {
-	var item aatLookupTable8
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: 4, got %d", L)
-	}
-	_ = src[3] // early bound checking
-	item.firstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
-	n += 4
-
-	{
-
-		if L := len(src); L < 4+arrayLengthValues*2 {
-			return item, 0, fmt.Errorf("reading aatLookupTable8: "+"EOF: expected length: %d, got %d", 4+arrayLengthValues*2, L)
-		}
-
-		item.values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
-		for i := range item.values {
-			item.values[i] = binary.BigEndian.Uint16(src[4+i*2:])
-		}
-		n += arrayLengthValues * 2
-	}
-	return item, n, nil
-}
-
 func parseKernSubtable0(src []byte) (kernSubtable0, int, error) {
 	var item kernSubtable0
 	n := 0

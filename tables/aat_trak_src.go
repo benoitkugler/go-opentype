@@ -1,10 +1,5 @@
 package tables
 
-import (
-	"encoding/binary"
-	"fmt"
-)
-
 // Trak is the tracking table.
 // See - https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6trak.html
 type Trak struct {
@@ -13,17 +8,6 @@ type Trak struct {
 	Horiz    TrackData `offsetSize:"Offset16"` // Offset from start of tracking table to TrackData for horizontal text (or 0 if none).
 	Vert     TrackData `offsetSize:"Offset16"` // Offset from start of tracking table to TrackData for vertical text (or 0 if none).
 	reserved uint16    // Reserved. Set to 0.
-}
-
-func parseTrackSizes(src []byte, offset, count int) ([]int16, error) {
-	if L := len(src); L < offset+count*2 {
-		return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset+count*2, L)
-	}
-	out := make([]int16, count)
-	for i := range out {
-		out[i] = int16(binary.BigEndian.Uint16(src[offset+2*i:]))
-	}
-	return out, nil
 }
 
 type TrackData struct {
