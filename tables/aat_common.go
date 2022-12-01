@@ -16,19 +16,19 @@ type aatSTHeader struct {
 	entryTable uint16 // Byte offset from the beginning of the state table to the entry subtable.
 }
 
-// Extended state table header, without the actual data
+// Extended state table, including the data
 // See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6Tables.html - State tables
 // binarygen: argument=entryDataSize int
-type aatSTXHeader struct {
+type AATStateTableExt struct {
 	stateSize  uint32          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
-	classTable AATLookup       `offsetSize:"Offset32"` // Byte offset from the beginning of the state table to the class subtable.
+	Class      AATLookup       `offsetSize:"Offset32"` // Byte offset from the beginning of the state table to the class subtable.
 	stateArray Offset32        // Byte offset from the beginning of the state table to the state array.
 	entryTable Offset32        // Byte offset from the beginning of the state table to the entry subtable.
 	States     [][]uint16      `isOpaque:""`
 	Entries    []AATStateEntry `isOpaque:""`
 }
 
-func (state *aatSTXHeader) parseStates(src []byte, _, _ int) (int, error) {
+func (state *AATStateTableExt) parseStates(src []byte, _, _ int) (int, error) {
 	if state.stateArray > state.entryTable {
 		return 0, fmt.Errorf("invalid AAT state table (%d > %d)", state.stateArray, state.entryTable)
 	}
@@ -54,7 +54,7 @@ func (state *aatSTXHeader) parseStates(src []byte, _, _ int) (int, error) {
 	return 0, nil
 }
 
-func (state *aatSTXHeader) parseEntries(src []byte, _, entryDataSize int) (int, error) {
+func (state *AATStateTableExt) parseEntries(src []byte, _, entryDataSize int) (int, error) {
 	// find max index
 	var maxi uint16
 	for _, l := range state.States {
@@ -127,6 +127,9 @@ type binSearchHeader struct {
 
 type AATLookup interface {
 	isAATLookup()
+	// Class returns the class ID for the provided glyph, or (0, false)
+	// for glyphs not covered by this class.
+	Class(g GlyphID) (uint16, bool)
 }
 
 func (AATLoopkup0) isAATLookup()  {}
@@ -144,10 +147,10 @@ type AATLoopkup0 struct {
 type AATLoopkup2 struct {
 	version uint16 `unionTag:"2"`
 	binSearchHeader
-	Records []lookupRecord2 `arrayCount:"ComputedField-nUnits"`
+	Records []LookupRecord2 `arrayCount:"ComputedField-nUnits"`
 }
 
-type lookupRecord2 struct {
+type LookupRecord2 struct {
 	LastGlyph  GlyphID
 	FirstGlyph GlyphID
 	Value      uint16
@@ -156,17 +159,18 @@ type lookupRecord2 struct {
 type AATLoopkup4 struct {
 	version uint16 `unionTag:"4"`
 	binSearchHeader
-	Records []loopkupRecord4 `arrayCount:"ComputedField-nUnits"`
+	// Do not include the termination segment
+	Records []AATLookupRecord4 `arrayCount:"ComputedField-nUnits-1"`
 }
 
-type loopkupRecord4 struct {
+type AATLookupRecord4 struct {
 	LastGlyph  GlyphID
 	FirstGlyph GlyphID
 	// offset to an array of []uint16 (or []uint32 for extended) with length last - first + 1
 	Values []uint16 `offsetSize:"Offset16" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nValues()"`
 }
 
-func (lk loopkupRecord4) nValues() int { return int(lk.LastGlyph) - int(lk.FirstGlyph) + 1 }
+func (lk AATLookupRecord4) nValues() int { return int(lk.LastGlyph) - int(lk.FirstGlyph) + 1 }
 
 type AATLoopkup6 struct {
 	version uint16 `unionTag:"6"`

@@ -650,13 +650,29 @@ func ParseChainedSequenceRule(src []byte) (ChainedSequenceRule, int, error) {
 		}
 		n += arrayLength * 2
 	}
-	if L := len(src); L < n+4 {
-		return item, 0, fmt.Errorf("reading ChainedSequenceRule: "+"EOF: expected length: n + 4, got %d", L)
+	if L := len(src); L < n+2 {
+		return item, 0, fmt.Errorf("reading ChainedSequenceRule: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	_ = src[n+3] // early bound checking
-	item.LookaheadSequence = GlyphID(binary.BigEndian.Uint16(src[n:]))
+	arrayLengthLookaheadSequence := int(binary.BigEndian.Uint16(src[n:]))
+	n += 2
+
+	{
+
+		if L := len(src); L < n+arrayLengthLookaheadSequence*2 {
+			return item, 0, fmt.Errorf("reading ChainedSequenceRule: "+"EOF: expected length: %d, got %d", n+arrayLengthLookaheadSequence*2, L)
+		}
+
+		item.LookaheadSequence = make([]GlyphID, arrayLengthLookaheadSequence) // allocation guarded by the previous check
+		for i := range item.LookaheadSequence {
+			item.LookaheadSequence[i] = GlyphID(binary.BigEndian.Uint16(src[n+i*2:]))
+		}
+		n += arrayLengthLookaheadSequence * 2
+	}
+	if L := len(src); L < n+2 {
+		return item, 0, fmt.Errorf("reading ChainedSequenceRule: "+"EOF: expected length: n + 2, got %d", L)
+	}
 	arrayLengthSeqLookupRecords := int(binary.BigEndian.Uint16(src[n:]))
-	n += 4
+	n += 2
 
 	{
 

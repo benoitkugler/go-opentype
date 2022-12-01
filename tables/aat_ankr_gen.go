@@ -13,6 +13,13 @@ func (item *AnrkAnchor) mustParse(src []byte) {
 	item.Y = int16(binary.BigEndian.Uint16(src[2:]))
 }
 
+func (item *LookupRecord2) mustParse(src []byte) {
+	_ = src[5] // early bound checking
+	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.Value = binary.BigEndian.Uint16(src[4:])
+}
+
 func ParseAATLookup(src []byte, valuesCount int) (AATLookup, int, error) {
 	var item AATLookup
 
@@ -45,6 +52,41 @@ func ParseAATLookup(src []byte, valuesCount int) (AATLookup, int, error) {
 	}
 
 	return item, read, nil
+}
+
+func ParseAATLookupRecord4(src []byte, parentSrc []byte) (AATLookupRecord4, int, error) {
+	var item AATLookupRecord4
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading AATLookupRecord4: "+"EOF: expected length: 6, got %d", L)
+	}
+	_ = src[5] // early bound checking
+	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	offsetValues := int(binary.BigEndian.Uint16(src[4:]))
+	n += 6
+
+	{
+
+		if offsetValues != 0 { // ignore null offset
+			if L := len(parentSrc); L < offsetValues {
+				return item, 0, fmt.Errorf("reading AATLookupRecord4: "+"EOF: expected length: %d, got %d", offsetValues, L)
+			}
+
+			arrayLength := int(item.nValues())
+
+			if L := len(parentSrc); L < offsetValues+arrayLength*2 {
+				return item, 0, fmt.Errorf("reading AATLookupRecord4: "+"EOF: expected length: %d, got %d", offsetValues+arrayLength*2, L)
+			}
+
+			item.Values = make([]uint16, arrayLength) // allocation guarded by the previous check
+			for i := range item.Values {
+				item.Values[i] = binary.BigEndian.Uint16(parentSrc[offsetValues+i*2:])
+			}
+			offsetValues += arrayLength * 2
+		}
+	}
+	return item, n, nil
 }
 
 func ParseAATLoopkup0(src []byte, valuesCount int) (AATLoopkup0, int, error) {
@@ -117,7 +159,7 @@ func ParseAATLoopkup2(src []byte) (AATLoopkup2, int, error) {
 			return item, 0, fmt.Errorf("reading AATLoopkup2: "+"EOF: expected length: %d, got %d", 12+arrayLength*6, L)
 		}
 
-		item.Records = make([]lookupRecord2, arrayLength) // allocation guarded by the previous check
+		item.Records = make([]LookupRecord2, arrayLength) // allocation guarded by the previous check
 		for i := range item.Records {
 			item.Records[i].mustParse(src[12+i*6:])
 		}
@@ -138,11 +180,11 @@ func ParseAATLoopkup4(src []byte) (AATLoopkup4, int, error) {
 	n += 12
 
 	{
-		arrayLength := int(item.nUnits)
+		arrayLength := int(item.nUnits - 1)
 
 		offset := 12
 		for i := 0; i < arrayLength; i++ {
-			elem, read, err := parseLoopkupRecord4(src[offset:], src)
+			elem, read, err := ParseAATLookupRecord4(src[offset:], src)
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AATLoopkup4: %s", err)
 			}
@@ -273,50 +315,8 @@ func (item *binSearchHeader) mustParse(src []byte) {
 	item.rangeShift = binary.BigEndian.Uint16(src[8:])
 }
 
-func (item *lookupRecord2) mustParse(src []byte) {
-	_ = src[5] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	item.Value = binary.BigEndian.Uint16(src[4:])
-}
-
 func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.Glyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	item.Value = binary.BigEndian.Uint16(src[2:])
-}
-
-func parseLoopkupRecord4(src []byte, parentSrc []byte) (loopkupRecord4, int, error) {
-	var item loopkupRecord4
-	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading loopkupRecord4: "+"EOF: expected length: 6, got %d", L)
-	}
-	_ = src[5] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	offsetValues := int(binary.BigEndian.Uint16(src[4:]))
-	n += 6
-
-	{
-
-		if offsetValues != 0 { // ignore null offset
-			if L := len(parentSrc); L < offsetValues {
-				return item, 0, fmt.Errorf("reading loopkupRecord4: "+"EOF: expected length: %d, got %d", offsetValues, L)
-			}
-
-			arrayLength := int(item.nValues())
-
-			if L := len(parentSrc); L < offsetValues+arrayLength*2 {
-				return item, 0, fmt.Errorf("reading loopkupRecord4: "+"EOF: expected length: %d, got %d", offsetValues+arrayLength*2, L)
-			}
-
-			item.Values = make([]uint16, arrayLength) // allocation guarded by the previous check
-			for i := range item.Values {
-				item.Values[i] = binary.BigEndian.Uint16(parentSrc[offsetValues+i*2:])
-			}
-			offsetValues += arrayLength * 2
-		}
-	}
-	return item, n, nil
 }
