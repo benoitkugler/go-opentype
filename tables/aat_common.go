@@ -125,6 +125,8 @@ type binSearchHeader struct {
 	rangeShift    uint16 // The value of unitSize times the difference of the value of nUnits minus the largest power of 2 less than or equal to the value of nUnits.
 }
 
+// AATLookup is conceptually a map[GlyphID]uint16, but it may
+// be implemented more efficiently.
 type AATLookup interface {
 	isAATLookup()
 	// Class returns the class ID for the provided glyph, or (0, false)

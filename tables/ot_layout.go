@@ -15,6 +15,12 @@ import (
 // See https://learn.microsoft.com/typography/opentype/spec/chapter2#lookup-table
 type Coverage interface {
 	isCoverage()
+
+	// Index returns the index of the provided glyph, or
+	// `false` if the glyph is not covered by this lookup.
+	// Note: this method is injective: two distincts, covered glyphs are mapped
+	// to distincts indices.
+	Index(GlyphID) (int, bool)
 }
 
 func (Coverage1) isCoverage() {}
@@ -41,6 +47,7 @@ type RangeRecord struct {
 // be implemented more efficiently.
 type ClassDef interface {
 	isClassDef()
+	Class(gi GlyphID) (uint16, bool)
 }
 
 func (ClassDef1) isClassDef() {}
