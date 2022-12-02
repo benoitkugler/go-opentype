@@ -2,6 +2,7 @@ package tables
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
@@ -359,3 +360,49 @@ func TestMorxInsertion(t *testing.T) {
 
 	assert(t, reflect.DeepEqual(insert.Insertions, []GlyphID{0x022f}))
 }
+
+func TestParseKerx(t *testing.T) {
+	for _, filepath := range []string{
+		"toys/tables/kerx0.bin",
+		"toys/tables/kerx2.bin",
+		"toys/tables/kerx2bis.bin",
+		"toys/tables/kerx6-VF.bin",
+		"toys/tables/kerx24.bin",
+	} {
+		table, err := td.Files.ReadFile(filepath)
+		assertNoErr(t, err)
+
+		kerx, _, err := ParseKerx(table, 0xFF)
+		assertNoErr(t, err)
+		assert(t, len(kerx.Tables) > 0)
+
+		for _, subtable := range kerx.Tables {
+			assert(t, subtable.TupleCount > 0 == strings.Contains(filepath, "VF"))
+			switch data := subtable.Data.(type) {
+			case KerxData0:
+				assert(t, len(data.Pairs) > 0)
+			case KerxData2:
+				assert(t, data.Left != nil)
+				assert(t, data.Right != nil)
+				assert(t, int(data.array) <= len(data.kerningData))
+			}
+		}
+	}
+}
+
+// func TestExtract(t *testing.T) {
+// 	filepath := "/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/harfbuzz/harfbuzz_reference/in-house/fonts/e39391c77a6321c2ac7a2d644de0396470cd4bfe.ttf"
+// 	file, err := os.ReadFile(filepath)
+// 	assertNoErr(t, err)
+
+// 	fonts, err := opentype.NewLoaders(bytes.NewReader(file))
+// 	assertNoErr(t, err)
+// 	fmt.Println(len(fonts))
+// 	font := fonts[0]
+
+// 	// font, err := opentype.NewLoader(bytes.NewReader(file))
+// 	// assertNoErr(t, err)
+
+// 	b := readTable(t, font, "kern")
+// 	os.WriteFile("kern02.bin", b, os.ModePerm)
+// }
