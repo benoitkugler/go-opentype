@@ -128,7 +128,10 @@ type binSearchHeader struct {
 // AATLookup is conceptually a map[GlyphID]uint16, but it may
 // be implemented more efficiently.
 type AATLookup interface {
+	aatLookupMixed
+
 	isAATLookup()
+
 	// Class returns the class ID for the provided glyph, or (0, false)
 	// for glyphs not covered by this class.
 	Class(g GlyphID) (uint16, bool)
@@ -200,8 +203,15 @@ type AATLoopkup10 struct {
 
 // extended versions
 
+// AATLookupExt is the same as AATLookup, but class values are uint32
 type AATLookupExt interface {
+	aatLookupMixed
+
 	isAATLookupExt()
+
+	// Class returns the class ID for the provided glyph, or (0, false)
+	// for glyphs not covered by this class.
+	Class(g GlyphID) (uint32, bool)
 }
 
 func (AATLoopkupExt0) isAATLookupExt()  {}
@@ -242,6 +252,8 @@ type loopkupRecordExt4 struct {
 	Values []uint32 `offsetSize:"Offset16" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nValues()"`
 }
 
+func (lk loopkupRecordExt4) nValues() int { return int(lk.LastGlyph) - int(lk.FirstGlyph) + 1 }
+
 type AATLoopkupExt6 struct {
 	version uint16 `unionTag:"6"`
 	binSearchHeader
@@ -253,11 +265,7 @@ type loopkupRecordExt6 struct {
 	Value uint32
 }
 
-type AATLoopkupExt8 struct {
-	version    uint16 `unionTag:"8"`
-	FirstGlyph GlyphID
-	Values     []uint16 `arrayCount:"FirstUint16"`
-}
+type AATLoopkupExt8 AATLoopkup8
 
 type AATLoopkupExt10 struct {
 	version    uint16 `unionTag:"10"`

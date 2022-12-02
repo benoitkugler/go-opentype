@@ -366,8 +366,11 @@ func TestParseKerx(t *testing.T) {
 		"toys/tables/kerx0.bin",
 		"toys/tables/kerx2.bin",
 		"toys/tables/kerx2bis.bin",
-		"toys/tables/kerx6-VF.bin",
 		"toys/tables/kerx24.bin",
+		"toys/tables/kerx4-1.bin",
+		"toys/tables/kerx4-2.bin",
+		"toys/tables/kerx6Exp-VF.bin",
+		"toys/tables/kerx6-VF.bin",
 	} {
 		table, err := td.Files.ReadFile(filepath)
 		assertNoErr(t, err)
@@ -385,24 +388,86 @@ func TestParseKerx(t *testing.T) {
 				assert(t, data.Left != nil)
 				assert(t, data.Right != nil)
 				assert(t, int(data.array) <= len(data.kerningData))
+			case KerxData4:
+				assert(t, data.Anchors != nil)
 			}
 		}
 	}
 }
 
-// func TestExtract(t *testing.T) {
-// 	filepath := "/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/harfbuzz/harfbuzz_reference/in-house/fonts/e39391c77a6321c2ac7a2d644de0396470cd4bfe.ttf"
-// 	file, err := os.ReadFile(filepath)
+func TestKerx6(t *testing.T) {
+	table, err := td.Files.ReadFile("toys/tables/kerx6Exp-VF.bin")
+	assertNoErr(t, err)
+
+	kerx, _, err := ParseKerx(table, 0xFF)
+	assert(t, len(kerx.Tables) == 1)
+
+	k, ok := kerx.Tables[0].Data.(KerxData6)
+	assert(t, ok)
+
+	expecteds := []struct { // value extracted from harfbuzz run
+		left, right GlyphID
+		kerning     int16
+	}{
+		{283, 659, -270},
+		{659, 3, 0},
+		{3, 4, 0},
+		{4, 333, -130},
+		{333, 3, 0},
+		{3, 283, 0},
+		{283, 815, -230},
+		{815, 3, 0},
+		{3, 333, 0},
+		{333, 573, -150},
+		{573, 3, 0},
+		{3, 815, 0},
+		{815, 283, -170},
+		{283, 3, 0},
+		{3, 659, 0},
+		{659, 283, -270},
+		{283, 3, 0},
+		{3, 283, 0},
+		{283, 650, -270},
+	}
+
+	for _, exp := range expecteds {
+		got := k.KernPair(exp.left, exp.right)
+		assert(t, got == exp.kerning)
+	}
+}
+
+func TestExtract(t *testing.T) {
+	// filepath := "/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/truetype/Bangla Sangam MN.ttc"
+	// file, err := os.ReadFile(filepath)
+	// assertNoErr(t, err)
+
+	// fonts, err := opentype.NewLoaders(bytes.NewReader(file))
+	// assertNoErr(t, err)
+	// fmt.Println(len(fonts))
+	// // font := fonts[0]
+
+	// // font, err := opentype.NewLoader(bytes.NewReader(file))
+	// // assertNoErr(t, err)
+
+	// for i, font := range fonts {
+	// 	b := readTable(t, font, "kerx")
+	// 	os.WriteFile(fmt.Sprintf("kerx4-%d.bin", i+1), b, os.ModePerm)
+
+	// }
+}
+
+// func TestTmp(t *testing.T) {
+// 	table, err := td.Files.ReadFile("toys/tables/kerx6Exp.bin")
 // 	assertNoErr(t, err)
 
-// 	fonts, err := opentype.NewLoaders(bytes.NewReader(file))
-// 	assertNoErr(t, err)
-// 	fmt.Println(len(fonts))
-// 	font := fonts[0]
+// 	table = table[12:]
+// 	header := make([]byte, 2+2+4)
+// 	binary.BigEndian.PutUint16(header[:], 2)
+// 	binary.BigEndian.PutUint16(header[2:], 0)
+// 	binary.BigEndian.PutUint32(header[4:], 1)
+// 	table = append(header, table...)
 
-// 	// font, err := opentype.NewLoader(bytes.NewReader(file))
+// 	os.WriteFile("/home/benoit/go/src/github.com/benoitkugler/go-opentype-testdata/data/toys/tables/kerx6Exp.bin", table, os.ModePerm)
+// 	// _, _, err = ParseKerx(table, 2775)
 // 	// assertNoErr(t, err)
-
-// 	b := readTable(t, font, "kern")
-// 	os.WriteFile("kern02.bin", b, os.ModePerm)
 // }

@@ -119,9 +119,178 @@ type KerxData2 struct {
 	kerningData []byte    `subsliceStart:"AtStart" arrayCount:"ToEnd"` // indexed by Left + Right
 }
 
-type KerxData4 struct{}
+// binarygen: argument=valuesCount int
+type KerxData4 struct {
+	AATStateTableExt `arguments:"valuesCount=valuesCount,entryDataSize=2"`
+	Flags            uint32
+	Anchors          KerxAnchors `isOpaque:""`
+}
 
-type KerxData6 struct{}
+func (kd KerxData4) nAnchors() int {
+	// find the maximum index need in the actions array
+	var maxi uint16
+	for _, entry := range kd.Entries {
+		if index := entry.AsKernxIndex(); index != 0xFFFF && index > maxi {
+			maxi = index
+		}
+	}
+	return int(maxi) + 1
+}
+
+func (kd *KerxData4) parseAnchors(src []byte, _ int) (int, error) {
+	nAnchors := kd.nAnchors()
+	const Offset = 0x00FFFFFF // Masks the offset in bytes from the beginning of the subtable to the beginning of the control point table.
+	controlOffset := int(kd.Flags & Offset)
+	if L := len(src); L < controlOffset {
+		return 0, fmt.Errorf("EOF: expected length: %d, got %d", controlOffset, L)
+	}
+	var err error
+	switch kd.ActionType() {
+	case 0:
+		kd.Anchors, _, err = ParseKerxAnchorControls(src[controlOffset:], nAnchors)
+	case 1:
+		kd.Anchors, _, err = ParseKerxAnchorAnchors(src[controlOffset:], nAnchors)
+	case 2:
+		kd.Anchors, _, err = ParseKerxAnchorCoordinates(src[controlOffset:], nAnchors)
+	default:
+		return 0, fmt.Errorf("invalid Kerx4 anchor format %d", kd.ActionType())
+	}
+	if err != nil {
+		return 0, err
+	}
+	return len(src), nil
+}
+
+// ActionType returns 0, 1 or 2, according to the anchor format :
+//   - 0 : KerxAnchorControls
+//   - 1 : KerxAnchorAnchors
+//   - 2 : KerxAnchorCoordinates
+func (kd KerxData4) ActionType() uint8 {
+	const ActionType = 0xC0000000 // A two-bit field containing the action type.
+	return uint8((kd.Flags & ActionType) >> 30)
+}
+
+type KerxAnchors interface {
+	isKerxAnchors()
+}
+
+func (KerxAnchorControls) isKerxAnchors()    {}
+func (KerxAnchorAnchors) isKerxAnchors()     {}
+func (KerxAnchorCoordinates) isKerxAnchors() {}
+
+type KerxAnchorControls struct {
+	Anchors []KAControl
+}
+type KerxAnchorAnchors struct {
+	Anchors []KAAnchor
+}
+type KerxAnchorCoordinates struct {
+	Anchors []KACoordinates
+}
+
+type KAControl struct {
+	Mark, Current uint16
+}
+
+type KAAnchor struct {
+	Mark, Current uint16
+}
+
+type KACoordinates struct {
+	MarkX, MarkY, CurrentX, CurrentY int16
+}
+
+// binarygen: argument=tupleCount int
+// binarygen: argument=valuesCount int
+type KerxData6 struct {
+	flags                  uint32         // Flags for this subtable. See below.
+	rowCount               uint16         // The number of rows in the kerning value array
+	columnCount            uint16         // The number of columns in the kerning value array
+	rowIndexTableOffset    uint32         // Offset from beginning of this subtable to the row index lookup table.
+	columnIndexTableOffset uint32         // Offset from beginning of this subtable to column index offset table.
+	kerningArrayOffset     uint32         // Offset from beginning of this subtable to the start of the kerning array.
+	kerningVectorOffset    uint32         // Offset from beginning of this subtable to the start of the kerning vectors. This value is only present if the tupleCount for this subtable is 1 or more.
+	row                    aatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"` // Values are pre-multiplied by `columnCount`
+	column                 aatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"`
+	// with rowCount * columnCount
+	// for tuples the values are estParseKerx (Not yet run).the first element of the tuple
+	kernings []int16 `isOpaque:""  offsetRelativeTo:"Parent"`
+}
+
+func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) (int, error) {
+	isExtended := kd.flags&1 != 0
+	if L := len(parentSrc); L < int(kd.rowIndexTableOffset) {
+		return 0, fmt.Errorf("EOF: expected length: %d, got %d", kd.rowIndexTableOffset, L)
+	}
+	var err error
+	if isExtended {
+		kd.row, _, err = ParseAATLookupExt(parentSrc[kd.rowIndexTableOffset:], valuesCount)
+	} else {
+		kd.row, _, err = ParseAATLookup(parentSrc[kd.rowIndexTableOffset:], valuesCount)
+	}
+	return 0, err
+}
+
+func (kd *KerxData6) parseColumn(_, parentSrc []byte, _, valuesCount int) (int, error) {
+	isExtended := kd.flags&1 != 0
+	if L := len(parentSrc); L < int(kd.columnIndexTableOffset) {
+		return 0, fmt.Errorf("EOF: expected length: %d, got %d", kd.columnIndexTableOffset, L)
+	}
+	var err error
+	if isExtended {
+		kd.column, _, err = ParseAATLookupExt(parentSrc[kd.columnIndexTableOffset:], valuesCount)
+	} else {
+		kd.column, _, err = ParseAATLookup(parentSrc[kd.columnIndexTableOffset:], valuesCount)
+	}
+	return 0, err
+}
+
+func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int, error) {
+	isExtended := kd.flags&1 != 0
+
+	length := int(kd.rowCount) * int(kd.columnCount)
+	var tmp []uint32
+	if isExtended {
+		if L, E := len(parentSrc), int(kd.kerningArrayOffset)+length*4; L < E {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+		}
+		tmp = make([]uint32, length)
+		for i := range tmp {
+			tmp[i] = binary.BigEndian.Uint32(parentSrc[int(kd.kerningArrayOffset)+4*i:])
+		}
+	} else {
+		if L, E := len(parentSrc), int(kd.kerningArrayOffset)+length*2; L < E {
+			return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+		}
+		tmp = make([]uint32, length)
+		for i := range tmp {
+			tmp[i] = uint32(binary.BigEndian.Uint16(parentSrc[int(kd.kerningArrayOffset)+2*i:]))
+		}
+	}
+
+	kd.kernings = make([]int16, len(tmp))
+	if tupleCount != 0 { // interpret kern values as offset
+		// If the tupleCount is 1 or more, then the kerning array contains offsets from the beginning
+		// of the kerningVectors table to a tupleCount-dimensional vector of FUnits controlling the kerning.
+		for i, v := range tmp {
+			kerningOffset := int(kd.kerningVectorOffset) + int(v)
+			if L := len(parentSrc); L < kerningOffset+2 {
+				return 0, fmt.Errorf("EOF: expected length: %d, got %d", kerningOffset+2, L)
+			}
+			kd.kernings[i] = int16(binary.BigEndian.Uint16(parentSrc[kerningOffset:]))
+		}
+	} else {
+		// a kerning value greater than an int16 should not happen
+		for i, v := range tmp {
+			kd.kernings[i] = int16(v)
+		}
+	}
+	return len(parentSrc), nil
+}
+
+type dummy struct {
+	A AATLookupExt
+}
 
 // -------------------------------- kern table --------------------------------
 
