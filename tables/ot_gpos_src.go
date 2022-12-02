@@ -66,7 +66,7 @@ type PairPosData1 struct {
 
 	valueFormat1  ValueFormat // Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
 	valueFormat2  ValueFormat // Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
-	PairSetOffset []PairSet   `arrayCount:"FirstUint16" offsetsArray:"Offset16" arguments:".valueFormat1, .valueFormat2"` //[pairSetCount] Array of offsets to PairSet tables. Offsets are from beginning of PairPos subtable, ordered by Coverage Index.
+	PairSetOffset []PairSet   `arrayCount:"FirstUint16" offsetsArray:"Offset16" arguments:"valueFormat1=.valueFormat1, valueFormat2=.valueFormat2"` //[pairSetCount] Array of offsets to PairSet tables. Offsets are from beginning of PairPos subtable, ordered by Coverage Index.
 }
 
 // binarygen: argument=valueFormat1  ValueFormat
@@ -195,8 +195,8 @@ type MarkBasePos struct {
 	markCoverage   Coverage  `offsetSize:"Offset16"` // Offset to markCoverage table, from beginning of MarkBasePos subtable.
 	baseCoverage   Coverage  `offsetSize:"Offset16"` // Offset to baseCoverage table, from beginning of MarkBasePos subtable.
 	markClassCount uint16    // Number of classes defined for marks
-	markArray      MarkArray `offsetSize:"Offset16"`                             // Offset to MarkArray table, from beginning of MarkBasePos subtable.
-	baseArray      BaseArray `offsetSize:"Offset16" arguments:".markClassCount"` // Offset to BaseArray table, from beginning of MarkBasePos subtable.
+	markArray      MarkArray `offsetSize:"Offset16"`                                          // Offset to MarkArray table, from beginning of MarkBasePos subtable.
+	baseArray      BaseArray `offsetSize:"Offset16" arguments:"offsetsCount=.markClassCount"` // Offset to BaseArray table, from beginning of MarkBasePos subtable.
 }
 
 type BaseArray struct {
@@ -239,8 +239,8 @@ type MarkLigPos struct {
 	MarkCoverage     Coverage      `offsetSize:"Offset16"` // Offset to markCoverage table, from beginning of MarkLigPos subtable.
 	LigatureCoverage Coverage      `offsetSize:"Offset16"` // Offset to ligatureCoverage table, from beginning of MarkLigPos subtable.
 	MarkClassCount   uint16        // Number of defined mark classes
-	MarkArray        MarkArray     `offsetSize:"Offset16"`                             // Offset to MarkArray table, from beginning of MarkLigPos subtable.
-	LigatureArray    LigatureArray `offsetSize:"Offset16" arguments:".MarkClassCount"` // Offset to LigatureArray table, from beginning of MarkLigPos subtable.
+	MarkArray        MarkArray     `offsetSize:"Offset16"`                                          // Offset to MarkArray table, from beginning of MarkLigPos subtable.
+	LigatureArray    LigatureArray `offsetSize:"Offset16" arguments:"offsetsCount=.MarkClassCount"` // Offset to LigatureArray table, from beginning of MarkLigPos subtable.
 }
 
 type LigatureArray struct {
@@ -265,8 +265,8 @@ type MarkMarkPos struct {
 	Mark1Coverage  Coverage   `offsetSize:"Offset16"` // Offset to Combining Mark Coverage table, from beginning of MarkMarkPos subtable.
 	Mark2Coverage  Coverage   `offsetSize:"Offset16"` // Offset to Base Mark Coverage table, from beginning of MarkMarkPos subtable.
 	MarkClassCount uint16     //	Number of Combining Mark classes defined
-	Mark1Array     MarkArray  `offsetSize:"Offset16"`                             //	Offset to MarkArray table for mark1, from beginning of MarkMarkPos subtable.
-	Mark2Array     Mark2Array `offsetSize:"Offset16" arguments:".MarkClassCount"` //	Offset to Mark2Array table for mark2, from beginning of MarkMarkPos subtable.
+	Mark1Array     MarkArray  `offsetSize:"Offset16"`                                          //	Offset to MarkArray table for mark1, from beginning of MarkMarkPos subtable.
+	Mark2Array     Mark2Array `offsetSize:"Offset16" arguments:"offsetsCount=.MarkClassCount"` //	Offset to Mark2Array table for mark2, from beginning of MarkMarkPos subtable.
 }
 
 type Mark2Array struct {

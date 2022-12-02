@@ -84,7 +84,7 @@ type ItemVarStore struct {
 
 type VariationRegionList struct {
 	axisCount        uint16            //	The number of variation axes for this font. This must be the same number as axisCount in the 'fvar' table.
-	VariationRegions []VariationRegion `arrayCount:"FirstUint16" arguments:".axisCount"` // [regionCount] Array of variation regions.
+	VariationRegions []VariationRegion `arrayCount:"FirstUint16" arguments:"regionAxesCount=.axisCount"` // [regionCount] Array of variation regions.
 }
 
 type VariationRegion struct {
@@ -146,16 +146,16 @@ func (ivd *ItemVariationData) parseDeltaSets(src []byte) (int, error) {
 
 // See - https://learn.microsoft.com/fr-fr/typography/opentype/spec/gvar
 type Gvar struct {
-	majorVersion                  uint16                                                           // Major version number of the glyph variations table — set to 1.
-	minorVersion                  uint16                                                           // Minor version number of the glyph variations table — set to 0.
-	axisCount                     uint16                                                           // The number of variation axes for this font. This must be the same number as axisCount in the 'fvar' table.
-	sharedTupleCount              uint16                                                           // The number of shared tuple records. Shared tuple records can be referenced within glyph variation data tables for multiple glyphs, as opposed to other tuple records stored directly within a glyph variation data table.
-	SharedTuples                  `offsetSize:"Offset32" arguments:".sharedTupleCount,.axisCount"` // Offset from the start of this table to the shared tuple records.
-	glyphCount                    uint16                                                           // The number of glyphs in this font. This must match the number of glyphs stored elsewhere in the font.
-	flags                         uint16                                                           // Bit-field that gives the format of the offset array that follows. If bit 0 is clear, the offsets are uint16; if bit 0 is set, the offsets are uint32.
-	glyphVariationDataArrayOffset Offset32                                                         // Offset from the start of this table to the array of GlyphVariationData tables.
-	glyphVariationDataOffsets     []uint32                                                         `isOpaque:"" subsliceStart:"AtCurrent"` // [glyphCount + 1]Offset16 or Offset32 Offsets from the start of the GlyphVariationData array to each GlyphVariationData table.
-	GlyphVariationDatas           []GlyphVariationData                                             `isOpaque:""`
+	majorVersion                  uint16                                                                                         // Major version number of the glyph variations table — set to 1.
+	minorVersion                  uint16                                                                                         // Minor version number of the glyph variations table — set to 0.
+	axisCount                     uint16                                                                                         // The number of variation axes for this font. This must be the same number as axisCount in the 'fvar' table.
+	sharedTupleCount              uint16                                                                                         // The number of shared tuple records. Shared tuple records can be referenced within glyph variation data tables for multiple glyphs, as opposed to other tuple records stored directly within a glyph variation data table.
+	SharedTuples                  `offsetSize:"Offset32" arguments:"sharedTuplesCount=.sharedTupleCount,valuesCount=.axisCount"` // Offset from the start of this table to the shared tuple records.
+	glyphCount                    uint16                                                                                         // The number of glyphs in this font. This must match the number of glyphs stored elsewhere in the font.
+	flags                         uint16                                                                                         // Bit-field that gives the format of the offset array that follows. If bit 0 is clear, the offsets are uint16; if bit 0 is set, the offsets are uint32.
+	glyphVariationDataArrayOffset Offset32                                                                                       // Offset from the start of this table to the array of GlyphVariationData tables.
+	glyphVariationDataOffsets     []uint32                                                                                       `isOpaque:"" subsliceStart:"AtCurrent"` // [glyphCount + 1]Offset16 or Offset32 Offsets from the start of the GlyphVariationData array to each GlyphVariationData table.
+	GlyphVariationDatas           []GlyphVariationData                                                                           `isOpaque:""`
 }
 
 func (gv *Gvar) parseGlyphVariationDataOffsets(src []byte) (int, error) {

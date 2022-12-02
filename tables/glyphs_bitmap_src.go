@@ -83,7 +83,7 @@ type IndexSubHeader struct {
 	indexFormat     indexVersion // Format of this IndexSubTable.
 	imageFormat     uint16       // Format of EBDT image data.
 	imageDataOffset Offset32     // Offset to image data in EBDT table.
-	IndexData       IndexData    `unionField:"indexFormat" arguments:"numGlyphs"`
+	IndexData       IndexData    `unionField:"indexFormat"`
 }
 
 type indexVersion uint16

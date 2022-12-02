@@ -15,56 +15,6 @@ func (item *AATFeature) mustParse(src []byte) {
 	item.DisableFlags = binary.BigEndian.Uint32(src[8:])
 }
 
-func ParseAATStateTableExt(src []byte, valuesCount int, entryDataSize int) (AATStateTableExt, int, error) {
-	var item AATStateTableExt
-	n := 0
-	if L := len(src); L < 16 {
-		return item, 0, fmt.Errorf("reading AATStateTableExt: "+"EOF: expected length: 16, got %d", L)
-	}
-	_ = src[15] // early bound checking
-	item.stateSize = binary.BigEndian.Uint32(src[0:])
-	offsetClass := int(binary.BigEndian.Uint32(src[4:]))
-	item.stateArray = Offset32(binary.BigEndian.Uint32(src[8:]))
-	item.entryTable = Offset32(binary.BigEndian.Uint32(src[12:]))
-	n += 16
-
-	{
-
-		if offsetClass != 0 { // ignore null offset
-			if L := len(src); L < offsetClass {
-				return item, 0, fmt.Errorf("reading AATStateTableExt: "+"EOF: expected length: %d, got %d", offsetClass, L)
-			}
-
-			var (
-				err  error
-				read int
-			)
-			item.Class, read, err = ParseAATLookup(src[offsetClass:], valuesCount)
-			if err != nil {
-				return item, 0, fmt.Errorf("reading AATStateTableExt: %s", err)
-			}
-			offsetClass += read
-		}
-	}
-	{
-
-		read, err := item.parseStates(src[:], valuesCount, entryDataSize)
-		if err != nil {
-			return item, 0, fmt.Errorf("reading AATStateTableExt: %s", err)
-		}
-		n = read
-	}
-	{
-
-		read, err := item.parseEntries(src[:], valuesCount, entryDataSize)
-		if err != nil {
-			return item, 0, fmt.Errorf("reading AATStateTableExt: %s", err)
-		}
-		n = read
-	}
-	return item, n, nil
-}
-
 func ParseMorx(src []byte, valuesCount int) (Morx, int, error) {
 	var item Morx
 	n := 0
@@ -176,14 +126,12 @@ func ParseMorxChainSubtable(src []byte, valuesCount int) (MorxChainSubtable, int
 		}
 		n += read
 	}
-	{
-
-		read, err := item.parsePostProcess(src[:], valuesCount)
-		if err != nil {
-			return item, 0, fmt.Errorf("reading MorxChainSubtable: %s", err)
-		}
-		n = read
+	var err error
+	n, err = item.parseEnd(src)
+	if err != nil {
+		return item, 0, fmt.Errorf("reading MorxChainSubtable: %s", err)
 	}
+
 	return item, n, nil
 }
 

@@ -42,12 +42,11 @@ type MorxChainSubtable struct {
 
 	SubFeatureFlags uint32 // The 32-bit mask identifying which subtable this is (the subtable being executed if the AND of this value and the processed defaultFlags is nonzero)
 
-	Content     MorxSubtable `unionField:"version"`
-	postProcess [0]byte      `isOpaque:""`
+	Content MorxSubtable `unionField:"version"`
 }
 
 // check and return the subtable length
-func (mc *MorxChainSubtable) parsePostProcess(src []byte, _ int) (int, error) {
+func (mc *MorxChainSubtable) parseEnd(src []byte) (int, error) {
 	if L := len(src); L < int(mc.length) {
 		return 0, fmt.Errorf("EOF: expected length: %d, got %d", mc.length, L)
 	}
@@ -79,16 +78,16 @@ func (MorxSubtableInsertion) isMorxSubtable()     {}
 
 // binarygen: argument=valuesCount int
 type MorxSubtableRearrangement struct {
-	AATStateTableExt `arguments:"valuesCount, 0"`
+	AATStateTableExt `arguments:"valuesCount=valuesCount,entryDataSize=0"`
 }
 
 // binarygen: argument=valuesCount int
 type MorxSubtableContextual struct {
-	AATStateTableExt `arguments:"valuesCount, 4"`
+	AATStateTableExt `arguments:"valuesCount=valuesCount,entryDataSize=4"`
 	// Byte offset from the beginning of the state subtable to the beginning of the substitution tables :
 	// each value of the array is itself an offet to a aatLookupTable, and the number of
 	// items is computed from the header
-	Substitutions SubstitutionsTable `offsetSize:"Offset32" arguments:".nSubs(), valuesCount"`
+	Substitutions SubstitutionsTable `offsetSize:"Offset32" arguments:"substitutionsCount=.nSubs(), valuesCount=valuesCount"`
 }
 
 type SubstitutionsTable struct {
@@ -112,7 +111,7 @@ func (ct *MorxSubtableContextual) nSubs() int {
 
 // binarygen: argument=valuesCount int
 type MorxSubtableLigature struct {
-	AATStateTableExt `arguments:"valuesCount, 2"`
+	AATStateTableExt `arguments:"valuesCount=valuesCount, entryDataSize=2"`
 	ligActionOffset  Offset32  // Byte offset from stateHeader to the start of the ligature action table.
 	componentOffset  Offset32  // Byte offset from stateHeader to the start of the component table.
 	ligatureOffset   Offset32  // Byte offset from stateHeader to the start of the actual ligature lists.
@@ -191,7 +190,7 @@ type MorxSubtableNonContextual struct {
 
 // binarygen: argument=valuesCount int
 type MorxSubtableInsertion struct {
-	AATStateTableExt `arguments:"valuesCount, 4"`
+	AATStateTableExt `arguments:"valuesCount=valuesCount,entryDataSize=4"`
 	Insertions       []GlyphID `offsetSize:"Offset32" arrayCount:"ComputedField-nInsertions()"` // Byte offset from stateHeader to the start of the insertion glyph table.
 }
 

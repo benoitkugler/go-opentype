@@ -14,7 +14,7 @@ type TrackData struct {
 	nTracks    uint16            // Number of separate tracks included in this table.
 	nSizes     uint16            // Number of point sizes included in this table.
 	SizeTable  []Float1616       `offsetSize:"Offset32" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nSizes"` // Offset from start of the tracking table to the start of the size subtable.
-	TrackTable []TrackTableEntry `arrayCount:"ComputedField-nTracks" arguments:".nSizes"`                            // Array[nTracks] of TrackTableEntry records.
+	TrackTable []TrackTableEntry `arrayCount:"ComputedField-nTracks" arguments:"perSizeTrackingCount=.nSizes"`       // Array[nTracks] of TrackTableEntry records.
 }
 
 type TrackTableEntry struct {
