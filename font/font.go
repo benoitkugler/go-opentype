@@ -1,3 +1,6 @@
+// Package font provides an high level API to access
+// Opentype font properties.
+// See [opentype] and [tables] for a lower, more detailled API.
 package font
 
 import "math"
@@ -5,6 +8,8 @@ import "math"
 // GID is used to identify glyphs in a font.
 // It is mostly internal to the font and should not be confused with
 // Unicode code points.
+// Note that, despite Opentype font files using uint16, we choose to use uint32,
+// to allow room for future extension.
 type GID uint32
 
 // EmptyGlyph represents an invisible glyph, which should not be drawn,

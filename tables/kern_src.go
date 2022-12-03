@@ -130,7 +130,7 @@ type KernData3 struct {
 func (kd *KernData3) nKernIndex() int { return int(kd.leftClassCount) * int(kd.rightClassCount) }
 
 // sanitize index and class values
-func (kd *KernData3) parseEnd(_ byte) (int, error) {
+func (kd *KernData3) parseEnd(_ []byte) (int, error) {
 	for _, index := range kd.kernIndex {
 		if index >= kd.kernValueCount {
 			return 0, errors.New("invalid kern subtable format 3 index value")

@@ -281,6 +281,12 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 		item.kernIndex = src[n:L]
 		n = L
 	}
+	var err error
+	n, err = item.parseEnd(src)
+	if err != nil {
+		return item, 0, fmt.Errorf("reading KernData3: %s", err)
+	}
+
 	return item, n, nil
 }
 

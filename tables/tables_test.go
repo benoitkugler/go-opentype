@@ -100,23 +100,24 @@ func TestParseCmap(t *testing.T) {
 	// general parsing
 	for _, filename := range filenames(t, "common") {
 		fp := readFontFile(t, filename)
-		cmap, _, err := ParseCmap(readTable(t, fp, "cmap"))
+		_, _, err := ParseCmap(readTable(t, fp, "cmap"))
 		assertNoErr(t, err)
-		assert(t, len(cmap.records) == len(cmap.subtables))
 	}
 
 	// specialized tests for each format
 	for _, filename := range filenames(t, "cmap") {
 		fp := readFontFile(t, filename)
-		cmap, _, err := ParseCmap(readTable(t, fp, "cmap"))
+		_, _, err := ParseCmap(readTable(t, fp, "cmap"))
 		assertNoErr(t, err)
-		assert(t, len(cmap.records) == len(cmap.subtables))
 	}
 
-	// test format 2 through a single table
-	file, err := td.Files.ReadFile("cmap/table/CMAP2.bin")
-	assertNoErr(t, err)
-	cmap, _, err := ParseCmapSubtable2(file)
-	assertNoErr(t, err)
-	assert(t, cmap.format == 2)
+	// tests through a single table
+	for _, filepath := range filenames(t, "cmap/table") {
+		table, err := td.Files.ReadFile(filepath)
+		assertNoErr(t, err)
+
+		cmap, _, err := ParseCmap(table)
+		assertNoErr(t, err)
+		assert(t, len(cmap.Records) > 0)
+	}
 }

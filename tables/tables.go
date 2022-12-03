@@ -50,12 +50,6 @@ type EncodingID uint16
 // the three most common values are provided as constants.
 type LanguageID uint16
 
-// same as binary.BigEndian.Uint32, but for 24 bit uint
-func parseUint24(b []byte) rune {
-	_ = b[2] // BCE
-	return rune(b[0])<<16 | rune(b[1])<<8 | rune(b[2])
-}
-
 // Offset16 is an offset into the input byte slice
 type Offset16 uint16
 
