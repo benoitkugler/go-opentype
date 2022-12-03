@@ -127,7 +127,7 @@ func ParseMorxChainSubtable(src []byte, valuesCount int) (MorxChainSubtable, int
 		n += read
 	}
 	var err error
-	n, err = item.parseEnd(src)
+	n, err = item.parseEnd(src, valuesCount)
 	if err != nil {
 		return item, 0, fmt.Errorf("reading MorxChainSubtable: %s", err)
 	}

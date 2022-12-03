@@ -1,6 +1,9 @@
 package tables
 
-import "sort"
+import (
+	"encoding/binary"
+	"sort"
+)
 
 // This file implements routines used to simplify acces to the tables
 // data.
@@ -77,7 +80,7 @@ func (lk AATLoopkup6) Class(g GlyphID) (uint16, bool) {
 	return 0, false
 }
 
-func (lk AATLoopkup8) Class(g GlyphID) (uint16, bool) {
+func (lk AATLoopkup8Data) Class(g GlyphID) (uint16, bool) {
 	if g < lk.FirstGlyph || g >= lk.FirstGlyph+GlyphID(len(lk.Values)) {
 		return 0, false
 	}
@@ -164,10 +167,8 @@ func (lk AATLoopkupExt6) Class(g GlyphID) (uint32, bool) {
 }
 
 func (lk AATLoopkupExt8) Class(g GlyphID) (uint32, bool) {
-	if g < lk.FirstGlyph || g >= lk.FirstGlyph+GlyphID(len(lk.Values)) {
-		return 0, false
-	}
-	return uint32(lk.Values[g-lk.FirstGlyph]), true
+	v, ok := AATLoopkup8(lk).Class(g)
+	return uint32(v), ok
 }
 
 func (lk AATLoopkupExt10) Class(g GlyphID) (uint32, bool) {
@@ -240,6 +241,51 @@ func (lk AATLoopkupExt8) classUint32(g GlyphID) uint32 {
 func (lk AATLoopkupExt10) classUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
+}
+
+// kerning access
+
+func kernPair(records []Kernx0Record, left, right GlyphID) int16 {
+	key := uint32(left)<<16 | uint32(right)
+	low, high := 0, len(records)
+	for low < high {
+		mid := low + (high-low)/2 // avoid overflow when computing mid
+		p := records[mid].key()
+		if key < p {
+			high = mid
+		} else if key > p {
+			low = mid + 1
+		} else {
+			return records[mid].Value
+		}
+	}
+	return 0
+}
+
+func (kp Kernx0Record) key() uint32 { return uint32(kp.Left)<<16 | uint32(kp.Right) }
+
+func (kd KerxData0) KernPair(left, right GlyphID) int16 { return kernPair(kd.Pairs, left, right) }
+func (kd KernData0) KernPair(left, right GlyphID) int16 { return kernPair(kd.Pairs, left, right) }
+
+func (kd KernData2) KernPair(left, right GlyphID) int16 {
+	l, _ := kd.left.Class(left)
+	r, _ := kd.right.Class(right)
+	index := int(l) + int(r)
+	if len(kd.kerningData) < index+2 || index < int(kd.array) {
+		return 0
+	}
+	kernVal := binary.BigEndian.Uint16(kd.kerningData[index:])
+	return int16(kernVal)
+}
+
+func (kd KernData3) KernPair(left, right GlyphID) int16 {
+	if int(left) >= len(kd.leftClass) || int(right) >= len(kd.rightClass) { // should not happend
+		return 0
+	}
+
+	lc, rc := int(kd.leftClass[left]), int(kd.rightClass[right])
+	index := kd.kernIndex[lc*int(kd.rightClassCount)+rc] // sanitized during parsing
+	return kd.kernings[index]                            // sanitized during parsing
 }
 
 func (kd *KerxData6) KernPair(left, right GlyphID) int16 {

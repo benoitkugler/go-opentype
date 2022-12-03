@@ -46,7 +46,7 @@ type MorxChainSubtable struct {
 }
 
 // check and return the subtable length
-func (mc *MorxChainSubtable) parseEnd(src []byte) (int, error) {
+func (mc *MorxChainSubtable) parseEnd(src []byte, _ int) (int, error) {
 	if L := len(src); L < int(mc.length) {
 		return 0, fmt.Errorf("EOF: expected length: %d, got %d", mc.length, L)
 	}

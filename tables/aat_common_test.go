@@ -435,39 +435,3 @@ func TestKerx6(t *testing.T) {
 		assert(t, got == exp.kerning)
 	}
 }
-
-func TestExtract(t *testing.T) {
-	// filepath := "/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/truetype/Bangla Sangam MN.ttc"
-	// file, err := os.ReadFile(filepath)
-	// assertNoErr(t, err)
-
-	// fonts, err := opentype.NewLoaders(bytes.NewReader(file))
-	// assertNoErr(t, err)
-	// fmt.Println(len(fonts))
-	// // font := fonts[0]
-
-	// // font, err := opentype.NewLoader(bytes.NewReader(file))
-	// // assertNoErr(t, err)
-
-	// for i, font := range fonts {
-	// 	b := readTable(t, font, "kerx")
-	// 	os.WriteFile(fmt.Sprintf("kerx4-%d.bin", i+1), b, os.ModePerm)
-
-	// }
-}
-
-// func TestTmp(t *testing.T) {
-// 	table, err := td.Files.ReadFile("toys/tables/kerx6Exp.bin")
-// 	assertNoErr(t, err)
-
-// 	table = table[12:]
-// 	header := make([]byte, 2+2+4)
-// 	binary.BigEndian.PutUint16(header[:], 2)
-// 	binary.BigEndian.PutUint16(header[2:], 0)
-// 	binary.BigEndian.PutUint32(header[4:], 1)
-// 	table = append(header, table...)
-
-// 	os.WriteFile("/home/benoit/go/src/github.com/benoitkugler/go-opentype-testdata/data/toys/tables/kerx6Exp.bin", table, os.ModePerm)
-// 	// _, _, err = ParseKerx(table, 2775)
-// 	// assertNoErr(t, err)
-// }

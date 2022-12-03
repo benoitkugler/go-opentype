@@ -9,11 +9,85 @@ import (
 
 // State table header, without the actual data
 // See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6Tables.html
-type aatSTHeader struct {
-	stateSize  uint16 // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
-	classTable uint16 // Byte offset from the beginning of the state table to the class subtable.
-	stateArray uint16 // Byte offset from the beginning of the state table to the state array.
-	entryTable uint16 // Byte offset from the beginning of the state table to the entry subtable.
+type AATStateTable struct {
+	stateSize  uint16          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
+	classTable classTable      `offsetSize:"Offset16"` // Byte offset from the beginning of the state table to the class subtable.
+	stateArray Offset16        // Byte offset from the beginning of the state table to the state array.
+	entryTable Offset16        // Byte offset from the beginning of the state table to the entry subtable.
+	States     [][]uint8       `isOpaque:""`
+	Entries    []AATStateEntry `isOpaque:""` // entry data are empty
+}
+
+func (state *AATStateTable) parseStates(src []byte) (int, error) {
+	if state.stateArray > state.entryTable {
+		return 0, fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
+	}
+	if L := len(src); L < int(state.entryTable) {
+		return 0, fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
+	}
+	states := src[state.stateArray:state.entryTable]
+
+	nC := int(state.stateSize)
+	// Ensure pre-defined classes fit.
+	if nC < 4 {
+		return 0, fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
+	}
+	state.States = make([][]uint8, len(states)/nC)
+	for i := range state.States {
+		state.States[i] = states[i*nC : (i+1)*nC]
+	}
+
+	return int(state.entryTable), nil
+}
+
+func (state *AATStateTable) parseEntries(src []byte) (int, error) {
+	// find max index
+	var maxi uint8
+	for _, l := range state.States {
+		for _, stateIndex := range l {
+			if stateIndex > maxi {
+				maxi = stateIndex
+			}
+		}
+	}
+
+	src = src[state.entryTable:] // checked in parseStates
+	count := int(maxi) + 1
+	var err error
+	state.Entries, err = parseAATStateEntries(src, count, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	// newState is an offset: convert back to index
+	for i, entry := range state.Entries {
+		state.Entries[i].NewState = uint16((int(entry.NewState) - int(state.entryTable)) / int(state.stateSize))
+	}
+
+	// the own header data stop at the entryTable offset
+	return 8, err
+}
+
+// src starts at the entryTable
+func parseAATStateEntries(src []byte, count, entryDataSize int) ([]AATStateEntry, error) {
+	entrySize := 4 + entryDataSize
+	if L := len(src); L < count*entrySize {
+		return nil, fmt.Errorf("EOF: expected length: %d, got %d", count*entrySize, L)
+	}
+	out := make([]AATStateEntry, count)
+	for i := range out {
+		out[i].NewState = binary.BigEndian.Uint16(src[i*entrySize:])
+		out[i].Flags = binary.BigEndian.Uint16(src[i*entrySize+2:])
+		copy(out[i].data[:], src[i*entrySize+4:(i+1)*entrySize])
+	}
+
+	return out, nil
+}
+
+// classTable is the same as AATLookup8, but with no format and with bytes instead of uint16s
+type classTable struct {
+	startGlyph GlyphID
+	values     []byte `arrayCount:"FirstUint16"`
 }
 
 // Extended state table, including the data
@@ -30,7 +104,7 @@ type AATStateTableExt struct {
 
 func (state *AATStateTableExt) parseStates(src []byte, _, _ int) (int, error) {
 	if state.stateArray > state.entryTable {
-		return 0, fmt.Errorf("invalid AAT state table (%d > %d)", state.stateArray, state.entryTable)
+		return 0, fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
 	}
 	if L := len(src); L < int(state.entryTable) {
 		return 0, fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
@@ -45,7 +119,7 @@ func (state *AATStateTableExt) parseStates(src []byte, _, _ int) (int, error) {
 	nC := int(state.stateSize)
 	// Ensure pre-defined classes fit.
 	if nC < 4 {
-		return 0, fmt.Errorf("invalid number of classes in state table: %d", nC)
+		return 0, fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
 	}
 	state.States = make([][]uint16, len(states)/nC)
 	for i := range state.States {
@@ -67,21 +141,16 @@ func (state *AATStateTableExt) parseEntries(src []byte, _, entryDataSize int) (i
 
 	src = src[state.entryTable:] // checked in parseStates
 	count := int(maxi) + 1
-	entrySize := 4 + entryDataSize
-	if L := len(src); L < count*entrySize {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", count*entrySize, L)
-	}
-	state.Entries = make([]AATStateEntry, count)
-	for i := range state.Entries {
-		state.Entries[i].NewState = binary.BigEndian.Uint16(src[i*entrySize:])
-		state.Entries[i].Flags = binary.BigEndian.Uint16(src[i*entrySize+2:])
-		copy(state.Entries[i].data[:], src[i*entrySize+4:(i+1)*entrySize])
-	}
+	var err error
+	state.Entries, err = parseAATStateEntries(src, count, entryDataSize)
 
 	// the own header data stop at the entryTable offset
-	return 16, nil
+	return 16, err
 }
 
+// AATStateEntry is shared between old and extended state tables,
+// and between the different kind of entries.
+// See the various AsXXX() methods.
 type AATStateEntry struct {
 	NewState uint16
 	Flags    uint16  // Table specific.
@@ -109,7 +178,7 @@ func (e AATStateEntry) AsMorxLigature() (ligActionIndex uint16) {
 	return binary.BigEndian.Uint16(e.data[:])
 }
 
-// AsKernxIndex reads the internal data for entries in 'kern/x' subtable format 1.
+// AsKernxIndex reads the internal data for entries in 'kern/x' subtable format 1 or 4.
 // An entry with no index returns 0xFFFF
 func (e AATStateEntry) AsKernxIndex() uint16 {
 	// for kern table, during parsing, we store the resolved index
@@ -189,7 +258,11 @@ type loopkupRecord6 struct {
 }
 
 type AATLoopkup8 struct {
-	version    uint16 `unionTag:"8"`
+	version uint16 `unionTag:"8"`
+	AATLoopkup8Data
+}
+
+type AATLoopkup8Data struct {
 	FirstGlyph GlyphID
 	Values     []uint16 `arrayCount:"FirstUint16"`
 }

@@ -27,7 +27,7 @@ type KerxSubtable struct {
 }
 
 // check and return the subtable length
-func (ks *KerxSubtable) parseEnd(src []byte) (int, error) {
+func (ks *KerxSubtable) parseEnd(src []byte, _ int) (int, error) {
 	if L := len(src); L < int(ks.length) {
 		return 0, fmt.Errorf("EOF: expected length: %d, got %d", ks.length, L)
 	}
@@ -56,19 +56,40 @@ func (KerxData2) isKerxData() {}
 func (KerxData4) isKerxData() {}
 func (KerxData6) isKerxData() {}
 
+// binarygen: argument=tupleCount int
 type KerxData0 struct {
 	nPairs        uint32
 	searchRange   uint32
 	entrySelector uint32
 	rangeShift    uint32
 	Pairs         []Kernx0Record `arrayCount:"ComputedField-nPairs"`
-	rawData       []byte         `arrayCount:"ToEnd" subsliceStart:"AtStart"` // not empty only for variable fonts
+}
+
+// resolve offset for variable fonts
+func (kd *KerxData0) parseEnd(src []byte, tupleCount int) (int, error) {
+	if tupleCount != 0 { // interpret values as offset
+		for i, pair := range kd.Pairs {
+			if L, E := len(src), int(uint16(pair.Value))+2; L < E {
+				return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+			}
+			kd.Pairs[i].Value = int16(binary.BigEndian.Uint16(src[pair.Value:]))
+		}
+	}
+	return len(src), nil
 }
 
 type Kernx0Record struct {
 	Left, Right GlyphID
-	value       int16
+	Value       int16
 }
+
+// Kernx1 state entry flags
+const (
+	Kerx1Push        = 0x8000 // If set, push this glyph on the kerning stack.
+	Kerx1DontAdvance = 0x4000 // If set, don't advance to the next glyph before going to the new state.
+	Kerx1Reset       = 0x2000 // If set, reset the kerning data (clear the stack)
+	Kern1Offset      = 0x3FFF // Byte offset from beginning of subtable to the  value table for the glyphs on the kerning stack.
+)
 
 // binarygen: argument=tupleCount int
 // binarygen: argument=valuesCount int
@@ -81,10 +102,10 @@ type KerxData1 struct {
 // From Apple 'kern' spec:
 // Each pops one glyph from the kerning stack and applies the kerning value to it.
 // The end of the list is marked by an odd value...
-func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) (int, error) {
+func parseKernx1Values(src []byte, entries []AATStateEntry, valueTableOffset, tupleCount int) ([]int16, error) {
 	// find the maximum index need in the values array
 	var maxi uint16
-	for _, entry := range kx.Entries {
+	for _, entry := range entries {
 		if index := entry.AsKernxIndex(); index != 0xFFFF && index > maxi {
 			maxi = index
 		}
@@ -94,21 +115,27 @@ func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) (int, error) {
 		tupleCount = 1
 	}
 	nbUint16Min := tupleCount * int(maxi+1)
-	if L, E := len(src), int(kx.valueTable)+2*nbUint16Min; L < E {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+	if L, E := len(src), valueTableOffset+2*nbUint16Min; L < E {
+		return nil, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
 	}
 
-	src = src[kx.valueTable:]
-	kx.Values = make([]int16, 0, nbUint16Min)
+	src = src[valueTableOffset:]
+	out := make([]int16, 0, nbUint16Min)
 	for len(src) >= 2 { // gracefully handle missing odd value
 		v := int16(binary.BigEndian.Uint16(src))
-		kx.Values = append(kx.Values, v)
+		out = append(out, v)
 		src = src[2:]
-		if len(kx.Values) >= nbUint16Min && v&1 != 0 {
+		if len(out) >= nbUint16Min && v&1 != 0 {
 			break
 		}
 	}
-	return len(src), nil
+	return out, nil
+}
+
+func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) (int, error) {
+	var err error
+	kx.Values, err = parseKernx1Values(src, kx.Entries, int(kx.valueTable), tupleCount)
+	return len(src), err
 }
 
 type KerxData2 struct {
@@ -290,59 +317,4 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int,
 
 type dummy struct {
 	A AATLookupExt
-}
-
-// -------------------------------- kern table --------------------------------
-
-type microsoftKern struct {
-	version uint16 // Table version number (0)
-	nTables uint16 // Number of subtables in the kerning table.
-}
-
-type kernSubtableW struct {
-	length     uint32 // The length of this subtable in bytes, including this header.
-	coverage   byte   // Circumstances under which this table is used.
-	version    kernSTVersion
-	tupleCount uint16       // The tuple count. This value is only used with variation fonts and should be 0 for all other fonts. The subtable's tupleCount will be ignored if the 'kerx' table version is less than 4.
-	data       kernSubtable `unionField:"version"`
-}
-
-type kernSubtable interface {
-	isKernSubtable()
-}
-
-func (kernSubtable0) isKernSubtable() {}
-func (kernSubtable1) isKernSubtable() {}
-func (kernSubtable2) isKernSubtable() {}
-
-type kernSTVersion byte
-
-const (
-	kernSTVersion0 kernSTVersion = iota
-	kernSTVersion1
-	kernSTVersion2
-	// kernSTVersion3 // TODO:
-)
-
-type kernSubtable0 struct {
-	nPairs        uint16         //	The number of kerning pairs in this subtable.
-	searchRange   uint16         //	The largest power of two less than or equal to the value of nPairs, multiplied by the size in bytes of an entry in the subtable.
-	entrySelector uint16         //	This is calculated as log2 of the largest power of two less than or equal to the value of nPairs. This value indicates how many iterations of the search loop have to be made. For example, in a list of eight items, there would be three iterations of the loop.
-	rangeShift    uint16         //	The value of nPairs minus the largest power of two less than or equal to nPairs. This is multiplied b
-	pairs         []Kernx0Record `arrayCount:"ComputedField-nPairs"`
-	rawData       []byte         `arrayCount:"ToEnd"` // used for variable fonts
-}
-
-type kernSubtable1 struct {
-	aatSTHeader
-	valueTable uint16 // Offset in bytes from the beginning of the subtable to the beginning of the kerning table.
-	rawData    []byte `arrayCount:"ToEnd" subsliceStart:"AtStart"`
-}
-
-type kernSubtable2 struct {
-	rowWidth           uint16      // The width, in bytes, of a row in the subtable.
-	left               AATLoopkup8 `offsetSize:"Offset16"`
-	right              AATLoopkup8 `offsetSize:"Offset16"`
-	kerningArrayOffset uint16
-	rawData            []byte `arrayCount:"ToEnd" subsliceStart:"AtStart"` // used to resolve kerning pairs
 }

@@ -226,24 +226,46 @@ func ParseAATLoopkup6(src []byte) (AATLoopkup6, int, error) {
 func ParseAATLoopkup8(src []byte) (AATLoopkup8, int, error) {
 	var item AATLoopkup8
 	n := 0
-	if L := len(src); L < 6 {
-		return item, 0, fmt.Errorf("reading AATLoopkup8: "+"EOF: expected length: 6, got %d", L)
+	if L := len(src); L < 2 {
+		return item, 0, fmt.Errorf("reading AATLoopkup8: "+"EOF: expected length: 2, got %d", L)
 	}
-	_ = src[5] // early bound checking
 	item.version = binary.BigEndian.Uint16(src[0:])
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	arrayLengthValues := int(binary.BigEndian.Uint16(src[4:]))
-	n += 6
+	n += 2
+
+	{
+		var (
+			err  error
+			read int
+		)
+		item.AATLoopkup8Data, read, err = ParseAATLoopkup8Data(src[2:])
+		if err != nil {
+			return item, 0, fmt.Errorf("reading AATLoopkup8: %s", err)
+		}
+		n += read
+	}
+	return item, n, nil
+}
+
+func ParseAATLoopkup8Data(src []byte) (AATLoopkup8Data, int, error) {
+	var item AATLoopkup8Data
+	n := 0
+	if L := len(src); L < 4 {
+		return item, 0, fmt.Errorf("reading AATLoopkup8Data: "+"EOF: expected length: 4, got %d", L)
+	}
+	_ = src[3] // early bound checking
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
+	n += 4
 
 	{
 
-		if L := len(src); L < 6+arrayLengthValues*2 {
-			return item, 0, fmt.Errorf("reading AATLoopkup8: "+"EOF: expected length: %d, got %d", 6+arrayLengthValues*2, L)
+		if L := len(src); L < 4+arrayLengthValues*2 {
+			return item, 0, fmt.Errorf("reading AATLoopkup8Data: "+"EOF: expected length: %d, got %d", 4+arrayLengthValues*2, L)
 		}
 
 		item.Values = make([]uint16, arrayLengthValues) // allocation guarded by the previous check
 		for i := range item.Values {
-			item.Values[i] = binary.BigEndian.Uint16(src[6+i*2:])
+			item.Values[i] = binary.BigEndian.Uint16(src[4+i*2:])
 		}
 		n += arrayLengthValues * 2
 	}
