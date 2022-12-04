@@ -83,7 +83,7 @@ type ItemVarStore struct {
 }
 
 type VariationRegionList struct {
-	axisCount        uint16            //	The number of variation axes for this font. This must be the same number as axisCount in the 'fvar' table.
+	axisCount        uint16            // The number of variation axes for this font. This must be the same number as axisCount in the 'fvar' table.
 	VariationRegions []VariationRegion `arrayCount:"FirstUint16" arguments:"regionAxesCount=.axisCount"` // [regionCount] Array of variation regions.
 }
 
@@ -97,6 +97,25 @@ type RegionAxisCoordinates struct {
 	StartCoord Float214 // The region start coordinate value for the current axis.
 	PeakCoord  Float214 // The region peak coordinate value for the current axis.
 	EndCoord   Float214 // The region end coordinate value for the current axis.
+}
+
+// Evaluate returns the factor corresponding to the given [coord],
+// interpolating between start and end.
+func (reg RegionAxisCoordinates) Evaluate(coord float32) float32 {
+	start, peak, end := reg.StartCoord, reg.PeakCoord, reg.EndCoord
+	if peak == 0 || coord == peak {
+		return 1.
+	}
+
+	if coord <= start || end <= coord {
+		return 0.
+	}
+
+	/* Interpolate */
+	if coord < peak {
+		return (coord - start) / (peak - start)
+	}
+	return (end - coord) / (end - peak)
 }
 
 type ItemVariationData struct {
@@ -160,7 +179,7 @@ type Gvar struct {
 
 func (gv *Gvar) parseGlyphVariationDataOffsets(src []byte) (int, error) {
 	var err error
-	gv.glyphVariationDataOffsets, err = parseLoca(src, int(gv.glyphCount), gv.flags&1 != 0)
+	gv.glyphVariationDataOffsets, err = ParseLoca(src, int(gv.glyphCount), gv.flags&1 != 0)
 	return len(src), err
 }
 

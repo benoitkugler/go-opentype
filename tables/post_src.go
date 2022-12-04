@@ -7,23 +7,23 @@ type Post struct {
 	italicAngle uint32
 	// UnderlinePosition is the suggested distance of the top of the
 	// underline from the baseline (negative values indicate below baseline).
-	underlinePosition int16
+	UnderlinePosition int16
 	// Suggested values for the underline thickness.
-	underlineThickness int16
+	UnderlineThickness int16
 	// IsFixedPitch indicates that the font is not proportionally spaced
 	// (i.e. monospaced).
 	isFixedPitch uint32
 	memoryUsage  [4]uint32
-	names        postNames `unionField:"version"`
+	Names        PostNames `unionField:"version"`
 }
 
-type postNames interface {
+type PostNames interface {
 	isPostNames()
 }
 
-func (postNames10) isPostNames() {}
-func (postNames20) isPostNames() {}
-func (postNames30) isPostNames() {}
+func (PostNames10) isPostNames() {}
+func (PostNames20) isPostNames() {}
+func (PostNames30) isPostNames() {}
 
 type postVersion uint32
 
@@ -33,11 +33,11 @@ const (
 	postVersion30 postVersion = 0x00030000
 )
 
-type postNames10 struct{}
+type PostNames10 struct{}
 
-type postNames20 struct {
-	glyphNameIndexes []uint16 `arrayCount:"FirstUint16"` // size numGlyph
-	stringData       []byte   `arrayCount:"ToEnd"`
+type PostNames20 struct {
+	GlyphNameIndexes []uint16 `arrayCount:"FirstUint16"` // size numGlyph
+	StringData       []byte   `arrayCount:"ToEnd"`
 }
 
-type postNames30 postNames10
+type PostNames30 PostNames10

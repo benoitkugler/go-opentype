@@ -16,8 +16,8 @@ func ParsePost(src []byte) (Post, int, error) {
 	_ = src[31] // early bound checking
 	item.version = postVersion(binary.BigEndian.Uint32(src[0:]))
 	item.italicAngle = binary.BigEndian.Uint32(src[4:])
-	item.underlinePosition = int16(binary.BigEndian.Uint16(src[8:]))
-	item.underlineThickness = int16(binary.BigEndian.Uint16(src[10:]))
+	item.UnderlinePosition = int16(binary.BigEndian.Uint16(src[8:]))
+	item.UnderlineThickness = int16(binary.BigEndian.Uint16(src[10:]))
 	item.isFixedPitch = binary.BigEndian.Uint32(src[12:])
 	item.memoryUsage[0] = binary.BigEndian.Uint32(src[16:])
 	item.memoryUsage[1] = binary.BigEndian.Uint32(src[20:])
@@ -32,13 +32,13 @@ func ParsePost(src []byte) (Post, int, error) {
 		)
 		switch item.version {
 		case postVersion10:
-			item.names, read, err = parsePostNames10(src[32:])
+			item.Names, read, err = ParsePostNames10(src[32:])
 		case postVersion20:
-			item.names, read, err = parsePostNames20(src[32:])
+			item.Names, read, err = ParsePostNames20(src[32:])
 		case postVersion30:
-			item.names, read, err = parsePostNames30(src[32:])
+			item.Names, read, err = ParsePostNames30(src[32:])
 		default:
-			err = fmt.Errorf("unsupported postNamesVersion %d", item.version)
+			err = fmt.Errorf("unsupported PostNamesVersion %d", item.version)
 		}
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Post: %s", err)
@@ -48,17 +48,17 @@ func ParsePost(src []byte) (Post, int, error) {
 	return item, n, nil
 }
 
-func parsePostNames10([]byte) (postNames10, int, error) {
-	var item postNames10
+func ParsePostNames10([]byte) (PostNames10, int, error) {
+	var item PostNames10
 	n := 0
 	return item, n, nil
 }
 
-func parsePostNames20(src []byte) (postNames20, int, error) {
-	var item postNames20
+func ParsePostNames20(src []byte) (PostNames20, int, error) {
+	var item PostNames20
 	n := 0
 	if L := len(src); L < 2 {
-		return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: 2, got %d", L)
+		return item, 0, fmt.Errorf("reading PostNames20: "+"EOF: expected length: 2, got %d", L)
 	}
 	arrayLengthGlyphNameIndexes := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
@@ -66,25 +66,25 @@ func parsePostNames20(src []byte) (postNames20, int, error) {
 	{
 
 		if L := len(src); L < 2+arrayLengthGlyphNameIndexes*2 {
-			return item, 0, fmt.Errorf("reading postNames20: "+"EOF: expected length: %d, got %d", 2+arrayLengthGlyphNameIndexes*2, L)
+			return item, 0, fmt.Errorf("reading PostNames20: "+"EOF: expected length: %d, got %d", 2+arrayLengthGlyphNameIndexes*2, L)
 		}
 
-		item.glyphNameIndexes = make([]uint16, arrayLengthGlyphNameIndexes) // allocation guarded by the previous check
-		for i := range item.glyphNameIndexes {
-			item.glyphNameIndexes[i] = binary.BigEndian.Uint16(src[2+i*2:])
+		item.GlyphNameIndexes = make([]uint16, arrayLengthGlyphNameIndexes) // allocation guarded by the previous check
+		for i := range item.GlyphNameIndexes {
+			item.GlyphNameIndexes[i] = binary.BigEndian.Uint16(src[2+i*2:])
 		}
 		n += arrayLengthGlyphNameIndexes * 2
 	}
 	{
 
-		item.stringData = src[n:]
+		item.StringData = src[n:]
 		n = len(src)
 	}
 	return item, n, nil
 }
 
-func parsePostNames30([]byte) (postNames30, int, error) {
-	var item postNames30
+func ParsePostNames30([]byte) (PostNames30, int, error) {
+	var item PostNames30
 	n := 0
 	return item, n, nil
 }

@@ -4,9 +4,9 @@ package tables
 type Hhea struct {
 	majorVersion         uint16
 	minorVersion         uint16
-	ascender             int16
-	descender            int16
-	lineGap              int16
+	Ascender             int16
+	Descender            int16
+	LineGap              int16
 	AdvanceMax           uint16
 	MinFirstSideBearing  int16
 	MinSecondSideBearing int16

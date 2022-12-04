@@ -2,14 +2,14 @@ package tables
 
 // https://learn.microsoft.com/en-us/typography/opentype/spec/hmtx
 type Hmtx struct {
-	hMetrics []longHorMetric `arrayCount:""`
+	Metrics []LongHorMetric `arrayCount:""`
 	// avances are padded with the last value
 	// and side bearings are given
-	leftSideBearings []int16 `arrayCount:""`
+	LeftSideBearings []int16 `arrayCount:""`
 }
 
-type longHorMetric struct {
-	advanceWidth, lsb int16
+type LongHorMetric struct {
+	AdvanceWidth, LeftSideBearing int16
 }
 
 // https://learn.microsoft.com/en-us/typography/opentype/spec/vmtx

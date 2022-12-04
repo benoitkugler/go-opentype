@@ -11,9 +11,9 @@ func (item *Hhea) mustParse(src []byte) {
 	_ = src[35] // early bound checking
 	item.majorVersion = binary.BigEndian.Uint16(src[0:])
 	item.minorVersion = binary.BigEndian.Uint16(src[2:])
-	item.ascender = int16(binary.BigEndian.Uint16(src[4:]))
-	item.descender = int16(binary.BigEndian.Uint16(src[6:]))
-	item.lineGap = int16(binary.BigEndian.Uint16(src[8:]))
+	item.Ascender = int16(binary.BigEndian.Uint16(src[4:]))
+	item.Descender = int16(binary.BigEndian.Uint16(src[6:]))
+	item.LineGap = int16(binary.BigEndian.Uint16(src[8:]))
 	item.AdvanceMax = binary.BigEndian.Uint16(src[10:])
 	item.MinFirstSideBearing = int16(binary.BigEndian.Uint16(src[12:]))
 	item.MinSecondSideBearing = int16(binary.BigEndian.Uint16(src[14:]))
