@@ -23,3 +23,23 @@ TODO:
 
 Note that the two first forms contain exactly the same information whereas the last only retains layout oriented data.
 The main interest of the intermediate form is that it provides methods to be serialized back to a slice of bytes, to simplify font transformations.
+
+## Example for text layout
+
+The [font/layout](font/layout) package is the entry point for client library interested in text layout. Typical usage would be as following 
+```go
+// Create an [opentype.Resource]
+var file opentype.Resource = ... 
+// Parse the file, yielding a [*Font]
+font, err := LoadFont(file)
+// handle invalid font files here
+
+// [font] is safe for concurrent use but handling variations is not :
+// in the general case, you should store [font] and re-use it as much as possible, 
+// but create a new [*Face] for each layout session
+face := NewFace(font)
+// optional : setup variations
+face.SetVariations(...)
+
+// use [face] as input of a text shaping library (not covered by this module)
+```
