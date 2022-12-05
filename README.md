@@ -42,4 +42,8 @@ face := NewFace(font)
 face.SetVariations(...)
 
 // use [face] as input of a text shaping library (not covered by this module)
+// ...
+
+// use [face] again to load glyphs data and render them
+glyph := face.LoadGlyph(glyphID)
 ```
