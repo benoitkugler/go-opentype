@@ -272,16 +272,18 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetLsbMapping, L)
 			}
 
+			var tmpLsbMapping DeltaSetMapping
 			var (
 				err  error
 				read int
 			)
-			item.LsbMapping, read, err = ParseDeltaSetMapping(src[offsetLsbMapping:])
+			tmpLsbMapping, read, err = ParseDeltaSetMapping(src[offsetLsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
 			offsetLsbMapping += read
 
+			item.LsbMapping = &tmpLsbMapping
 		}
 	}
 	{
@@ -291,16 +293,18 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetRsbMapping, L)
 			}
 
+			var tmpRsbMapping DeltaSetMapping
 			var (
 				err  error
 				read int
 			)
-			item.RsbMapping, read, err = ParseDeltaSetMapping(src[offsetRsbMapping:])
+			tmpRsbMapping, read, err = ParseDeltaSetMapping(src[offsetRsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
 			offsetRsbMapping += read
 
+			item.RsbMapping = &tmpRsbMapping
 		}
 	}
 	return item, n, nil
