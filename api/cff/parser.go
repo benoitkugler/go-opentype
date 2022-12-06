@@ -24,7 +24,7 @@ type Font struct {
 	charset     []uint16 // indexed by glyph ID
 
 	cidFontName string
-	charstrings [][]byte // indexed by glyph ID
+	Charstrings [][]byte // indexed by glyph ID
 	fontName    []byte   // name from the Name INDEX
 	globalSubrs [][]byte
 
@@ -33,30 +33,30 @@ type Font struct {
 	localSubrs [][][]byte
 }
 
-// Parse parse a .cff font file.
+// ParseFont parses a .cff font file.
 // Although CFF enables multiple font or CIDFont programs to be bundled together in a
 // single file, embedded CFF font file in PDF or in TrueType/OpenType fonts
 // shall consist of exactly one font or CIDFont. Thus, this function
 // returns an error if the file contains more than one font.
-func parse(file []byte) (Font, error) {
+func ParseFont(file []byte) (*Font, error) {
 	// read 4 bytes to check if its a supported CFF file
 	if L := len(file); L < 4 {
-		return Font{}, fmt.Errorf("EOF: expected length: %d, got %d", 4, L)
+		return nil, fmt.Errorf("EOF: expected length: %d, got %d", 4, L)
 	}
 	if file[0] != 1 || file[1] != 0 || file[2] != 4 {
-		return Font{}, errUnsupportedCFFVersion
+		return nil, errUnsupportedCFFVersion
 	}
 	p := cffParser{src: file, offset: 4}
 	out, err := p.parse()
 	if err != nil {
-		return Font{}, err
+		return nil, err
 	}
 
 	if len(out) > 1 {
-		return Font{}, errors.New("only one font is allowed CFF table")
+		return nil, errors.New("only one font is allowed CFF table")
 	}
 
-	return out[0], nil
+	return &out[0], nil
 }
 
 // GlyphName returns the name of the glyph or an empty string if not found.
@@ -186,11 +186,11 @@ func (p *cffParser) parse() ([]Font, error) {
 		if err = p.seek(topDict.charStringsOffset); err != nil {
 			return nil, err
 		}
-		out[i].charstrings, err = p.parseIndex()
+		out[i].Charstrings, err = p.parseIndex()
 		if err != nil {
 			return nil, err
 		}
-		numGlyphs := uint16(len(out[i].charstrings))
+		numGlyphs := uint16(len(out[i].Charstrings))
 
 		out[i].charset, err = p.parseCharset(topDict.charsetOffset, numGlyphs)
 		if err != nil {

@@ -11,7 +11,8 @@ import (
 
 // Coverage specifies all the glyphs affected by a substitution or
 // positioning operation described in a subtable.
-// Conceptually is it a []GlyphIndex, but it may be implemented for efficiently.
+// Conceptually is it a []GlyphIndex, with an Index method,
+// but it may be implemented for efficiently.
 // See https://learn.microsoft.com/typography/opentype/spec/chapter2#lookup-table
 type Coverage interface {
 	isCoverage()
@@ -21,6 +22,11 @@ type Coverage interface {
 	// Note: this method is injective: two distincts, covered glyphs are mapped
 	// to distincts indices.
 	Index(GlyphID) (int, bool)
+
+	// Len return the number of glyphs covered.
+	// It is 0 for empty coverages.
+	// For non empty Coverages, it is also 1 + (maximum index returned)
+	Len() int
 }
 
 func (Coverage1) isCoverage() {}
@@ -48,6 +54,10 @@ type RangeRecord struct {
 type ClassDef interface {
 	isClassDef()
 	Class(gi GlyphID) (uint16, bool)
+
+	// Extent returns the maximum class ID + 1. This is the length
+	// required for an array to be indexed by the class values.
+	Extent() int
 }
 
 func (ClassDef1) isClassDef() {}
@@ -83,6 +93,17 @@ type SequenceContextFormat1 struct {
 	SeqRuleSet []SequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[seqRuleSetCount]	Array of offsets to SequenceRuleSet tables, from beginning of SequenceContextFormat1 table (offsets may be NULL)
 }
 
+func (sc *SequenceContextFormat1) sanitize(lookupCount uint16) error {
+	for _, set := range sc.SeqRuleSet {
+		for _, rule := range set.SeqRule {
+			if err := rule.sanitize(lookupCount); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 type SequenceRuleSet struct {
 	SeqRule []SequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to SequenceRule tables, from beginning of the SequenceRuleSet table
 }
@@ -92,6 +113,18 @@ type SequenceRule struct {
 	seqLookupCount   uint16                 // Number of SequenceLookupRecords
 	InputSequence    []GlyphID              `arrayCount:"ComputedField-glyphCount-1"`   //[glyphCount - 1]	Array of input glyph IDs—starting with the second glyph
 	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"` //[seqLookupCount]	Array of Sequence lookup records
+}
+
+func (sr *SequenceRule) sanitize(lookupCount uint16) error {
+	for _, rec := range sr.SeqLookupRecords {
+		if rec.SequenceIndex >= sr.glyphCount {
+			return fmt.Errorf("invalid sequence lookup table (input index %d >= %d)", rec.SequenceIndex, sr.glyphCount)
+		}
+		if rec.LookupListIndex >= lookupCount {
+			return fmt.Errorf("invalid sequence lookup table (lookup index %d >= %d)", rec.LookupListIndex, lookupCount)
+		}
+	}
+	return nil
 }
 
 type SequenceContextFormat2 struct {
@@ -194,7 +227,73 @@ func (ChainedContextualSubs) isGSUBLookup()  {}
 func (ExtensionSubs) isGSUBLookup()          {}
 func (ReverseChainSingleSubs) isGSUBLookup() {}
 
-// AsGSUBLookups returns the GSUB lookup subtables
+func (ms MultipleSubs) Sanitize() error {
+	if exp, got := ms.Coverage.Len(), len(ms.Sequences); exp != got {
+		return fmt.Errorf("GSUB: invalid MultipleSubs sequences count (%d != %d)", exp, got)
+	}
+	return nil
+}
+
+func (ls LigatureSubs) Sanitize() error {
+	if exp, got := ls.Coverage.Len(), len(ls.LigatureSets); exp != got {
+		return fmt.Errorf("GSUB: invalid LigatureSubs sets count (%d != %d)", exp, got)
+	}
+	return nil
+}
+
+func (cs ContextualSubs) Sanitize(lookupCount uint16) error {
+	if f1, isFormat1 := cs.Data.(ContextualSubs1); isFormat1 {
+		return (*SequenceContextFormat1)(&f1).sanitize(lookupCount)
+	}
+	return nil
+}
+
+func (rs ReverseChainSingleSubs) Sanitize() error {
+	if exp, got := rs.Coverage.Len(), len(rs.SubstituteGlyphIDs); exp != got {
+		return fmt.Errorf("GSUB: invalid ReverseChainSingleSubs glyphs count (%d != %d)", exp, got)
+	}
+	return nil
+}
+
+func (ext ExtensionSubs) Resolve() (GSUBLookup, error) {
+	if L, E := len(ext.RawData), int(ext.ExtensionOffset); L < E {
+		return nil, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+	}
+	lk, err := parseGSUBLookup(ext.RawData[ext.ExtensionOffset:], ext.ExtensionLookupType)
+	if err != nil {
+		return nil, err
+	}
+	if _, isExt := lk.(ExtensionSubs); isExt {
+		return nil, errors.New("invalid extension substitution table")
+	}
+	return lk, nil
+}
+
+func parseGSUBLookup(src []byte, lookupType uint16) (out GSUBLookup, err error) {
+	switch lookupType {
+	case 1: // Single (format 1.1 1.2)	Replace one glyph with one glyph
+		out, _, err = ParseSingleSubs(src)
+	case 2: // Multiple (format 2.1)	Replace one glyph with more than one glyph
+		out, _, err = ParseMultipleSubs(src)
+	case 3: // Alternate (format 3.1)	Replace one glyph with one of many glyphs
+		out, _, err = ParseAlternateSubs(src)
+	case 4: // Ligature (format 4.1)	Replace multiple glyphs with one glyph
+		out, _, err = ParseLigatureSubs(src)
+	case 5: // Context (format 5.1 5.2 5.3)	Replace one or more glyphs in context
+		out, _, err = ParseContextualSubs(src)
+	case 6: // Chaining Context (format 6.1 6.2 6.3)	Replace one or more glyphs in chained context
+		out, _, err = ParseChainedContextualSubs(src)
+	case 7: // Extension Substitution (format 7.1) Extension mechanism for other substitutions
+		out, _, err = ParseExtensionSubs(src)
+	case 8: // Reverse chaining context single (format 8.1)
+		out, _, err = ParseReverseChainSingleSubs(src)
+	default:
+		err = fmt.Errorf("invalid GSUB Loopkup type %d", lookupType)
+	}
+	return out, err
+}
+
+// AsGSUBLookups returns the GSUB lookup subtables.
 func (lk Lookup) AsGSUBLookups() ([]GSUBLookup, error) {
 	var err error
 	out := make([]GSUBLookup, len(lk.subtableOffsets))
@@ -202,26 +301,7 @@ func (lk Lookup) AsGSUBLookups() ([]GSUBLookup, error) {
 		if L := len(lk.rawData); L < int(offset) {
 			return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
 		}
-		switch lk.lookupType {
-		case 1: // Single (format 1.1 1.2)	Replace one glyph with one glyph
-			out[i], _, err = ParseSingleSubs(lk.rawData[offset:])
-		case 2: // Multiple (format 2.1)	Replace one glyph with more than one glyph
-			out[i], _, err = ParseMultipleSubs(lk.rawData[offset:])
-		case 3: // Alternate (format 3.1)	Replace one glyph with one of many glyphs
-			out[i], _, err = ParseAlternateSubs(lk.rawData[offset:])
-		case 4: // Ligature (format 4.1)	Replace multiple glyphs with one glyph
-			out[i], _, err = ParseLigatureSubs(lk.rawData[offset:])
-		case 5: // Context (format 5.1 5.2 5.3)	Replace one or more glyphs in context
-			out[i], _, err = ParseContextualSubs(lk.rawData[offset:])
-		case 6: // Chaining Context (format 6.1 6.2 6.3)	Replace one or more glyphs in chained context
-			out[i], _, err = ParseChainedContextualSubs(lk.rawData[offset:])
-		case 7: // Extension Substitution (format 7.1) Extension mechanism for other substitutions
-			out[i], _, err = ParseExtensionSubs(lk.rawData[offset:])
-		case 8: // Reverse chaining context single (format 8.1)
-			out[i], _, err = ParseReverseChainSingleSubs(lk.rawData[offset:])
-		default:
-			err = fmt.Errorf("invalid GSUB Loopkup type %d", lk.lookupType)
-		}
+		out[i], err = parseGSUBLookup(lk.rawData[offset:], lk.lookupType)
 		if err != nil {
 			return nil, err
 		}
@@ -253,6 +333,100 @@ func (ContextualPos) isGPOSLookup()        {}
 func (ChainedContextualPos) isGPOSLookup() {}
 func (ExtensionPos) isGPOSLookup()         {}
 
+func (sp *SinglePos) Sanitize() error {
+	if f2, isFormat2 := sp.Data.(SinglePosData2); isFormat2 {
+		if exp, got := f2.Coverage.Len(), len(f2.ValueRecords); exp != got {
+			return fmt.Errorf("GPOS: invalid SinglePos values count (%d != %d)", exp, got)
+		}
+	}
+	return nil
+}
+
+func (pp *PairPos) Sanitize() error {
+	if f1, isFormat1 := pp.Data.(PairPosData1); isFormat1 {
+		if exp, got := f1.Coverage.Len(), len(f1.PairSetOffset); exp != got {
+			return fmt.Errorf("GPOS: invalid PairPos1 sets count (%d != %d)", exp, got)
+		}
+	} else if f2, isFormat2 := pp.Data.(PairPosData2); isFormat2 {
+		if exp, got := f2.ClassDef1.Extent(), int(f2.class1Count); exp != got {
+			return fmt.Errorf("GPOS: invalid PairPos2 class1 count (%d != %d)", exp, got)
+		}
+		if exp, got := f2.classDef2.Extent(), int(f2.class2Count); exp != got {
+			return fmt.Errorf("GPOS: invalid PairPos2 class2 count (%d != %d)", exp, got)
+		}
+	}
+	return nil
+}
+
+func (mp *MarkBasePos) Sanitize() error {
+	if exp, got := mp.markCoverage.Len(), len(mp.markArray.MarkRecords); exp != got {
+		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
+	}
+	if exp, got := mp.baseCoverage.Len(), len(mp.baseArray.BaseAnchors); exp != got {
+		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
+	}
+
+	return nil
+}
+
+func (mp *MarkLigPos) Sanitize() error {
+	if exp, got := mp.MarkCoverage.Len(), len(mp.MarkArray.MarkAnchors); exp != got {
+		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
+	}
+	if exp, got := mp.LigatureCoverage.Len(), len(mp.LigatureArray.LigatureAttachs); exp != got {
+		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
+	}
+
+	return nil
+}
+
+func (cs *ContextualPos) Sanitize(lookupCount uint16) error {
+	if f1, isFormat1 := cs.Data.(ContextualPos1); isFormat1 {
+		return (*SequenceContextFormat1)(&f1).sanitize(lookupCount)
+	}
+	return nil
+}
+
+func (ext ExtensionPos) Resolve() (GPOSLookup, error) {
+	if L, E := len(ext.RawData), int(ext.ExtensionOffset); L < E {
+		return nil, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+	}
+	lk, err := parseGPOSLookup(ext.RawData[ext.ExtensionOffset:], ext.ExtensionLookupType)
+	if err != nil {
+		return nil, err
+	}
+	if _, isExt := lk.(ExtensionPos); isExt {
+		return nil, errors.New("invalid extension positioning table")
+	}
+	return lk, nil
+}
+
+func parseGPOSLookup(src []byte, lookupType uint16) (out GPOSLookup, err error) {
+	switch lookupType {
+	case 1: // Single adjustment	Adjust position of a single glyph
+		out, _, err = ParseSinglePos(src)
+	case 2: // Pair adjustment	Adjust position of a pair of glyphs
+		out, _, err = ParsePairPos(src)
+	case 3: // Cursive attachment	Attach cursive glyphs
+		out, _, err = ParseCursivePos(src)
+	case 4: // MarkToBase attachment	Attach a combining mark to a base glyph
+		out, _, err = ParseMarkBasePos(src)
+	case 5: // MarkToLigature attachment	Attach a combining mark to a ligature
+		out, _, err = ParseMarkLigPos(src)
+	case 6: // MarkToMark attachment	Attach a combining mark to another mark
+		out, _, err = ParseMarkMarkPos(src)
+	case 7: // Context positioning	Position one or more glyphs in context
+		out, _, err = ParseContextualPos(src)
+	case 8: // Chained Context positioning	Position one or more glyphs in chained context
+		out, _, err = ParseChainedContextualPos(src)
+	case 9: // Extension positioning	Extension mechanism for other positionings
+		out, _, err = ParseExtensionPos(src)
+	default:
+		err = fmt.Errorf("invalid GPOS Loopkup type %d", lookupType)
+	}
+	return out, err
+}
+
 // AsGPOSLookups returns the GPOS lookup subtables
 func (lk Lookup) AsGPOSLookups() ([]GPOSLookup, error) {
 	var err error
@@ -261,28 +435,7 @@ func (lk Lookup) AsGPOSLookups() ([]GPOSLookup, error) {
 		if L := len(lk.rawData); L < int(offset) {
 			return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
 		}
-		switch lk.lookupType {
-		case 1: // Single adjustment	Adjust position of a single glyph
-			out[i], _, err = ParseSinglePos(lk.rawData[offset:])
-		case 2: // Pair adjustment	Adjust position of a pair of glyphs
-			out[i], _, err = ParsePairPos(lk.rawData[offset:])
-		case 3: // Cursive attachment	Attach cursive glyphs
-			out[i], _, err = ParseCursivePos(lk.rawData[offset:])
-		case 4: // MarkToBase attachment	Attach a combining mark to a base glyph
-			out[i], _, err = ParseMarkBasePos(lk.rawData[offset:])
-		case 5: // MarkToLigature attachment	Attach a combining mark to a ligature
-			out[i], _, err = ParseMarkLigPos(lk.rawData[offset:])
-		case 6: // MarkToMark attachment	Attach a combining mark to another mark
-			out[i], _, err = ParseMarkMarkPos(lk.rawData[offset:])
-		case 7: // Context positioning	Position one or more glyphs in context
-			out[i], _, err = ParseContextualPos(lk.rawData[offset:])
-		case 8: // Chained Context positioning	Position one or more glyphs in chained context
-			out[i], _, err = ParseChainedContextualPos(lk.rawData[offset:])
-		case 9: // Extension positioning	Extension mechanism for other positionings
-			out[i], _, err = ParseExtensionPos(lk.rawData[offset:])
-		default:
-			err = fmt.Errorf("invalid GPOS Loopkup type %d", lk.lookupType)
-		}
+		out[i], err = parseGPOSLookup(lk.rawData[offset:], lk.lookupType)
 		if err != nil {
 			return nil, err
 		}

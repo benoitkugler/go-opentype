@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -45,6 +46,22 @@ func chooseSbixStrike(sb tables.Sbix, xPpem, yPpem uint16) *tables.Strike {
 }
 
 // ---------------------------- bitmap ----------------------------
+
+func loadBitmap(ld *loader.Loader, tagLoc, tagData loader.Tag) (bitmap, error) {
+	raw, err := ld.RawTable(tagLoc)
+	if err != nil {
+		return nil, err
+	}
+	loc, _, err := tables.ParseCBLC(raw)
+	if err != nil {
+		return nil, err
+	}
+	imageTable, err := ld.RawTable(tagData)
+	if err != nil {
+		return nil, err
+	}
+	return newBitmap(loc, imageTable)
+}
 
 // CBLC/CBDT or EBLC/EBDT or BLOC/BDAT
 type bitmap []bitmapStrike
@@ -159,15 +176,17 @@ func (b *bitmapStrike) findTable(glyph gID) *bitmapSubtable {
 }
 
 type bitmapSubtable struct {
-	first gID // First glyph ID of this range.
-	last  gID // Last glyph ID of this range (inclusive).
-	index bitmapIndex
+	first       gID // First glyph ID of this range.
+	last        gID // Last glyph ID of this range (inclusive).
+	imageFormat uint16
+	index       bitmapIndex
 }
 
 func newBitmapSubtable(header tables.BitmapSubtable, dataTable []byte) (bitmapSubtable, error) {
 	out := bitmapSubtable{
-		first: header.FirstGlyph,
-		last:  header.LastGlyph,
+		first:       header.FirstGlyph,
+		last:        header.LastGlyph,
+		imageFormat: header.ImageFormat,
 	}
 	if L, E := len(dataTable), int(header.ImageDataOffset); L < E {
 		return bitmapSubtable{}, errors.New("invalid bitmap table (EOF)")
@@ -188,6 +207,10 @@ func newBitmapSubtable(header tables.BitmapSubtable, dataTable []byte) (bitmapSu
 		out.index, err = parseIndexSubTable5(header, index, imageData)
 	}
 	return out, err
+}
+
+func (subT *bitmapSubtable) image(glyph gID) *bitmapImage {
+	return subT.index.imageFor(glyph, subT.first, subT.last)
 }
 
 type bitmapIndex interface {

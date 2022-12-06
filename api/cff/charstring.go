@@ -23,12 +23,12 @@ func (f *Font) LoadGlyph(glyph tables.GlyphID) ([]api.Segment, ps.PathBounds, er
 			return nil, ps.PathBounds{}, err
 		}
 	}
-	if int(glyph) >= len(f.charstrings) {
+	if int(glyph) >= len(f.Charstrings) {
 		return nil, ps.PathBounds{}, fmt.Errorf("invalid glyph index %d", glyph)
 	}
 
 	subrs := f.localSubrs[index]
-	err = psi.Run(f.charstrings[glyph], subrs, f.globalSubrs, &loader)
+	err = psi.Run(f.Charstrings[glyph], subrs, f.globalSubrs, &loader)
 	return loader.cs.Segments, loader.cs.Bounds, err
 }
 

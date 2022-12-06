@@ -17,7 +17,7 @@ type Layout struct {
 	minorVersion      uint16            // Minor version of the GPOS table, = 0 or 1
 	scriptList        scriptList        `offsetSize:"Offset16"` // Offset to ScriptList table, from beginning of GPOS table
 	featureList       featureList       `offsetSize:"Offset16"` // Offset to FeatureList table, from beginning of GPOS table
-	lookupList        lookupList        `offsetSize:"Offset16"` // Offset to LookupList table, from beginning of GPOS table
+	LookupList        lookupList        `offsetSize:"Offset16"` // Offset to LookupList table, from beginning of GPOS table
 	featureVariations *FeatureVariation `isOpaque:""`           // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
 }
 
@@ -145,9 +145,9 @@ func (ll *lookupList) parseLookups(src []byte) (int, error) {
 // Lookup is the common format for GSUB and GPOS lookups
 type Lookup struct {
 	lookupType       uint16     // Different enumerations for GSUB and GPOS
-	lookupFlag       uint16     // Lookup qualifiers
+	LookupFlag       uint16     // Lookup qualifiers
 	subtableOffsets  []Offset16 `arrayCount:"FirstUint16"` // [subTableCount] Array of offsets to lookup subtables, from beginning of Lookup table
-	markFilteringSet uint16     // Index (base 0) into GDEF mark glyph sets structure. This field is only present if the USE_MARK_FILTERING_SET lookup flag is set.
+	MarkFilteringSet uint16     // Index (base 0) into GDEF mark glyph sets structure. This field is only present if the USE_MARK_FILTERING_SET lookup flag is set.
 	rawData          []byte     `subsliceStart:"AtStart" arrayCount:"ToEnd"`
 }
 

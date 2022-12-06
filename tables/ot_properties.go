@@ -11,6 +11,8 @@ func (c Coverage1) Index(gi GlyphID) (int, bool) {
 	return 0, false
 }
 
+func (cl Coverage1) Len() int { return len(cl.Glyphs) }
+
 func (c Coverage2) Index(gi GlyphID) (int, bool) {
 	num := len(c.Ranges)
 	if num == 0 {
@@ -38,11 +40,29 @@ func (c Coverage2) Index(gi GlyphID) (int, bool) {
 	return 0, false
 }
 
+func (cr Coverage2) Len() int {
+	size := 0
+	for _, r := range cr.Ranges {
+		size += int(r.EndGlyphID - r.StartGlyphID + 1)
+	}
+	return size
+}
+
 func (cl ClassDef1) Class(gi GlyphID) (uint16, bool) {
 	if gi < cl.StartGlyphID || gi >= cl.StartGlyphID+GlyphID(len(cl.ClassValueArray)) {
 		return 0, false
 	}
 	return cl.ClassValueArray[gi-cl.StartGlyphID], true
+}
+
+func (cl ClassDef1) Extent() int {
+	max := uint16(0)
+	for _, cid := range cl.ClassValueArray {
+		if cid >= max {
+			max = cid
+		}
+	}
+	return int(max) + 1
 }
 
 func (cl ClassDef2) Class(g GlyphID) (uint16, bool) {
@@ -76,4 +96,14 @@ func (cl ClassDef2) Class(g GlyphID) (uint16, bool) {
 	}
 
 	return 0, false
+}
+
+func (cl ClassDef2) Extent() int {
+	max := uint16(0)
+	for _, r := range cl.ClassRangeRecords {
+		if r.Class >= max {
+			max = r.Class
+		}
+	}
+	return int(max) + 1
 }

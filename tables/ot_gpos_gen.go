@@ -1716,7 +1716,7 @@ func ParsePairPosData2(src []byte) (PairPosData2, int, error) {
 				err  error
 				read int
 			)
-			item.classDef1, read, err = ParseClassDef(src[offsetClassDef1:])
+			item.ClassDef1, read, err = ParseClassDef(src[offsetClassDef1:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading PairPosData2: %s", err)
 			}

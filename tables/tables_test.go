@@ -76,7 +76,7 @@ func numGlyphs(t *testing.T, fp *loader.Loader) int {
 	maxp, _, err := ParseMaxp(table)
 	assertNoErr(t, err)
 
-	return int(maxp.numGlyphs)
+	return int(maxp.NumGlyphs)
 }
 
 func TestParseBasicTables(t *testing.T) {

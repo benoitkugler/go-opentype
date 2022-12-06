@@ -836,7 +836,7 @@ func ParseMultipleSubs(src []byte) (MultipleSubs, int, error) {
 				err  error
 				read int
 			)
-			item.CoverageOffset, read, err = ParseCoverage(src[offsetCoverageOffset:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverageOffset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MultipleSubs: %s", err)
 			}

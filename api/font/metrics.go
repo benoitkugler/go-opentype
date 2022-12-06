@@ -207,7 +207,7 @@ func getSideBearing(gid gID, table tables.Hmtx) int16 {
 	if index < LM {
 		return table.Metrics[index].LeftSideBearing
 	} else if index < LS+LM {
-		return table.Metrics[index-LM].AdvanceWidth
+		return table.LeftSideBearings[index-LM]
 	} else {
 		return 0
 	}
@@ -320,14 +320,14 @@ func (f *Face) GlyphVOrigin(glyph GID) (x, y int32, found bool) {
 }
 
 func (f *Face) getExtentsFromGlyf(glyph gID) (api.GlyphExtents, bool) {
-	if int(glyph) >= len(f.Glyf) {
+	if int(glyph) >= len(f.glyf) {
 		return api.GlyphExtents{}, false
 	}
 	if f.isVar() { // we have to compute the outline points and apply variations
 		extents, _ := f.getGlyfPoints(glyph, true)
 		return extents, true
 	}
-	return getGlyphExtents(f.Glyf[glyph], f.hmtx, glyph), true
+	return getGlyphExtents(f.glyf[glyph], f.hmtx, glyph), true
 }
 
 func (f *Font) getExtentsFromBitmap(glyph gID, xPpem, yPpem uint16) (api.GlyphExtents, bool) {
@@ -339,7 +339,7 @@ func (f *Font) getExtentsFromBitmap(glyph gID, xPpem, yPpem uint16) (api.GlyphEx
 	if subtable == nil {
 		return api.GlyphExtents{}, false
 	}
-	image := subtable.index.imageFor(glyph, subtable.first, subtable.last)
+	image := subtable.image(glyph)
 	if image == nil {
 		return api.GlyphExtents{}, false
 	}

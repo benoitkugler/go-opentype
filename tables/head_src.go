@@ -23,3 +23,11 @@ type Head struct {
 	IndexToLocFormat   int16
 	glyphDataFormat    int16
 }
+
+// Upem returns a sanitize version of the 'UnitsPerEm' field.
+func (head *Head) Upem() uint16 {
+	if head.UnitsPerEm < 16 || head.UnitsPerEm > 16384 {
+		return 1000
+	}
+	return head.UnitsPerEm
+}

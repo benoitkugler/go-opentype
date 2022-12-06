@@ -20,7 +20,7 @@ func TestParseGlyf(t *testing.T) {
 		maxp, _, err := ParseMaxp(readTable(t, fp, "maxp"))
 		assertNoErr(t, err)
 
-		loca, err := ParseLoca(readTable(t, fp, "loca"), int(maxp.numGlyphs), head.IndexToLocFormat == 1)
+		loca, err := ParseLoca(readTable(t, fp, "loca"), int(maxp.NumGlyphs), head.IndexToLocFormat == 1)
 		assertNoErr(t, err)
 
 		glyphs, err := ParseGlyf(readTable(t, fp, "glyf"), loca)
@@ -58,12 +58,12 @@ func TestGlyphCoordinates(t *testing.T) {
 
 	num, _, err := ParseMaxp(maxpBin)
 	assertNoErr(t, err)
-	assert(t, num.numGlyphs == 4)
+	assert(t, num.NumGlyphs == 4)
 
 	head, _, err := ParseHead(headBin)
 	assertNoErr(t, err)
 
-	loca, err := ParseLoca(locaBin, int(num.numGlyphs), head.IndexToLocFormat == 1)
+	loca, err := ParseLoca(locaBin, int(num.NumGlyphs), head.IndexToLocFormat == 1)
 	assertNoErr(t, err)
 
 	glyphs, err := ParseGlyf(glyfBin, loca)
@@ -228,7 +228,7 @@ func TestParseSbix(t *testing.T) {
 		maxp, _, err := ParseMaxp(readTable(t, fp, "maxp"))
 		assertNoErr(t, err)
 
-		sbix, _, err := ParseSbix(readTable(t, fp, "sbix"), int(maxp.numGlyphs))
+		sbix, _, err := ParseSbix(readTable(t, fp, "sbix"), int(maxp.NumGlyphs))
 		assertNoErr(t, err)
 
 		assertNoErr(t, err)

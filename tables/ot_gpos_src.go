@@ -104,7 +104,7 @@ type PairPosData2 struct {
 	valueFormat1 ValueFormat //	Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
 	valueFormat2 ValueFormat //	Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
 
-	classDef1     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the first glyph of the pair.
+	ClassDef1     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the first glyph of the pair.
 	classDef2     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the second glyph of the pair.
 	class1Count   uint16         //	Number of classes in classDef1 table — includes Class 0.
 	class2Count   uint16         //	Number of classes in classDef2 table — includes Class 0.
@@ -221,6 +221,10 @@ func resolveAnchorOffsets(offsets []anchorOffsets, src []byte) ([][]Anchor, erro
 	for i, list := range offsets {
 		bi := make([]Anchor, len(list.offsets))
 		for j, offset := range list.offsets {
+			if offset == 0 {
+				continue
+			}
+
 			if L := len(src); L < int(offset) {
 				return nil, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
 			}

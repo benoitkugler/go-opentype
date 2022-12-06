@@ -458,3 +458,22 @@ func getSideBearingVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) f
 	index := t.LsbMapping.Index(glyph)
 	return getDelta(t.ItemVariationStore, index, coords)
 }
+
+func sanitizeGDEF(table tables.GDEF, axisCount int) error {
+	// check axis count
+	for _, reg := range table.ItemVarStore.VariationRegionList.VariationRegions {
+		if axisCount != len(reg.RegionAxes) {
+			return fmt.Errorf("GDEF: invalid number of axis (%d != %d)", axisCount, len(reg.RegionAxes))
+		}
+	}
+
+	// check LigCarets length
+	if table.LigCaretList.Coverage != nil {
+		expected := table.LigCaretList.Coverage.Len()
+		got := len(table.LigCaretList.LigGlyphs)
+		if expected != got {
+			return fmt.Errorf("GDEF: invalid number of lig gyphs (%d != %d)", expected, got)
+		}
+	}
+	return nil
+}

@@ -15,7 +15,7 @@ func ParseMaxp(src []byte) (Maxp, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.version = maxpVersion(binary.BigEndian.Uint32(src[0:]))
-	item.numGlyphs = binary.BigEndian.Uint16(src[4:])
+	item.NumGlyphs = binary.BigEndian.Uint16(src[4:])
 	n += 6
 
 	{

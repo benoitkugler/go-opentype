@@ -3,7 +3,7 @@ package tables
 // https://learn.microsoft.com/en-us/typography/opentype/spec/Maxp
 type Maxp struct {
 	version   maxpVersion
-	numGlyphs uint16
+	NumGlyphs uint16
 	data      maxpData `unionField:"version"`
 }
 

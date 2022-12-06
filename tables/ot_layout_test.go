@@ -13,13 +13,25 @@ func TestParseOTLayout(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 		assertNoErr(t, err)
-		assert(t, len(gsub.lookupList.Lookups) == len(gsub.lookupList.Lookups))
-		assert(t, len(gsub.lookupList.Lookups) > 0)
+		assert(t, len(gsub.LookupList.Lookups) == len(gsub.LookupList.Lookups))
+		assert(t, len(gsub.LookupList.Lookups) > 0)
+
+		for _, lookup := range gsub.LookupList.Lookups {
+			assert(t, lookup.lookupType > 0)
+			_, err = lookup.AsGSUBLookups()
+			assertNoErr(t, err)
+		}
 
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 		assertNoErr(t, err)
-		assert(t, len(gpos.lookupList.Lookups) == len(gpos.lookupList.Lookups))
-		assert(t, len(gpos.lookupList.Lookups) > 0)
+		assert(t, len(gpos.LookupList.Lookups) == len(gpos.LookupList.Lookups))
+		assert(t, len(gpos.LookupList.Lookups) > 0)
+
+		for _, lookup := range gpos.LookupList.Lookups {
+			assert(t, lookup.lookupType > 0)
+			_, err = lookup.AsGPOSLookups()
+			assertNoErr(t, err)
+		}
 
 		_, _, err = ParseGDEF(readTable(t, fp, "GDEF"))
 		assertNoErr(t, err)
@@ -31,10 +43,10 @@ func TestGSUB(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 		assertNoErr(t, err)
-		assert(t, len(gsub.lookupList.Lookups) == len(gsub.lookupList.Lookups))
-		assert(t, len(gsub.lookupList.Lookups) > 0)
+		assert(t, len(gsub.LookupList.Lookups) == len(gsub.LookupList.Lookups))
+		assert(t, len(gsub.LookupList.Lookups) > 0)
 
-		for _, lookup := range gsub.lookupList.Lookups {
+		for _, lookup := range gsub.LookupList.Lookups {
 			assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGSUBLookups()
 			assertNoErr(t, err)
@@ -47,10 +59,10 @@ func TestGPOS(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 		assertNoErr(t, err)
-		assert(t, len(gpos.lookupList.Lookups) == len(gpos.lookupList.Lookups))
-		assert(t, len(gpos.lookupList.Lookups) > 0)
+		assert(t, len(gpos.LookupList.Lookups) == len(gpos.LookupList.Lookups))
+		assert(t, len(gpos.LookupList.Lookups) > 0)
 
-		for _, lookup := range gpos.lookupList.Lookups {
+		for _, lookup := range gpos.LookupList.Lookups {
 			assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGPOSLookups()
 			assertNoErr(t, err)
@@ -178,7 +190,7 @@ func TestGSUBIndic(t *testing.T) {
 	if exp, got := expectedFeatures, gsub.featureList.Features; !reflect.DeepEqual(exp, got) {
 		t.Fatalf("expected %v, got %v", exp, got)
 	}
-	for i, lk := range gsub.lookupList.Lookups {
+	for i, lk := range gsub.LookupList.Lookups {
 		got, err := lk.AsGSUBLookups()
 		assertNoErr(t, err)
 		exp := expectedLookups[i]
@@ -192,7 +204,7 @@ func TestGSUBLigature(t *testing.T) {
 	gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 	assertNoErr(t, err)
 
-	lookups, err := gsub.lookupList.Lookups[0].AsGSUBLookups()
+	lookups, err := gsub.LookupList.Lookups[0].AsGSUBLookups()
 	assertNoErr(t, err)
 	lookup := lookups[0]
 
@@ -247,11 +259,11 @@ func TestGPOSCursive(t *testing.T) {
 	gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 	assertNoErr(t, err)
 
-	if len(gpos.lookupList.Lookups) != 4 || len(gpos.lookupList.Lookups[0].subtableOffsets) != 1 {
-		t.Fatalf("invalid gpos lookups: %v", gpos.lookupList)
+	if len(gpos.LookupList.Lookups) != 4 || len(gpos.LookupList.Lookups[0].subtableOffsets) != 1 {
+		t.Fatalf("invalid gpos lookups: %v", gpos.LookupList)
 	}
 
-	lookups, err := gpos.lookupList.Lookups[0].AsGPOSLookups()
+	lookups, err := gpos.LookupList.Lookups[0].AsGPOSLookups()
 	assertNoErr(t, err)
 
 	cursive, ok := lookups[0].(CursivePos)

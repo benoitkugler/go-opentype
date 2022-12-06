@@ -161,7 +161,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 				err  error
 				read int
 			)
-			item.lookupList, read, err = parseLookupList(src[offsetLookupList:])
+			item.LookupList, read, err = parseLookupList(src[offsetLookupList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
@@ -188,7 +188,7 @@ func ParseLookup(src []byte) (Lookup, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.lookupType = binary.BigEndian.Uint16(src[0:])
-	item.lookupFlag = binary.BigEndian.Uint16(src[2:])
+	item.LookupFlag = binary.BigEndian.Uint16(src[2:])
 	arrayLengthSubtableOffsets := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
@@ -207,7 +207,7 @@ func ParseLookup(src []byte) (Lookup, int, error) {
 	if L := len(src); L < n+2 {
 		return item, 0, fmt.Errorf("reading Lookup: "+"EOF: expected length: n + 2, got %d", L)
 	}
-	item.markFilteringSet = binary.BigEndian.Uint16(src[n:])
+	item.MarkFilteringSet = binary.BigEndian.Uint16(src[n:])
 	n += 2
 
 	{

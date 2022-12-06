@@ -24,9 +24,9 @@ type SingleSubstData2 struct {
 }
 
 type MultipleSubs struct {
-	substFormat    uint16     // Format identifier: format = 1
-	CoverageOffset Coverage   `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
-	Sequences      []Sequence `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
+	substFormat uint16     // Format identifier: format = 1
+	Coverage    Coverage   `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of substitution subtable
+	Sequences   []Sequence `arrayCount:"FirstUint16"  offsetsArray:"Offset16"`
 	//[sequenceCount]	Array of offsets to Sequence tables. Offsets are from beginning of substitution subtable, ordered by Coverage index
 }
 
