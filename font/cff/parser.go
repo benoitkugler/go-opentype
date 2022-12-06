@@ -9,6 +9,7 @@ import (
 
 	"github.com/benoitkugler/go-opentype/font"
 	ps "github.com/benoitkugler/go-opentype/font/cff/interpreter"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 var (
@@ -371,7 +372,7 @@ func (p *cffParser) parseCharset(charsetOffset int32, numGlyphs uint16) ([]uint1
 
 // fdSelect holds a CFF font's Font Dict Select data.
 type fdSelect interface {
-	fontDictIndex(glyph font.GID) (byte, error)
+	fontDictIndex(glyph tables.GlyphID) (byte, error)
 	// return the maximum index + 1 (it's the length of an array
 	// which can be safely indexed by the indexes)
 	extent() int
@@ -379,7 +380,7 @@ type fdSelect interface {
 
 type fdSelect0 []byte
 
-func (fds fdSelect0) fontDictIndex(glyph font.GID) (byte, error) {
+func (fds fdSelect0) fontDictIndex(glyph tables.GlyphID) (byte, error) {
 	if int(glyph) >= len(fds) {
 		return 0, errors.New("invalid glyph index")
 	}
@@ -397,16 +398,16 @@ func (fds fdSelect0) extent() int {
 }
 
 type range3 struct {
-	first font.GID
+	first tables.GlyphID
 	fd    byte
 }
 
 type fdSelect3 struct {
 	ranges   []range3
-	sentinel font.GID // = numGlyphs
+	sentinel tables.GlyphID // = numGlyphs
 }
 
-func (fds fdSelect3) fontDictIndex(x font.GID) (byte, error) {
+func (fds fdSelect3) fontDictIndex(x tables.GlyphID) (byte, error) {
 	lo, hi := 0, len(fds.ranges)
 	for lo < hi {
 		i := (lo + hi) / 2
@@ -465,12 +466,12 @@ func (p *cffParser) parseFDSelect(offset int32, numGlyphs uint16) (fdSelect, err
 			return nil, errors.New("invalid FDSelect data")
 		}
 		out := fdSelect3{
-			sentinel: font.GID(numGlyphs),
+			sentinel: tables.GlyphID(numGlyphs),
 			ranges:   make([]range3, numRanges),
 		}
 		for i := range out.ranges {
 			// 	buf holds the range [xlo, xhi).
-			out.ranges[i].first = font.GID(binary.BigEndian.Uint16(p.src[p.offset+3*i:]))
+			out.ranges[i].first = tables.GlyphID(binary.BigEndian.Uint16(p.src[p.offset+3*i:]))
 			out.ranges[i].fd = p.src[p.offset+3*i+2]
 		}
 		return out, nil

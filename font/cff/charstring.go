@@ -5,11 +5,12 @@ import (
 
 	"github.com/benoitkugler/go-opentype/font"
 	ps "github.com/benoitkugler/go-opentype/font/cff/interpreter"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // LoadGlyph parses the glyph charstring to compute segments and path bounds.
 // It returns an error if the glyph is invalid or if decoding the charstring fails.
-func (f *Font) LoadGlyph(glyph font.GID) ([]font.Segment, ps.PathBounds, error) {
+func (f *Font) LoadGlyph(glyph tables.GlyphID) ([]font.Segment, ps.PathBounds, error) {
 	var (
 		psi    ps.Machine
 		loader type2CharstringHandler

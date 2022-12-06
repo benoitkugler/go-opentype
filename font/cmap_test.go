@@ -3,6 +3,8 @@ package font
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -189,4 +191,14 @@ func TestCmap14(t *testing.T) {
 
 	_, flag = uv.GetGlyphVariant(33446, 0xF)
 	assert(t, flag == VariantNotFound)
+}
+
+func TestExtract(t *testing.T) {
+	b, _ := os.ReadFile("/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/truetype/Gacha_9.dfont")
+	fonts, _ := opentype.NewLoaders(bytes.NewReader(b))
+	bloc, _ := fonts[0].RawTable(opentype.MustNewTag("bloc"))
+	bdat, _ := fonts[0].RawTable(opentype.MustNewTag("bdat"))
+	fmt.Println(len(bloc), len(bdat))
+	os.WriteFile("bloc.bin", bloc, os.ModePerm)
+	os.WriteFile("bdat.bin", bdat, os.ModePerm)
 }

@@ -1,8 +1,17 @@
 package layout
 
 import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+
 	"github.com/benoitkugler/go-opentype/font"
+	"github.com/benoitkugler/go-opentype/opentype"
 	"github.com/benoitkugler/go-opentype/tables"
+	"golang.org/x/image/tiff"
 )
 
 type contourPoint struct {
@@ -37,7 +46,7 @@ const maxCompositeNesting = 20 // protect against malicious fonts
 // use the `glyf` table to fetch the contour points,
 // applying variation if needed.
 // for composite, recursively calls itself; allPoints includes phantom points and will be at least of length 4
-func (f *Font) getPointsForGlyph(gid tables.GlyphID, varCoords []float32, currentDepth int, allPoints *[]contourPoint /* OUT */) {
+func (f *Face) getPointsForGlyph(gid tables.GlyphID, currentDepth int, allPoints *[]contourPoint /* OUT */) {
 	// adapted from harfbuzz/src/hb-ot-glyf-table.hh
 
 	if currentDepth > maxCompositeNesting || int(gid) >= len(f.Glyf) {
@@ -66,7 +75,7 @@ func (f *Font) getPointsForGlyph(gid tables.GlyphID, varCoords []float32, curren
 	phantoms[phantomBottom].Y = vOrig - vAdv
 
 	if f.isVar() {
-		f.gvar.applyDeltasToPoints(gid, varCoords, points)
+		f.gvar.applyDeltasToPoints(gid, f.Coords, points)
 	}
 
 	switch data := g.Data.(type) {
@@ -77,7 +86,7 @@ func (f *Font) getPointsForGlyph(gid tables.GlyphID, varCoords []float32, curren
 			// recurse on component
 			var compPoints []contourPoint
 
-			f.getPointsForGlyph(item.GlyphIndex, varCoords, currentDepth+1, &compPoints)
+			f.getPointsForGlyph(item.GlyphIndex, currentDepth+1, &compPoints)
 
 			LC := len(compPoints)
 			if LC < phantomCount { // in case of max depth reached
@@ -177,12 +186,12 @@ func extentsFromPoints(allPoints []contourPoint) (ext font.GlyphExtents) {
 
 // walk through the contour points of the given glyph to compute its extends and its phantom points
 // As an optimization, if `computeExtents` is false, the extents computation is skipped (a zero value is returned).
-func (f *Font) getGlyfPoints(gid tables.GlyphID, varCoords []float32, computeExtents bool) (ext font.GlyphExtents, ph [phantomCount]contourPoint) {
+func (f *Face) getGlyfPoints(gid tables.GlyphID, computeExtents bool) (ext font.GlyphExtents, ph [phantomCount]contourPoint) {
 	if int(gid) >= len(f.Glyf) {
 		return
 	}
 	var allPoints []contourPoint
-	f.getPointsForGlyph(gid, varCoords, 0, &allPoints)
+	f.getPointsForGlyph(gid, 0, &allPoints)
 
 	copy(ph[:], allPoints[len(allPoints)-phantomCount:])
 
@@ -191,6 +200,20 @@ func (f *Font) getGlyfPoints(gid tables.GlyphID, varCoords []float32, computeExt
 	}
 
 	return ext, ph
+}
+
+func min16(a, b int16) int16 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max16(a, b int16) int16 {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func minF(a, b float32) float32 {
@@ -231,4 +254,82 @@ func transformPoints(c *tables.CompositeGlyphPart, points []contourPoint) {
 			points[i].translate(transX, transY)
 		}
 	}
+}
+
+func getGlyphExtents(g tables.Glyph, metrics tables.Hmtx, gid gID) font.GlyphExtents {
+	var extents font.GlyphExtents
+	/* Undocumented rasterizer behavior: shift glyph to the left by (lsb - xMin), i.e., xMin = lsb */
+	/* extents.XBearing = hb_min (glyph_header.xMin, glyph_header.xMax); */
+	extents.XBearing = float32(getSideBearing(gid, metrics))
+
+	extents.YBearing = float32(max16(g.YMin, g.YMax))
+	extents.Width = float32(max16(g.XMin, g.XMax) - min16(g.XMin, g.XMax))
+	extents.Height = float32(min16(g.YMin, g.YMax) - max16(g.YMin, g.YMax))
+	return extents
+}
+
+// sbix
+
+var (
+	dupe = opentype.MustNewTag("dupe")
+	// tagPNG identifies bitmap glyph with png format
+	tagPNG = opentype.MustNewTag("png ")
+	// tagTIFF identifies bitmap glyph with tiff format
+	tagTIFF = opentype.MustNewTag("tiff")
+	// tagJPG identifies bitmap glyph with jpg format
+	tagJPG = opentype.MustNewTag("jpg ")
+)
+
+// strikeGlyph return the data for [glyph], or a zero value if not found.
+func strikeGlyph(b *tables.Strike, glyph gID, recursionLevel int) tables.BitmapGlyphData {
+	const maxRecursionLevel = 8
+
+	if int(glyph) >= len(b.GlyphDatas) {
+		return tables.BitmapGlyphData{}
+	}
+	out := b.GlyphDatas[glyph]
+	if out.GraphicType == dupe {
+		if len(out.Data) < 2 || recursionLevel > maxRecursionLevel {
+			return tables.BitmapGlyphData{}
+		}
+		glyph = gID(binary.BigEndian.Uint16(out.Data))
+		return strikeGlyph(b, glyph, recursionLevel+1)
+	}
+	return out
+}
+
+// decodeBitmapConfig parse the data to find the width and height
+func decodeBitmapConfig(b tables.BitmapGlyphData) (width, height int, format font.BitmapFormat, err error) {
+	var config image.Config
+	switch b.GraphicType {
+	case tagPNG:
+		format = font.PNG
+		config, err = png.DecodeConfig(bytes.NewReader(b.Data))
+	case tagTIFF:
+		format = font.TIFF
+		config, err = tiff.DecodeConfig(bytes.NewReader(b.Data))
+	case tagJPG:
+		format = font.JPG
+		config, err = jpeg.DecodeConfig(bytes.NewReader(b.Data))
+	default:
+		err = fmt.Errorf("unsupported graphic type in sbix table: %s", b.GraphicType)
+	}
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return config.Width, config.Height, format, nil
+}
+
+// return the extents computed from the data
+// should only be called on valid, non nil glyph data
+func bitmapGlyphExtents(b tables.BitmapGlyphData) (out font.GlyphExtents, ok bool) {
+	width, height, _, err := decodeBitmapConfig(b)
+	if err != nil {
+		return out, false
+	}
+	out.XBearing = float32(b.OriginOffsetX)
+	out.YBearing = float32(height) + float32(b.OriginOffsetY)
+	out.Width = float32(width)
+	out.Height = -float32(height)
+	return out, true
 }

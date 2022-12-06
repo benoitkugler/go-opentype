@@ -446,15 +446,15 @@ func inferDelta(targetVal, prevVal, nextVal, prevDelta, nextDelta float32) float
 
 // ------------------------------ hvar/vvar ------------------------------
 
-func getAdvanceVar(t tables.HVAR, glyph tables.GlyphID, coords []float32) float32 {
+func getAdvanceVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) float32 {
 	index := t.AdvanceWidthMapping.Index(glyph)
 	return getDelta(t.ItemVariationStore, index, coords)
 }
 
-func getSideBearingVar(t tables.HVAR, glyph GID, coords []float32) float32 {
-	if t.leftSideBearings == nil {
+func getSideBearingVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) float32 {
+	if t.LsbMapping == nil {
 		return 0
 	}
-	index := t.leftSideBearings.getIndex(glyph)
+	index := t.LsbMapping.Index(glyph)
 	return getDelta(t.ItemVariationStore, index, coords)
 }

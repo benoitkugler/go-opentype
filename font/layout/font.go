@@ -33,17 +33,17 @@ type Font struct {
 	// Optionnal, only present in variable fonts
 
 	hvar *tables.HVAR // optional
-	vvar tables.VVAR  // optional
+	vvar *tables.VVAR // optional
 	avar tables.Avar
 	mvar mvar
 	gvar gvar
 	fvar tables.Fvar
 
-	Glyf tables.Glyf
-	hmtx tables.Hmtx
-	vmtx tables.Vmtx
-	// bitmap bitmapTable // CBDT or EBLC or BLOC
-	sbix tables.Sbix
+	Glyf   tables.Glyf
+	hmtx   tables.Hmtx
+	vmtx   tables.Vmtx
+	bitmap bitmap
+	sbix   tables.Sbix
 
 	os2 os2
 
@@ -64,12 +64,16 @@ type Font struct {
 	upem uint16 // cached value
 }
 
-// Face is a font with (optional) user-provided variable coordinates.
+// Face is a font with user-provided settings.
+// It is a lightweight wrapper around [*Font], NOT safe for concurrent use.
 type Face struct {
-	Font *Font
+	*Font
 
 	// Coords are the current variable coordinates, expressed in normalized units.
 	// It is empty for non variable fonts.
 	// Use `NormalizeVariations` to convert from design space units.
 	Coords []float32
+
+	// Horizontal and vertical pixels-per-em (ppem), used to select bitmap sizes.
+	XPpem, YPpem uint16
 }
