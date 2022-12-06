@@ -116,25 +116,25 @@ func TestParseGvar(t *testing.T) {
 		0: {},
 		1: {
 			{
-				variationDataSize: 0x000A,
+				VariationDataSize: 0x000A,
 				tupleIndex:        0x8000,
-				peakTuple:         Tuple{[]float32{0, 0.7000122}},
+				PeakTuple:         Tuple{[]float32{0, 0.7000122}},
 			},
 		},
 		2: {
 			{
-				variationDataSize: 0x0012,
+				VariationDataSize: 0x0012,
 				tupleIndex:        0xC000,
-				peakTuple:         Tuple{[]float32{0.5, 0}},
-				intermediateTuples: [2]Tuple{
+				PeakTuple:         Tuple{[]float32{0.5, 0}},
+				IntermediateTuples: [2]Tuple{
 					{[]float32{0, 0}},
 					{[]float32{1, 0}},
 				},
 			},
 			{
-				variationDataSize: 0x0016,
+				VariationDataSize: 0x0016,
 				tupleIndex:        0xA000,
-				peakTuple:         Tuple{[]float32{-1, 0.7999878}},
+				PeakTuple:         Tuple{[]float32{-1, 0.7999878}},
 			},
 		},
 	}

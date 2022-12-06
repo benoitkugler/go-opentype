@@ -223,20 +223,26 @@ type GlyphVariationData struct {
 	TupleVariationHeaders []TupleVariationHeader `arrayCount:"ComputedField-tupleVariationCount&0x0FFF"` //[tupleCount]	Array of tuple variation headers.
 }
 
+// HasSharedPointNumbers returns true if the  'sharedPointNumbers' is on.
+func (gv *GlyphVariationData) HasSharedPointNumbers() bool {
+	const sharedPointNumbers = 0x8000
+	return gv.tupleVariationCount&sharedPointNumbers != 0
+}
+
 // binarygen: argument=axisCount int
 type TupleVariationHeader struct {
-	variationDataSize uint16 //	The size in bytes of the serialized data for this tuple variation table.
+	VariationDataSize uint16 //	The size in bytes of the serialized data for this tuple variation table.
 	tupleIndex        uint16 //	A packed field. The high 4 bits are flags (see below). The low 12 bits are an index into a shared tuple records array.
 	// Peak tuple record for this tuple variation table — optional, determined by flags in the tupleIndex value.
 	// Note that this must always be included in the 'cvar' table.
-	peakTuple          Tuple    `isOpaque:"" subsliceStart:"AtCurrent"`
-	intermediateTuples [2]Tuple `isOpaque:"" subsliceStart:"AtCurrent"` //	Intermediate start/end tuple record for this tuple variation table — optional, determined by flags in the tupleIndex value.
+	PeakTuple          Tuple    `isOpaque:"" subsliceStart:"AtCurrent"`
+	IntermediateTuples [2]Tuple `isOpaque:"" subsliceStart:"AtCurrent"` //	Intermediate start/end tuple record for this tuple variation table — optional, determined by flags in the tupleIndex value.
 }
 
 func (tv *TupleVariationHeader) parsePeakTuple(src []byte, axisCount int) (read int, err error) {
 	const embeddedPeakTuple = 0x8000
 	if hasPeak := tv.tupleIndex&embeddedPeakTuple != 0; hasPeak {
-		tv.peakTuple, read, err = ParseTuple(src, axisCount)
+		tv.PeakTuple, read, err = ParseTuple(src, axisCount)
 		if err != nil {
 			return 0, err
 		}
@@ -247,14 +253,26 @@ func (tv *TupleVariationHeader) parsePeakTuple(src []byte, axisCount int) (read 
 func (tv *TupleVariationHeader) parseIntermediateTuples(src []byte, axisCount int) (read int, err error) {
 	const intermediateRegion = 0x4000
 	if hasRegions := tv.tupleIndex&intermediateRegion != 0; hasRegions {
-		tv.intermediateTuples[0], read, err = ParseTuple(src, axisCount)
+		tv.IntermediateTuples[0], read, err = ParseTuple(src, axisCount)
 		if err != nil {
 			return 0, err
 		}
-		tv.intermediateTuples[1], _, err = ParseTuple(src[read:], axisCount)
+		tv.IntermediateTuples[1], _, err = ParseTuple(src[read:], axisCount)
 		read *= 2
 	}
 	return
+}
+
+// HasPrivatePointNumbers returns true if the flag 'privatePointNumbers' is on
+func (t *TupleVariationHeader) HasPrivatePointNumbers() bool {
+	const privatePointNumbers = 0x2000
+	return t.tupleIndex&privatePointNumbers != 0
+}
+
+// Index returns the tuple index, after masking
+func (t *TupleVariationHeader) Index() uint16 {
+	const TupleIndexMask = 0x0FFF
+	return t.tupleIndex & TupleIndexMask
 }
 
 // ---------------------------------- HVAR/VVAR ----------------------------------
@@ -279,6 +297,22 @@ type DeltaSetMapping struct {
 	entryFormat uint8 // A packed field that describes the compressed representation of delta-set indices. See details below.
 	// uint16 or uint32	mapCount : The number of mapping entries.
 	Map []VariationStoreIndex `isOpaque:"" subsliceStart:"AtCurrent"`
+}
+
+// Index returns the [VariationStoreIndex] for the given index.
+func (m DeltaSetMapping) Index(glyph GlyphID) VariationStoreIndex {
+	// If a mapping table is not provided, glyph indices are used as implicit delta-set indices.
+	// [...] the delta-set outer-level index is zero, and the glyph ID is used as the inner-level index.
+	if len(m.Map) == 0 {
+		return VariationStoreIndex{DeltaSetInner: uint16(glyph)}
+	}
+
+	// If a given glyph ID is greater than mapCount - 1, then the last entry is used.
+	if int(glyph) >= len(m.Map) {
+		glyph = GlyphID(len(m.Map) - 1)
+	}
+
+	return m.Map[glyph]
 }
 
 func (ds *DeltaSetMapping) parseMap(src []byte) (int, error) {

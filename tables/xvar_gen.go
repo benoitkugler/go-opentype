@@ -549,7 +549,7 @@ func ParseTupleVariationHeader(src []byte, axisCount int) (TupleVariationHeader,
 		return item, 0, fmt.Errorf("reading TupleVariationHeader: "+"EOF: expected length: 4, got %d", L)
 	}
 	_ = src[3] // early bound checking
-	item.variationDataSize = binary.BigEndian.Uint16(src[0:])
+	item.VariationDataSize = binary.BigEndian.Uint16(src[0:])
 	item.tupleIndex = binary.BigEndian.Uint16(src[2:])
 	n += 4
 

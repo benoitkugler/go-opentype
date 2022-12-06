@@ -111,7 +111,7 @@ func (state *AATStateTableExt) parseStates(src []byte, _, _ int) (int, error) {
 	}
 
 	statesArray := src[state.stateArray:state.entryTable]
-	states, err := parseUint16s(statesArray, len(statesArray)/2)
+	states, err := ParseUint16s(statesArray, len(statesArray)/2)
 	if err != nil {
 		return 0, err
 	}

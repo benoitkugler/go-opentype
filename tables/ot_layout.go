@@ -339,7 +339,7 @@ func parseValueRecord(format ValueFormat, data []byte, offset int) (out ValueRec
 		return out, offset, nil
 	}
 	// start by parsing the list of values
-	values, err := parseUint16s(data[offset:], size)
+	values, err := ParseUint16s(data[offset:], size)
 	if err != nil {
 		return out, 0, fmt.Errorf("invalid value record: %s", err)
 	}
@@ -442,7 +442,7 @@ func parseDeviceTable(src []byte, offset uint16) (DeviceTable, error) {
 			// add padding
 			count = outLength/nbPerUint16 + 1
 		}
-		uint16s, err := parseUint16s(src[offset+6:], count)
+		uint16s, err := ParseUint16s(src[offset+6:], count)
 		if err != nil {
 			return nil, err
 		}
@@ -592,9 +592,9 @@ func uint16As8Bits(dst []int8, u uint16) {
 	dst[1] = int8(u)
 }
 
-// parseUint16s interprets data as a (big endian) uint16 slice.
+// ParseUint16s interprets data as a (big endian) uint16 slice.
 // It returns an error if [data] is not long enough for the given [count].
-func parseUint16s(src []byte, count int) ([]uint16, error) {
+func ParseUint16s(src []byte, count int) ([]uint16, error) {
 	if L := len(src); L < 2*count {
 		return nil, fmt.Errorf("EOF: expected length: %d, got %d", 2*count, L)
 	}
