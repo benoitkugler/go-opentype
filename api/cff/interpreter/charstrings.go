@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/benoitkugler/go-opentype/font"
+	"github.com/benoitkugler/go-opentype/api"
 )
 
 // PathBounds represents a control bounds for
@@ -30,8 +30,8 @@ func (b *PathBounds) Enlarge(pt Point) {
 }
 
 // ToExtents converts a path bounds to the corresponding glyph extents.
-func (b *PathBounds) ToExtents() font.GlyphExtents {
-	return font.GlyphExtents{
+func (b *PathBounds) ToExtents() api.GlyphExtents {
+	return api.GlyphExtents{
 		XBearing: float32(b.Min.X),
 		YBearing: float32(b.Max.Y),
 		Width:    float32(b.Max.X - b.Min.X),
@@ -48,15 +48,15 @@ func (p *Point) Move(dx, dy int32) {
 	p.Y += dy
 }
 
-func (p Point) toSP() font.SegmentPoint {
-	return font.SegmentPoint{X: float32(p.X), Y: float32(p.Y)}
+func (p Point) toSP() api.SegmentPoint {
+	return api.SegmentPoint{X: float32(p.X), Y: float32(p.Y)}
 }
 
 // CharstringReader provides implementation
 // of the operators found in a font charstring.
 type CharstringReader struct {
 	// Acumulated segments for the glyph outlines
-	Segments []font.Segment
+	Segments []api.Segment
 	// Acumulated bounds for the glyph outlines
 	Bounds PathBounds
 
@@ -113,9 +113,9 @@ func (out *CharstringReader) move(pt Point) {
 	out.CurrentPoint.Move(pt.X, pt.Y)
 	out.isPathOpen = false
 	out.firstPoint = out.CurrentPoint
-	out.Segments = append(out.Segments, font.Segment{
-		Op:   font.SegmentOpMoveTo,
-		Args: [3]font.SegmentPoint{out.CurrentPoint.toSP()},
+	out.Segments = append(out.Segments, api.Segment{
+		Op:   api.SegmentOpMoveTo,
+		Args: [3]api.SegmentPoint{out.CurrentPoint.toSP()},
 	})
 }
 
@@ -127,9 +127,9 @@ func (out *CharstringReader) line(pt Point) {
 	}
 	out.CurrentPoint = pt
 	out.updateBounds(pt)
-	out.Segments = append(out.Segments, font.Segment{
-		Op:   font.SegmentOpLineTo,
-		Args: [3]font.SegmentPoint{pt.toSP()},
+	out.Segments = append(out.Segments, api.Segment{
+		Op:   api.SegmentOpLineTo,
+		Args: [3]api.SegmentPoint{pt.toSP()},
 	})
 }
 
@@ -143,9 +143,9 @@ func (out *CharstringReader) curve(pt1, pt2, pt3 Point) {
 	out.updateBounds(pt2)
 	out.CurrentPoint = pt3
 	out.updateBounds(pt3)
-	out.Segments = append(out.Segments, font.Segment{
-		Op:   font.SegmentOpCubeTo,
-		Args: [3]font.SegmentPoint{pt1.toSP(), pt2.toSP(), pt3.toSP()},
+	out.Segments = append(out.Segments, api.Segment{
+		Op:   api.SegmentOpCubeTo,
+		Args: [3]api.SegmentPoint{pt1.toSP(), pt2.toSP(), pt3.toSP()},
 	})
 }
 
@@ -156,9 +156,9 @@ func (out *CharstringReader) doubleCurve(pt1, pt2, pt3, pt4, pt5, pt6 Point) {
 
 func (out *CharstringReader) ensureClosePath() {
 	if out.firstPoint != out.CurrentPoint {
-		out.Segments = append(out.Segments, font.Segment{
-			Op:   font.SegmentOpLineTo,
-			Args: [3]font.SegmentPoint{out.firstPoint.toSP()},
+		out.Segments = append(out.Segments, api.Segment{
+			Op:   api.SegmentOpLineTo,
+			Args: [3]api.SegmentPoint{out.firstPoint.toSP()},
 		})
 	}
 }

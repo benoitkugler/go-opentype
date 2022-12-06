@@ -1,15 +1,15 @@
-package layout
+package font
 
 import (
-	"github.com/benoitkugler/go-opentype/font"
-	"github.com/benoitkugler/go-opentype/font/cff"
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/api/cff"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
 type (
-	GID = font.GID
-	Tag = opentype.Tag
+	GID = api.GID
+	Tag = loader.Tag
 )
 
 // Font represents one Opentype font file (or one sub font of a collection).
@@ -18,8 +18,8 @@ type (
 //
 // All its methods are read-only and a [*Font] object is thus safe for concurrent use.
 type Font struct {
-	cmap    font.Cmap
-	cmapVar font.UnicodeVariations
+	cmap    api.Cmap
+	cmapVar api.UnicodeVariations
 
 	names tables.Name
 

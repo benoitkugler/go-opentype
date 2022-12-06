@@ -1,14 +1,12 @@
-package font
+package api
 
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
@@ -48,22 +46,22 @@ func filenames(t testing.TB, dir string) []string {
 }
 
 // wrap td.Files.ReadFile
-func readFontFile(t testing.TB, filepath string) *opentype.Loader {
+func readFontFile(t testing.TB, filepath string) *loader.Loader {
 	t.Helper()
 
 	file, err := td.Files.ReadFile(filepath)
 	assertNoErr(t, err)
 
-	fp, err := opentype.NewLoader(bytes.NewReader(file))
+	fp, err := loader.NewLoader(bytes.NewReader(file))
 	assertNoErr(t, err)
 
 	return fp
 }
 
-func readTable(t testing.TB, fl *opentype.Loader, tag string) []byte {
+func readTable(t testing.TB, fl *loader.Loader, tag string) []byte {
 	t.Helper()
 
-	table, err := fl.RawTable(opentype.MustNewTag(tag))
+	table, err := fl.RawTable(loader.MustNewTag(tag))
 	assertNoErr(t, err)
 
 	return table
@@ -139,7 +137,7 @@ func TestBestEncoding(t *testing.T) {
 	file, err := td.Files.ReadFile(filename)
 	assertNoErr(t, err)
 
-	fs, err := opentype.NewLoaders(bytes.NewReader(file))
+	fs, err := loader.NewLoaders(bytes.NewReader(file))
 	assertNoErr(t, err)
 
 	font := fs[0]
@@ -191,14 +189,4 @@ func TestCmap14(t *testing.T) {
 
 	_, flag = uv.GetGlyphVariant(33446, 0xF)
 	assert(t, flag == VariantNotFound)
-}
-
-func TestExtract(t *testing.T) {
-	b, _ := os.ReadFile("/home/benoit/go/src/github.com/benoitkugler/textlayout-testdata/truetype/Gacha_9.dfont")
-	fonts, _ := opentype.NewLoaders(bytes.NewReader(b))
-	bloc, _ := fonts[0].RawTable(opentype.MustNewTag("bloc"))
-	bdat, _ := fonts[0].RawTable(opentype.MustNewTag("bdat"))
-	fmt.Println(len(bloc), len(bdat))
-	os.WriteFile("bloc.bin", bloc, os.ModePerm)
-	os.WriteFile("bdat.bin", bdat, os.ModePerm)
 }

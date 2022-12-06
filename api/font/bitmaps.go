@@ -1,11 +1,11 @@
-package layout
+package font
 
 import (
 	"errors"
 	"fmt"
 	"math"
 
-	"github.com/benoitkugler/go-opentype/font"
+	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -101,7 +101,7 @@ func (bt bitmap) chooseStrike(xPpem, yPpem uint16) *bitmapStrike {
 	return &bt[bestIndex]
 }
 
-func (b *bitmapStrike) sizeMetrics(avgWidth, upem uint16) (out font.BitmapSize) {
+func (b *bitmapStrike) sizeMetrics(avgWidth, upem uint16) (out api.BitmapSize) {
 	out.XPpem, out.YPpem = b.ppemX, b.ppemY
 	ascender := int16(b.hori.Ascender)
 	descender := int16(b.hori.Descender)
@@ -144,7 +144,7 @@ func (b *bitmapStrike) sizeMetrics(avgWidth, upem uint16) (out font.BitmapSize) 
 	return out
 }
 
-func inferBitmapWidth(size *font.BitmapSize, avgWidth, upem uint16) {
+func inferBitmapWidth(size *api.BitmapSize, avgWidth, upem uint16) {
 	size.Width = uint16((uint32(avgWidth)*uint32(size.XPpem) + uint32(upem/2)) / uint32(upem))
 }
 

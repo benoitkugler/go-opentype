@@ -1,10 +1,10 @@
-package layout
+package font
 
 import (
 	"math"
 
-	"github.com/benoitkugler/go-opentype/font"
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -34,12 +34,12 @@ func (f *Font) GlyphName(glyph GID) string {
 func (f *Font) Upem() uint16 { return f.upem }
 
 var (
-	metricsTagHorizontalAscender  = opentype.MustNewTag("hasc")
-	metricsTagHorizontalDescender = opentype.MustNewTag("hdsc")
-	metricsTagHorizontalLineGap   = opentype.MustNewTag("hlgp")
-	metricsTagVerticalAscender    = opentype.MustNewTag("vasc")
-	metricsTagVerticalDescender   = opentype.MustNewTag("vdsc")
-	metricsTagVerticalLineGap     = opentype.MustNewTag("vlgp")
+	metricsTagHorizontalAscender  = loader.MustNewTag("hasc")
+	metricsTagHorizontalDescender = loader.MustNewTag("hdsc")
+	metricsTagHorizontalLineGap   = loader.MustNewTag("hlgp")
+	metricsTagVerticalAscender    = loader.MustNewTag("vasc")
+	metricsTagVerticalDescender   = loader.MustNewTag("vdsc")
+	metricsTagVerticalLineGap     = loader.MustNewTag("vlgp")
 )
 
 func fixAscenderDescender(value float32, metricsTag Tag) float32 {
@@ -92,9 +92,9 @@ func (f *Font) getPositionCommon(metricTag Tag, varCoords []float32) (float32, b
 
 // FontHExtents returns the extents of the font for horizontal text, or false
 // it not available, in font units.
-func (f *Face) FontHExtents() (font.FontExtents, bool) {
+func (f *Face) FontHExtents() (api.FontExtents, bool) {
 	var (
-		out           font.FontExtents
+		out           api.FontExtents
 		ok1, ok2, ok3 bool
 	)
 	out.Ascender, ok1 = f.Font.getPositionCommon(metricsTagHorizontalAscender, f.Coords)
@@ -104,9 +104,9 @@ func (f *Face) FontHExtents() (font.FontExtents, bool) {
 }
 
 // FontVExtents is the same as `FontHExtents`, but for vertical text.
-func (f *Face) FontVExtents() (font.FontExtents, bool) {
+func (f *Face) FontVExtents() (api.FontExtents, bool) {
 	var (
-		out           font.FontExtents
+		out           api.FontExtents
 		ok1, ok2, ok3 bool
 	)
 	out.Ascender, ok1 = f.Font.getPositionCommon(metricsTagVerticalAscender, f.Coords)
@@ -116,45 +116,45 @@ func (f *Face) FontVExtents() (font.FontExtents, bool) {
 }
 
 var (
-	tagStrikeoutSize      = opentype.MustNewTag("strs")
-	tagStrikeoutOffset    = opentype.MustNewTag("stro")
-	tagUnderlineSize      = opentype.MustNewTag("unds")
-	tagUnderlineOffset    = opentype.MustNewTag("undo")
-	tagSuperscriptYSize   = opentype.MustNewTag("spys")
-	tagSuperscriptYOffset = opentype.MustNewTag("spyo")
-	tagSuperscriptXSize   = opentype.MustNewTag("spxs")
-	tagSuperscriptXOffset = opentype.MustNewTag("spxo")
-	tagSubscriptYSize     = opentype.MustNewTag("sbys")
-	tagSubscriptYOffset   = opentype.MustNewTag("sbyo")
-	tagSubscriptXOffset   = opentype.MustNewTag("sbxo")
-	tagXHeight            = opentype.MustNewTag("xhgt")
-	tagCapHeight          = opentype.MustNewTag("cpht")
+	tagStrikeoutSize      = loader.MustNewTag("strs")
+	tagStrikeoutOffset    = loader.MustNewTag("stro")
+	tagUnderlineSize      = loader.MustNewTag("unds")
+	tagUnderlineOffset    = loader.MustNewTag("undo")
+	tagSuperscriptYSize   = loader.MustNewTag("spys")
+	tagSuperscriptYOffset = loader.MustNewTag("spyo")
+	tagSuperscriptXSize   = loader.MustNewTag("spxs")
+	tagSuperscriptXOffset = loader.MustNewTag("spxo")
+	tagSubscriptYSize     = loader.MustNewTag("sbys")
+	tagSubscriptYOffset   = loader.MustNewTag("sbyo")
+	tagSubscriptXOffset   = loader.MustNewTag("sbxo")
+	tagXHeight            = loader.MustNewTag("xhgt")
+	tagCapHeight          = loader.MustNewTag("cpht")
 )
 
 // LineMetric returns the metric identified by `metric` (in fonts units).
-func (f *Face) LineMetric(metric font.LineMetric) float32 {
+func (f *Face) LineMetric(metric api.LineMetric) float32 {
 	switch metric {
-	case font.UnderlinePosition:
+	case api.UnderlinePosition:
 		return f.post.underlinePosition + f.mvar.getVar(tagUnderlineOffset, f.Coords)
-	case font.UnderlineThickness:
+	case api.UnderlineThickness:
 		return f.post.underlineThickness + f.mvar.getVar(tagUnderlineSize, f.Coords)
-	case font.StrikethroughPosition:
+	case api.StrikethroughPosition:
 		return float32(f.os2.yStrikeoutPosition) + f.mvar.getVar(tagStrikeoutOffset, f.Coords)
-	case font.StrikethroughThickness:
+	case api.StrikethroughThickness:
 		return float32(f.os2.yStrikeoutSize) + f.mvar.getVar(tagStrikeoutSize, f.Coords)
-	case font.SuperscriptEmYSize:
+	case api.SuperscriptEmYSize:
 		return float32(f.os2.ySuperscriptYSize) + f.mvar.getVar(tagSuperscriptYSize, f.Coords)
-	case font.SuperscriptEmXOffset:
+	case api.SuperscriptEmXOffset:
 		return float32(f.os2.ySuperscriptXOffset) + f.mvar.getVar(tagSuperscriptXOffset, f.Coords)
-	case font.SubscriptEmYSize:
+	case api.SubscriptEmYSize:
 		return float32(f.os2.ySubscriptYSize) + f.mvar.getVar(tagSubscriptYSize, f.Coords)
-	case font.SubscriptEmYOffset:
+	case api.SubscriptEmYOffset:
 		return float32(f.os2.ySubscriptYOffset) + f.mvar.getVar(tagSubscriptYOffset, f.Coords)
-	case font.SubscriptEmXOffset:
+	case api.SubscriptEmXOffset:
 		return float32(f.os2.ySubscriptXOffset) + f.mvar.getVar(tagSubscriptXOffset, f.Coords)
-	case font.CapHeight:
+	case api.CapHeight:
 		return float32(f.os2.sCapHeight) + f.mvar.getVar(tagCapHeight, f.Coords)
-	case font.XHeight:
+	case api.XHeight:
 		return float32(f.os2.sxHeigh) + f.mvar.getVar(tagXHeight, f.Coords)
 	default:
 		return 0
@@ -172,9 +172,9 @@ func (f *Font) NominalGlyph(ch rune) (GID, bool) { return f.cmap.Lookup(ch) }
 func (f *Font) VariationGlyph(ch, varSelector rune) (GID, bool) {
 	gid, kind := f.cmapVar.GetGlyphVariant(ch, varSelector)
 	switch kind {
-	case font.VariantNotFound:
+	case api.VariantNotFound:
 		return 0, false
-	case font.VariantFound:
+	case api.VariantFound:
 		return gid, true
 	default: // VariantUseDefault
 		return f.NominalGlyph(ch)
@@ -319,9 +319,9 @@ func (f *Face) GlyphVOrigin(glyph GID) (x, y int32, found bool) {
 	return x, y, ok
 }
 
-func (f *Face) getExtentsFromGlyf(glyph gID) (font.GlyphExtents, bool) {
+func (f *Face) getExtentsFromGlyf(glyph gID) (api.GlyphExtents, bool) {
 	if int(glyph) >= len(f.Glyf) {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	if f.isVar() { // we have to compute the outline points and apply variations
 		extents, _ := f.getGlyfPoints(glyph, true)
@@ -330,20 +330,20 @@ func (f *Face) getExtentsFromGlyf(glyph gID) (font.GlyphExtents, bool) {
 	return getGlyphExtents(f.Glyf[glyph], f.hmtx, glyph), true
 }
 
-func (f *Font) getExtentsFromCBDT(glyph gID, xPpem, yPpem uint16) (font.GlyphExtents, bool) {
+func (f *Font) getExtentsFromBitmap(glyph gID, xPpem, yPpem uint16) (api.GlyphExtents, bool) {
 	strike := f.bitmap.chooseStrike(xPpem, yPpem)
 	if strike == nil || strike.ppemX == 0 || strike.ppemY == 0 {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	subtable := strike.findTable(glyph)
 	if subtable == nil {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	image := subtable.index.imageFor(glyph, subtable.first, subtable.last)
 	if image == nil {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
-	extents := font.GlyphExtents{
+	extents := api.GlyphExtents{
 		XBearing: float32(image.metrics.BearingX),
 		YBearing: float32(image.metrics.BearingY),
 		Width:    float32(image.metrics.Width),
@@ -360,14 +360,14 @@ func (f *Font) getExtentsFromCBDT(glyph gID, xPpem, yPpem uint16) (font.GlyphExt
 	return extents, true
 }
 
-func (f *Font) getExtentsFromSbix(glyph gID, xPpem, yPpem uint16) (font.GlyphExtents, bool) {
+func (f *Font) getExtentsFromSbix(glyph gID, xPpem, yPpem uint16) (api.GlyphExtents, bool) {
 	strike := chooseSbixStrike(f.sbix, xPpem, yPpem)
 	if strike == nil || strike.Ppem == 0 {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	data := strikeGlyph(strike, glyph, 0)
 	if data.GraphicType == 0 {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	extents, ok := bitmapGlyphExtents(data)
 
@@ -380,23 +380,19 @@ func (f *Font) getExtentsFromSbix(glyph gID, xPpem, yPpem uint16) (font.GlyphExt
 	return extents, ok
 }
 
-func (f *Font) getExtentsFromCff1(glyph gID) (font.GlyphExtents, bool) {
+func (f *Font) getExtentsFromCff1(glyph gID) (api.GlyphExtents, bool) {
 	if f.cff == nil {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	_, bounds, err := f.cff.LoadGlyph(glyph)
 	if err != nil {
-		return font.GlyphExtents{}, false
+		return api.GlyphExtents{}, false
 	}
 	return bounds.ToExtents(), true
 }
 
-func (f *Face) GlyphExtents(glyph GID) (font.GlyphExtents, bool) {
-	out, ok := f.getExtentsFromSbix(gID(glyph), f.XPpem, f.YPpem)
-	if ok {
-		return out, ok
-	}
-	out, ok = f.getExtentsFromGlyf(gID(glyph))
+func (f *Face) GlyphExtents(glyph GID) (api.GlyphExtents, bool) {
+	out, ok := f.getExtentsFromGlyf(gID(glyph))
 	if ok {
 		return out, ok
 	}
@@ -404,6 +400,10 @@ func (f *Face) GlyphExtents(glyph GID) (font.GlyphExtents, bool) {
 	if ok {
 		return out, ok
 	}
-	out, ok = f.getExtentsFromCBDT(gID(glyph), f.XPpem, f.YPpem)
+	out, ok = f.getExtentsFromSbix(gID(glyph), f.XPpem, f.YPpem)
+	if ok {
+		return out, ok
+	}
+	out, ok = f.getExtentsFromBitmap(gID(glyph), f.XPpem, f.YPpem)
 	return out, ok
 }

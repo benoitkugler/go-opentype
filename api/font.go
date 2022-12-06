@@ -1,4 +1,47 @@
-package font
+// Package font provides an high level API to access
+// Opentype font properties.
+// See [loader] and [tables] for a lower, more detailled API.
+package api
+
+import (
+	"math"
+)
+
+// GID is used to identify glyphs in a font.
+// It is mostly internal to the font and should not be confused with
+// Unicode code points.
+// Note that, despite Opentype font files using uint16, we choose to use uint32,
+// to allow room for future extension.
+type GID uint32
+
+// EmptyGlyph represents an invisible glyph, which should not be drawn,
+// but whose advance and offsets should still be accounted for when rendering.
+const EmptyGlyph GID = math.MaxUint32
+
+// CmapIter is an interator over a Cmap.
+type CmapIter interface {
+	// Next returns true if the iterator still has data to yield
+	Next() bool
+
+	// Char must be called only when `Next` has returned `true`
+	Char() (rune, GID)
+}
+
+// Cmap stores a compact representation of a cmap,
+// offering both on-demand rune lookup and full rune range.
+// It is conceptually equivalent to a map[rune]GID, but is often
+// implemented more efficiently.
+type Cmap interface {
+	// Iter returns a new iterator over the cmap
+	// Multiple iterators may be used over the same cmap
+	// The returned interface is garanted not to be nil.
+	Iter() CmapIter
+
+	// Lookup avoid the construction of a map and provides
+	// an alternative when only few runes need to be fetched.
+	// It returns a default value and false when no glyph is provided.
+	Lookup(rune) (GID, bool)
+}
 
 // FontExtents exposes font-wide extent values, measured in font units.
 // Note that typically ascender is positive and descender negative in coordinate systems that grow up.
@@ -43,66 +86,6 @@ type GlyphExtents struct {
 	YBearing float32 // Top side of glyph from origin
 	Width    float32 // Distance from left to right side
 	Height   float32 // Distance from top to bottom side
-}
-
-// FaceMetrics exposes details of the font content.
-// Implementation must be valid map keys to simplify caching.
-type FaceMetrics interface {
-	// Upem returns the units per em of the font file.
-	// If not found, should return 1000 as fallback value.
-	// This value is only relevant for scalable fonts.
-	Upem() uint16
-
-	// GlyphName returns the name of the given glyph, or an empty
-	// string if the glyph is invalid or has no name.
-	GlyphName(gid GID) string
-
-	// LineMetric returns the metric identified by `metric` (in fonts units), or false
-	// if the font does not provide such information.
-	LineMetric(metric LineMetric) (float32, bool)
-
-	// FontHExtents returns the extents of the font for horizontal text, or false
-	// it not available, in font units.
-	// `varCoords` (in normalized coordinates) is only useful for variable fonts.
-	FontHExtents() (FontExtents, bool)
-
-	// FontVExtents is the same as `FontHExtents`, but for vertical text.
-	FontVExtents() (FontExtents, bool)
-
-	// NominalGlyph returns the glyph used to represent the given rune,
-	// or false if not found.
-	NominalGlyph(ch rune) (GID, bool)
-
-	// HorizontalAdvance returns the horizontal advance in font units.
-	// When no data is available but the glyph index is valid, this method
-	// should return a default value (the upem number for example).
-	// If the glyph is invalid it should return 0.
-	// `coords` is used by variable fonts, and is specified in normalized coordinates.
-	HorizontalAdvance(gid GID) float32
-
-	// VerticalAdvance is the same as `HorizontalAdvance`, but for vertical advance.
-	VerticalAdvance(gid GID) float32
-
-	// GlyphHOrigin fetches the (X,Y) coordinates of the origin (in font units) for a glyph ID,
-	// for horizontal text segments.
-	// Returns `false` if not available.
-	GlyphHOrigin(GID) (x, y int32, found bool)
-
-	// GlyphVOrigin is the same as `GlyphHOrigin`, but for vertical text segments.
-	GlyphVOrigin(GID) (x, y int32, found bool)
-
-	// GlyphExtents retrieve the extents for a specified glyph, of false, if not available.
-	// `coords` is used by variable fonts, and is specified in normalized coordinates.
-	// For bitmap glyphs, the closest resolution to `xPpem` and `yPpem` is selected.
-	GlyphExtents(glyph GID, xPpem, yPpem uint16) (GlyphExtents, bool)
-}
-
-// FaceRenderer exposes access to glyph contents
-type FaceRenderer interface {
-	// GlyphData loads the glyph content, or return nil
-	// if 'gid' is not supported.
-	// For bitmap glyphs, the closest resolution to `xPpem` and `yPpem` is selected.
-	GlyphData(gid GID, xPpem, yPpem uint16) GlyphData
 }
 
 // GlyphData describe how to graw a glyph.

@@ -6,7 +6,7 @@
 // For the parsing of the various tables, see package [tables].
 // For an higher level API, see the packages [XXX]
 // TODO:
-package opentype
+package loader
 
 // Tag represents an open-type name.
 // These are technically uint32's, but are usually

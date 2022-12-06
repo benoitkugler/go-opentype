@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/benoitkugler/go-opentype/font"
-	ps "github.com/benoitkugler/go-opentype/font/cff/interpreter"
+	"github.com/benoitkugler/go-opentype/api"
+	ps "github.com/benoitkugler/go-opentype/api/cff/interpreter"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -60,7 +60,7 @@ func parse(file []byte) (Font, error) {
 }
 
 // GlyphName returns the name of the glyph or an empty string if not found.
-func (f *Font) GlyphName(glyph font.GID) string {
+func (f *Font) GlyphName(glyph api.GID) string {
 	if f.fdSelect != nil || int(glyph) >= len(f.charset) {
 		return ""
 	}

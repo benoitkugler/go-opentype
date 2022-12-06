@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/loader"
 )
 
 func TestParseGlyf(t *testing.T) {
@@ -284,7 +284,7 @@ func TestParseVORG(t *testing.T) {
 	file, err := td.Files.ReadFile(filename)
 	assertNoErr(t, err)
 
-	fonts, err := opentype.NewLoaders(bytes.NewReader(file))
+	fonts, err := loader.NewLoaders(bytes.NewReader(file))
 	assertNoErr(t, err)
 
 	for _, fp := range fonts {

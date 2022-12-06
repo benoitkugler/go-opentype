@@ -1,11 +1,11 @@
-package layout
+package font
 
 import (
 	"bytes"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -24,22 +24,22 @@ func assertNoErr(t testing.TB, err error) {
 }
 
 // wrap td.Files.ReadFile
-func readFontFile(t testing.TB, filepath string) *opentype.Loader {
+func readFontFile(t testing.TB, filepath string) *loader.Loader {
 	t.Helper()
 
 	file, err := td.Files.ReadFile(filepath)
 	assertNoErr(t, err)
 
-	fp, err := opentype.NewLoader(bytes.NewReader(file))
+	fp, err := loader.NewLoader(bytes.NewReader(file))
 	assertNoErr(t, err)
 
 	return fp
 }
 
-func readTable(t testing.TB, fl *opentype.Loader, tag string) []byte {
+func readTable(t testing.TB, fl *loader.Loader, tag string) []byte {
 	t.Helper()
 
-	table, err := fl.RawTable(opentype.MustNewTag(tag))
+	table, err := fl.RawTable(loader.MustNewTag(tag))
 	assertNoErr(t, err)
 
 	return table

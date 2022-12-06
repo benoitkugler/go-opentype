@@ -1,4 +1,4 @@
-package layout
+package font
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"github.com/benoitkugler/go-opentype/font"
-	"github.com/benoitkugler/go-opentype/opentype"
+	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 	"golang.org/x/image/tiff"
 )
 
 type contourPoint struct {
-	font.SegmentPoint
+	api.SegmentPoint
 
 	isOnCurve  bool
 	isEndPoint bool // this point is the last of the current contour
@@ -163,7 +163,7 @@ func getContourPoints(sg tables.SimpleGlyph) []contourPoint {
 	return points
 }
 
-func extentsFromPoints(allPoints []contourPoint) (ext font.GlyphExtents) {
+func extentsFromPoints(allPoints []contourPoint) (ext api.GlyphExtents) {
 	truePoints := allPoints[:len(allPoints)-phantomCount]
 	if len(truePoints) == 0 {
 		// zero extent for the empty glyph
@@ -186,7 +186,7 @@ func extentsFromPoints(allPoints []contourPoint) (ext font.GlyphExtents) {
 
 // walk through the contour points of the given glyph to compute its extends and its phantom points
 // As an optimization, if `computeExtents` is false, the extents computation is skipped (a zero value is returned).
-func (f *Face) getGlyfPoints(gid tables.GlyphID, computeExtents bool) (ext font.GlyphExtents, ph [phantomCount]contourPoint) {
+func (f *Face) getGlyfPoints(gid tables.GlyphID, computeExtents bool) (ext api.GlyphExtents, ph [phantomCount]contourPoint) {
 	if int(gid) >= len(f.Glyf) {
 		return
 	}
@@ -256,8 +256,8 @@ func transformPoints(c *tables.CompositeGlyphPart, points []contourPoint) {
 	}
 }
 
-func getGlyphExtents(g tables.Glyph, metrics tables.Hmtx, gid gID) font.GlyphExtents {
-	var extents font.GlyphExtents
+func getGlyphExtents(g tables.Glyph, metrics tables.Hmtx, gid gID) api.GlyphExtents {
+	var extents api.GlyphExtents
 	/* Undocumented rasterizer behavior: shift glyph to the left by (lsb - xMin), i.e., xMin = lsb */
 	/* extents.XBearing = hb_min (glyph_header.xMin, glyph_header.xMax); */
 	extents.XBearing = float32(getSideBearing(gid, metrics))
@@ -271,13 +271,13 @@ func getGlyphExtents(g tables.Glyph, metrics tables.Hmtx, gid gID) font.GlyphExt
 // sbix
 
 var (
-	dupe = opentype.MustNewTag("dupe")
+	dupe = loader.MustNewTag("dupe")
 	// tagPNG identifies bitmap glyph with png format
-	tagPNG = opentype.MustNewTag("png ")
+	tagPNG = loader.MustNewTag("png ")
 	// tagTIFF identifies bitmap glyph with tiff format
-	tagTIFF = opentype.MustNewTag("tiff")
+	tagTIFF = loader.MustNewTag("tiff")
 	// tagJPG identifies bitmap glyph with jpg format
-	tagJPG = opentype.MustNewTag("jpg ")
+	tagJPG = loader.MustNewTag("jpg ")
 )
 
 // strikeGlyph return the data for [glyph], or a zero value if not found.
@@ -299,17 +299,17 @@ func strikeGlyph(b *tables.Strike, glyph gID, recursionLevel int) tables.BitmapG
 }
 
 // decodeBitmapConfig parse the data to find the width and height
-func decodeBitmapConfig(b tables.BitmapGlyphData) (width, height int, format font.BitmapFormat, err error) {
+func decodeBitmapConfig(b tables.BitmapGlyphData) (width, height int, format api.BitmapFormat, err error) {
 	var config image.Config
 	switch b.GraphicType {
 	case tagPNG:
-		format = font.PNG
+		format = api.PNG
 		config, err = png.DecodeConfig(bytes.NewReader(b.Data))
 	case tagTIFF:
-		format = font.TIFF
+		format = api.TIFF
 		config, err = tiff.DecodeConfig(bytes.NewReader(b.Data))
 	case tagJPG:
-		format = font.JPG
+		format = api.JPG
 		config, err = jpeg.DecodeConfig(bytes.NewReader(b.Data))
 	default:
 		err = fmt.Errorf("unsupported graphic type in sbix table: %s", b.GraphicType)
@@ -322,7 +322,7 @@ func decodeBitmapConfig(b tables.BitmapGlyphData) (width, height int, format fon
 
 // return the extents computed from the data
 // should only be called on valid, non nil glyph data
-func bitmapGlyphExtents(b tables.BitmapGlyphData) (out font.GlyphExtents, ok bool) {
+func bitmapGlyphExtents(b tables.BitmapGlyphData) (out api.GlyphExtents, ok bool) {
 	width, height, _, err := decodeBitmapConfig(b)
 	if err != nil {
 		return out, false

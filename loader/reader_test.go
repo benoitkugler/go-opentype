@@ -1,4 +1,4 @@
-package opentype
+package loader
 
 import (
 	"bytes"

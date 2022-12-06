@@ -1,6 +1,6 @@
 package tables
 
-import "github.com/benoitkugler/go-opentype/opentype"
+import "github.com/benoitkugler/go-opentype/loader"
 
 //go:generate ../../binarygen/cmd/generator . _src.go
 
@@ -9,7 +9,7 @@ type GlyphID uint16
 // NameID is the ID for entries in the font table.
 type NameID uint16
 
-type Tag = opentype.Tag
+type Tag = loader.Tag
 
 // Float1616 is a float32, represented in
 // fixed 16.16 format in font files.
