@@ -1,6 +1,8 @@
 package tables
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Sbix is the Standard Bitmap Graphics Table
 // See - https://learn.microsoft.com/fr-fr/typography/opentype/spec/sbix

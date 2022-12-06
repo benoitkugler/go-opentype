@@ -269,6 +269,15 @@ func TestParseEBLC(t *testing.T) {
 	}
 }
 
+func TestParseBloc(t *testing.T) {
+	blocT, err := td.Files.ReadFile("toys/tables/bloc.bin")
+	assertNoErr(t, err)
+
+	bloc, _, err := ParseCBLC(blocT)
+	assertNoErr(t, err)
+	assert(t, len(bloc.BitmapSizes) == 1)
+}
+
 func TestParseVORG(t *testing.T) {
 	filename := "collections/NotoSansCJK-Bold.ttc"
 

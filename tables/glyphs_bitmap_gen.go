@@ -9,14 +9,10 @@ import (
 
 func (item *BigGlyphMetrics) mustParse(src []byte) {
 	_ = src[7] // early bound checking
-	item.Height = src[0]
-	item.Width = src[1]
-	item.HoriBearingX = int8(src[2])
-	item.HoriBearingY = int8(src[3])
-	item.HoriAdvance = src[4]
-	item.VertBearingX = int8(src[5])
-	item.VertBearingY = int8(src[6])
-	item.VertAdvance = src[7]
+	item.SmallGlyphMetrics.mustParse(src[0:])
+	item.vertBearingX = int8(src[5])
+	item.vertBearingY = int8(src[6])
+	item.vertAdvance = src[7]
 }
 
 func (item *BitmapSize) mustParse(src []byte) {
@@ -25,12 +21,12 @@ func (item *BitmapSize) mustParse(src []byte) {
 	item.indexTablesSize = binary.BigEndian.Uint32(src[4:])
 	item.numberOfIndexSubTables = binary.BigEndian.Uint32(src[8:])
 	item.colorRef = binary.BigEndian.Uint32(src[12:])
-	item.hori.mustParse(src[16:])
-	item.vert.mustParse(src[28:])
+	item.Hori.mustParse(src[16:])
+	item.Vert.mustParse(src[28:])
 	item.startGlyphIndex = binary.BigEndian.Uint16(src[40:])
 	item.endGlyphIndex = binary.BigEndian.Uint16(src[42:])
-	item.ppemX = src[44]
-	item.ppemY = src[45]
+	item.PpemX = src[44]
+	item.PpemY = src[45]
 	item.bitDepth = src[46]
 	item.flags = int8(src[47])
 }
@@ -45,6 +41,108 @@ func (item *IndexData2) mustParse(src []byte) {
 	_ = src[11] // early bound checking
 	item.ImageSize = binary.BigEndian.Uint32(src[0:])
 	item.BigMetrics.mustParse(src[4:])
+}
+
+func (item *IndexSubTableHeader) mustParse(src []byte) {
+	_ = src[7] // early bound checking
+	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.additionalOffsetToIndexSubtable = Offset32(binary.BigEndian.Uint32(src[4:]))
+}
+
+func ParseBitmapData17(src []byte) (BitmapData17, int, error) {
+	var item BitmapData17
+	n := 0
+	if L := len(src); L < 9 {
+		return item, 0, fmt.Errorf("reading BitmapData17: "+"EOF: expected length: 9, got %d", L)
+	}
+	_ = src[8] // early bound checking
+	item.SmallGlyphMetrics.mustParse(src[0:])
+	arrayLengthImage := int(binary.BigEndian.Uint32(src[5:]))
+	n += 9
+
+	{
+
+		L := int(9 + arrayLengthImage)
+		if len(src) < L {
+			return item, 0, fmt.Errorf("reading BitmapData17: "+"EOF: expected length: %d, got %d", L, len(src))
+		}
+		item.Image = src[9:L]
+		n = L
+	}
+	return item, n, nil
+}
+
+func ParseBitmapData18(src []byte) (BitmapData18, int, error) {
+	var item BitmapData18
+	n := 0
+	if L := len(src); L < 12 {
+		return item, 0, fmt.Errorf("reading BitmapData18: "+"EOF: expected length: 12, got %d", L)
+	}
+	_ = src[11] // early bound checking
+	item.BigGlyphMetrics.mustParse(src[0:])
+	arrayLengthImage := int(binary.BigEndian.Uint32(src[8:]))
+	n += 12
+
+	{
+
+		L := int(12 + arrayLengthImage)
+		if len(src) < L {
+			return item, 0, fmt.Errorf("reading BitmapData18: "+"EOF: expected length: %d, got %d", L, len(src))
+		}
+		item.Image = src[12:L]
+		n = L
+	}
+	return item, n, nil
+}
+
+func ParseBitmapData19(src []byte) (BitmapData19, int, error) {
+	var item BitmapData19
+	n := 0
+	if L := len(src); L < 4 {
+		return item, 0, fmt.Errorf("reading BitmapData19: "+"EOF: expected length: 4, got %d", L)
+	}
+	arrayLengthImage := int(binary.BigEndian.Uint32(src[0:]))
+	n += 4
+
+	{
+
+		L := int(4 + arrayLengthImage)
+		if len(src) < L {
+			return item, 0, fmt.Errorf("reading BitmapData19: "+"EOF: expected length: %d, got %d", L, len(src))
+		}
+		item.Image = src[4:L]
+		n = L
+	}
+	return item, n, nil
+}
+
+func ParseBitmapData2(src []byte) (BitmapData2, int, error) {
+	var item BitmapData2
+	n := 0
+	if L := len(src); L < 5 {
+		return item, 0, fmt.Errorf("reading BitmapData2: "+"EOF: expected length: 5, got %d", L)
+	}
+	item.SmallGlyphMetrics.mustParse(src[0:])
+	n += 5
+
+	{
+
+		item.Image = src[5:]
+		n = len(src)
+	}
+	return item, n, nil
+}
+
+func ParseBitmapData5(src []byte) (BitmapData5, int, error) {
+	var item BitmapData5
+	n := 0
+	{
+
+		item.Image = src[0:]
+		n = len(src)
+	}
+	return item, n, nil
 }
 
 func ParseCBLC(src []byte) (CBLC, int, error) {
@@ -157,24 +255,24 @@ func ParseIndexData4(src []byte) (IndexData4, int, error) {
 func ParseIndexData5(src []byte) (IndexData5, int, error) {
 	var item IndexData5
 	n := 0
-	if L := len(src); L < 14 {
-		return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: 14, got %d", L)
+	if L := len(src); L < 16 {
+		return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: 16, got %d", L)
 	}
-	_ = src[13] // early bound checking
+	_ = src[15] // early bound checking
 	item.ImageSize = binary.BigEndian.Uint32(src[0:])
 	item.BigMetrics.mustParse(src[4:])
-	arrayLengthGlyphIdArray := int(binary.BigEndian.Uint16(src[12:]))
-	n += 14
+	arrayLengthGlyphIdArray := int(binary.BigEndian.Uint32(src[12:]))
+	n += 16
 
 	{
 
-		if L := len(src); L < 14+arrayLengthGlyphIdArray*2 {
-			return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: %d, got %d", 14+arrayLengthGlyphIdArray*2, L)
+		if L := len(src); L < 16+arrayLengthGlyphIdArray*2 {
+			return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: %d, got %d", 16+arrayLengthGlyphIdArray*2, L)
 		}
 
 		item.GlyphIdArray = make([]GlyphID, arrayLengthGlyphIdArray) // allocation guarded by the previous check
 		for i := range item.GlyphIdArray {
-			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[14+i*2:]))
+			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[16+i*2:]))
 		}
 		n += arrayLengthGlyphIdArray * 2
 	}
@@ -189,8 +287,8 @@ func ParseIndexSubHeader(src []byte, sbitOffsetsCount int) (IndexSubHeader, int,
 	}
 	_ = src[7] // early bound checking
 	item.indexFormat = indexVersion(binary.BigEndian.Uint16(src[0:]))
-	item.imageFormat = binary.BigEndian.Uint16(src[2:])
-	item.imageDataOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
+	item.ImageFormat = binary.BigEndian.Uint16(src[2:])
+	item.ImageDataOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
 	n += 8
 
 	{
@@ -229,7 +327,7 @@ func ParseIndexSubTableArray(src []byte, subtablesCount int) (IndexSubTableArray
 			return item, 0, fmt.Errorf("reading IndexSubTableArray: "+"EOF: expected length: %d, got %d", subtablesCount*8, L)
 		}
 
-		item.Subtables = make([]indexSubTableHeader, subtablesCount) // allocation guarded by the previous check
+		item.Subtables = make([]IndexSubTableHeader, subtablesCount) // allocation guarded by the previous check
 		for i := range item.Subtables {
 			item.Subtables[i].mustParse(src[i*8:])
 		}
@@ -240,23 +338,25 @@ func ParseIndexSubTableArray(src []byte, subtablesCount int) (IndexSubTableArray
 
 func (item *SbitLineMetrics) mustParse(src []byte) {
 	_ = src[11] // early bound checking
-	item.ascender = int8(src[0])
-	item.descender = int8(src[1])
+	item.Ascender = int8(src[0])
+	item.Descender = int8(src[1])
 	item.widthMax = src[2]
 	item.caretSlopeNumerator = int8(src[3])
 	item.caretSlopeDenominator = int8(src[4])
 	item.caretOffset = int8(src[5])
 	item.minOriginSB = int8(src[6])
 	item.minAdvanceSB = int8(src[7])
-	item.maxBeforeBL = int8(src[8])
-	item.minAfterBL = int8(src[9])
+	item.MaxBeforeBL = int8(src[8])
+	item.MinAfterBL = int8(src[9])
 	item.pad1 = int8(src[10])
 	item.pad2 = int8(src[11])
 }
 
-func (item *indexSubTableHeader) mustParse(src []byte) {
-	_ = src[7] // early bound checking
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
-	item.additionalOffsetToIndexSubtable = Offset32(binary.BigEndian.Uint32(src[4:]))
+func (item *SmallGlyphMetrics) mustParse(src []byte) {
+	_ = src[4] // early bound checking
+	item.Height = src[0]
+	item.Width = src[1]
+	item.BearingX = int8(src[2])
+	item.BearingY = int8(src[3])
+	item.Advance = src[4]
 }

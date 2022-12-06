@@ -9,3 +9,7 @@ type BitmapSubtable struct {
 // EBLC is the Embedded Bitmap Location Table
 // See - https://learn.microsoft.com/fr-fr/typography/opentype/spec/eblc
 type EBLC = CBLC
+
+// Bloc is the bitmap location table
+// See - https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6bloc.html
+type Bloc = CBLC

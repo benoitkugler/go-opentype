@@ -44,36 +44,36 @@ type BitmapSize struct {
 	indexTablesSize          uint32          //	Number of bytes in corresponding index subtables and array.
 	numberOfIndexSubTables   uint32          //	There is an index subtable for each range or format change.
 	colorRef                 uint32          //	Not used; set to 0.
-	hori                     SbitLineMetrics //	Line metrics for text rendered horizontally.
-	vert                     SbitLineMetrics //	Line metrics for text rendered vertically.
+	Hori                     SbitLineMetrics //	Line metrics for text rendered horizontally.
+	Vert                     SbitLineMetrics //	Line metrics for text rendered vertically.
 	startGlyphIndex          uint16          //	Lowest glyph index for this size.
 	endGlyphIndex            uint16          //	Highest glyph index for this size.
-	ppemX                    uint8           //	Horizontal pixels per em.
-	ppemY                    uint8           //	Vertical pixels per em.
+	PpemX                    uint8           //	Horizontal pixels per em.
+	PpemY                    uint8           //	Vertical pixels per em.
 	bitDepth                 uint8           //	In addtition to already defined bitDepth values 1, 2, 4, and 8 supported by existing implementations, the value of 32 is used to identify color bitmaps with 8 bit per pixel RGBA channels.
 	flags                    int8            //	Vertical or horizontal (see the Bitmap Flags section of the EBLC table chapter).
 }
 
 type SbitLineMetrics struct {
-	ascender              int8
-	descender             int8
+	Ascender              int8
+	Descender             int8
 	widthMax              uint8
 	caretSlopeNumerator   int8
 	caretSlopeDenominator int8
 	caretOffset           int8
 	minOriginSB           int8
 	minAdvanceSB          int8
-	maxBeforeBL           int8
-	minAfterBL            int8
+	MaxBeforeBL           int8
+	MinAfterBL            int8
 	pad1                  int8
 	pad2                  int8
 }
 
 type IndexSubTableArray struct {
-	Subtables []indexSubTableHeader
+	Subtables []IndexSubTableHeader
 }
 
-type indexSubTableHeader struct {
+type IndexSubTableHeader struct {
 	FirstGlyph                      GlyphID  //	First glyph ID of this range.
 	LastGlyph                       GlyphID  //	Last glyph ID of this range (inclusive).
 	additionalOffsetToIndexSubtable Offset32 //	Add to indexSubTableArrayOffset to get offset from beginning of EBLC.
@@ -81,8 +81,8 @@ type indexSubTableHeader struct {
 
 type IndexSubHeader struct {
 	indexFormat     indexVersion // Format of this IndexSubTable.
-	imageFormat     uint16       // Format of EBDT image data.
-	imageDataOffset Offset32     // Offset to image data in EBDT table.
+	ImageFormat     uint16       // Format of EBDT image data.
+	ImageDataOffset Offset32     // Offset to image data in EBDT table.
 	IndexData       IndexData    `unionField:"indexFormat"`
 }
 
@@ -136,16 +136,53 @@ type GlyphIdOffsetPair struct {
 type IndexData5 struct {
 	ImageSize    uint32          //	All glyphs have the same data size.
 	BigMetrics   BigGlyphMetrics //	All glyphs have the same metrics.
-	GlyphIdArray []GlyphID       `arrayCount:"FirstUint16"` // [numGlyphs] One per glyph, sorted by glyph ID.
+	GlyphIdArray []GlyphID       `arrayCount:"FirstUint32"` // [numGlyphs] One per glyph, sorted by glyph ID.
+}
+
+// ------------------------- actual data : shared by EBDT / CBDT / BDAT -------------------------
+// for now, we simplify the implementation to two cases:
+//	- data, metrics (small)
+//  - data only
+
+type SmallGlyphMetrics struct {
+	Height   uint8 // Number of rows of data.
+	Width    uint8 // Number of columns of data.
+	BearingX int8  // Distance in pixels from the horizontal origin to the left edge of the bitmap.
+	BearingY int8  // Distance in pixels from the horizontal origin to the top edge of the bitmap.
+	Advance  uint8 // Horizontal advance width in pixels.
 }
 
 type BigGlyphMetrics struct {
-	Height       uint8 // Number of rows of data.
-	Width        uint8 // Number of columns of data.
-	HoriBearingX int8  // Distance in pixels from the horizontal origin to the left edge of the bitmap.
-	HoriBearingY int8  // Distance in pixels from the horizontal origin to the top edge of the bitmap.
-	HoriAdvance  uint8 // Horizontal advance width in pixels.
-	VertBearingX int8  // Distance in pixels from the vertical origin to the left edge of the bitmap.
-	VertBearingY int8  // Distance in pixels from the vertical origin to the top edge of the bitmap.
-	VertAdvance  uint8 // Vertical advance width in pixels.
+	SmallGlyphMetrics
+	vertBearingX int8  // Distance in pixels from the vertical origin to the left edge of the bitmap.
+	vertBearingY int8  // Distance in pixels from the vertical origin to the top edge of the bitmap.
+	vertAdvance  uint8 // Vertical advance width in pixels.
+}
+
+// Format 2: small metrics, bit-aligned data
+type BitmapData2 struct {
+	SmallGlyphMetrics
+	Image []byte `arrayCount:"ToEnd"`
+}
+
+// Format 5: metrics in CBLC table, bit-aligned image data only
+type BitmapData5 struct {
+	Image []byte `arrayCount:"ToEnd"`
+}
+
+// Format 17: small metrics, PNG image data
+type BitmapData17 struct {
+	SmallGlyphMetrics
+	Image []byte `arrayCount:"FirstUint32"`
+}
+
+// Format 18: big metrics, PNG image data
+type BitmapData18 struct {
+	BigGlyphMetrics
+	Image []byte `arrayCount:"FirstUint32"`
+}
+
+// Format 19: metrics in CBLC table, PNG image data
+type BitmapData19 struct {
+	Image []byte `arrayCount:"FirstUint32"`
 }
