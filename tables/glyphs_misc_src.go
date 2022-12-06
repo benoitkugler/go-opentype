@@ -36,6 +36,23 @@ type VORG struct {
 	VertOriginYMetrics []VertOriginYMetric `arrayCount:"FirstUint16"`
 }
 
+// YOrigin returns the vertical origin for [glyph].
+func (t *VORG) YOrigin(glyph GlyphID) int16 {
+	// binary search
+	for i, j := 0, len(t.VertOriginYMetrics); i < j; {
+		h := i + (j-i)/2
+		entry := t.VertOriginYMetrics[h]
+		if glyph < entry.GlyphIndex {
+			j = h
+		} else if entry.GlyphIndex < glyph {
+			i = h + 1
+		} else {
+			return entry.VertOriginY
+		}
+	}
+	return t.DefaultVertOriginY
+}
+
 type VertOriginYMetric struct {
 	GlyphIndex  GlyphID //  Glyph index.
 	VertOriginY int16   //  Y coordinate, in the font’s design coordinate system, of the vertical origin of glyph with index glyphIndex.
