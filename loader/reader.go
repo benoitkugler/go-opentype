@@ -63,11 +63,6 @@ type Loader struct {
 	// Type represents the kind of this font being loaded.
 	// It is one of TrueType, TrueTypeApple, PostScript1, OpenType
 	Type Tag
-
-	// True for fonts which include a 'hbed' table instead
-	// of a 'head' table. Apple uses it as a flag that a font doesn't have
-	// any glyph outlines but only embedded bitmaps
-	isBinary bool
 }
 
 // NewLoader reads the `file` header and returns
@@ -153,12 +148,18 @@ func (pr *Loader) findTableBuffer(s tableSection) ([]byte, error) {
 	return buf, nil
 }
 
+// HasTable returns true if [table] is present.
+func (pr *Loader) HasTable(table Tag) bool {
+	_, has := pr.tables[table]
+	return has
+}
+
 // RawTable returns the binary content of the given table,
 // or an error if not found.
 func (pr *Loader) RawTable(tag Tag) ([]byte, error) {
 	s, found := pr.tables[tag]
 	if !found {
-		return nil, fmt.Errorf("missing table %d", tag)
+		return nil, fmt.Errorf("missing table %s", tag)
 	}
 
 	return pr.findTableBuffer(s)

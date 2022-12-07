@@ -3,6 +3,7 @@ package tables
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
@@ -79,7 +80,7 @@ func TestGSUBIndic(t *testing.T) {
 	expectedScripts := []Script{
 		{
 			// Tag: MustNewTag("beng"),
-			DefaultLangSys: LangSys{
+			DefaultLangSys: &LangSys{
 				RequiredFeatureIndex: 0xFFFF,
 				FeatureIndices:       []uint16{0, 2},
 			},
@@ -88,7 +89,7 @@ func TestGSUBIndic(t *testing.T) {
 		},
 		{
 			// Tag: MustNewTag("bng2"),
-			DefaultLangSys: LangSys{
+			DefaultLangSys: &LangSys{
 				RequiredFeatureIndex: 0xFFFF,
 				FeatureIndices:       []uint16{1, 2},
 			},
@@ -345,4 +346,67 @@ func TestGDEFVarStore(t *testing.T) {
 
 	assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
 	assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
+}
+
+func TestGetProps(t *testing.T) {
+	file := readFontFile(t, "common/Raleway-v4020-Regular.otf")
+
+	gpos, _, err := ParseLayout(readTable(t, file, "GPOS"))
+	assertNoErr(t, err)
+	gsub, _, err := ParseLayout(readTable(t, file, "GSUB"))
+	assertNoErr(t, err)
+
+	for _, table := range []Layout{gpos, gsub} {
+		var tags []int
+		for _, s := range table.scriptList.records {
+			tags = append(tags, int(s.Tag))
+		}
+		assert(t, sort.IntsAreSorted(tags))
+
+		for i, s := range table.scriptList.records {
+			ptr := table.FindScript(s.Tag)
+			assert(t, ptr == i)
+		}
+
+		s := table.FindScript(Tag(0)) // invalid
+		assert(t, s == -1)
+
+		for _, feat := range table.featureList.records {
+			_, ok := table.FindFeatureIndex(feat.Tag)
+			assert(t, ok)
+		}
+		_, ok := table.FindFeatureIndex(Tag(0)) // invalid
+		assert(t, !ok)
+
+		// now check the languages
+
+		for _, script := range table.scriptList.Scripts {
+			var tags []int
+			for _, s := range script.langSysRecords {
+				tags = append(tags, int(s.Tag))
+			}
+			assert(t, sort.IntsAreSorted(tags))
+
+			for i, l := range script.langSysRecords {
+				ptr := script.FindLanguage(l.Tag)
+				assert(t, ptr == i)
+			}
+
+			s := script.FindLanguage(Tag(0)) // invalid
+			assert(t, s == -1)
+
+			assert(t, script.DefaultLangSys != nil)
+			assert(t, reflect.DeepEqual(script.GetLangSys(0xFFFF), *script.DefaultLangSys))
+		}
+	}
+}
+
+func TestOTFeatureVariation(t *testing.T) {
+	ft := readFontFile(t, "common/Commissioner-VF.ttf")
+
+	gsub, _, err := ParseLayout(readTable(t, ft, "GSUB"))
+	assertNoErr(t, err)
+
+	assert(t, gsub.FindVariationIndex([]float32{0.8}) == 0)
+	assert(t, gsub.FindVariationIndex([]float32{0.4}) == -1)
 }

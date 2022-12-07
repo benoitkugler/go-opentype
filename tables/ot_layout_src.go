@@ -71,9 +71,9 @@ func (sl *scriptList) parseScripts(src []byte) error {
 }
 
 type Script struct {
-	DefaultLangSys LangSys           `offsetSize:"Offset16"`    // Offset to default LangSys table, from beginning of Script table — may be NULL
+	DefaultLangSys *LangSys          `offsetSize:"Offset16"`    // Offset to default LangSys table, from beginning of Script table — may be NULL
 	langSysRecords []tagOffsetRecord `arrayCount:"FirstUint16"` // [langSysCount]	Array of LangSysRecords, listed alphabetically by LangSys tag
-	LangSys        []LangSys         `isOpaque:""`
+	LangSys        []LangSys         `isOpaque:""`              // same length as langSysRecords
 }
 
 func (sc *Script) parseLangSys(src []byte) error {
@@ -143,6 +143,18 @@ type FeatureVariation struct {
 }
 
 type FeatureVariationRecord struct {
-	conditionSetOffset             uint32 // Offset to a condition set table, from beginning of FeatureVariations table.
-	featureTableSubstitutionOffset uint32 // Offset to a feature table substitution table, from beginning of the FeatureVariations table.
+	conditionSet                   ConditionSet `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a condition set table, from beginning of FeatureVariations table.
+	featureTableSubstitutionOffset uint32       // Offset to a feature table substitution table, from beginning of the FeatureVariations table.
+}
+
+type ConditionSet struct {
+	// uint16	conditionCount	Number of conditions for this condition set.
+	conditions []ConditionFormat1 `arrayCount:"FirstUint16" offsetsArray:"Offset32"` // [conditionCount]	Array of offsets to condition tables, from beginning of the ConditionSet table.
+}
+
+type ConditionFormat1 struct {
+	format              uint16   // Format, = 1
+	axisIndex           uint16   // Index (zero-based) for the variation axis within the 'fvar' table.
+	filterRangeMinValue Float214 // Minimum value of the font variation instances that satisfy this condition.
+	filterRangeMaxValue Float214 // Maximum value of the font variation instances that satisfy this condition.
 }

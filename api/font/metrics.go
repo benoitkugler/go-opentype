@@ -245,7 +245,7 @@ func (f *Face) HorizontalAdvance(gid GID) float32 {
 
 // return `true` is the font is variable and `Coords` is valid
 func (f *Face) isVar() bool {
-	return len(f.Coords) != 0 && len(f.Coords) == len(f.Font.fvar.Axis)
+	return len(f.Coords) != 0 && len(f.Coords) == len(f.Font.fvar)
 }
 
 func (f *Face) VerticalAdvance(gid GID) float32 {

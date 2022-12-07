@@ -24,7 +24,7 @@ func (cb *CBLC) parseIndexSubTables(src []byte) error {
 		}
 		sizeSubtables := make([]BitmapSubtable, len(subtables.Subtables))
 		for j, subtable := range subtables.Subtables {
-			numGlyphs := int(subtable.LastGlyph) - int(subtable.LastGlyph) + 1
+			numGlyphs := int(subtable.LastGlyph) - int(subtable.FirstGlyph) + 1
 			subtableStart := start + int(subtable.additionalOffsetToIndexSubtable)
 
 			sizeSubtables[j].FirstGlyph = subtable.FirstGlyph

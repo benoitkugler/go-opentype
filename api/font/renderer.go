@@ -14,29 +14,35 @@ import (
 // GlyphData returns the glyph content for [gid], or nil if
 // not found.
 func (f *Face) GlyphData(gid GID) api.GlyphData {
-	var out api.GlyphData
+	// since outline may be specified for SVG and bitmaps, check it at the end
+	outB, err := sbixGlyphData(f.sbix, gID(gid), f.XPpem, f.YPpem)
+	if err == nil {
+		outline, ok := f.outlineGlyphData(gID(gid))
+		if ok {
+			outB.Outline = &outline
+		}
+		return outB
+	}
 
-	// try every table start with SVG first
-	out_, ok := f.svg.glyphData(gID(gid))
+	outB, err = f.bitmap.glyphData(gID(gid), f.XPpem, f.YPpem)
+	if err == nil {
+		outline, ok := f.outlineGlyphData(gID(gid))
+		if ok {
+			outB.Outline = &outline
+		}
+		return outB
+	}
+
+	outS, ok := f.svg.glyphData(gID(gid))
 	if ok {
 		// Spec :
 		// For every SVG glyph description, there must be a corresponding TrueType,
 		// CFF or CFF2 glyph description in the font.
-		out_.Outline, _ = f.outlineGlyphData(gID(gid))
-		return out_
+		outS.Outline, _ = f.outlineGlyphData(gID(gid))
+		return outS
 	}
 
 	if out, ok := f.outlineGlyphData(gID(gid)); ok {
-		return out
-	}
-
-	out, err := sbixGlyphData(f.sbix, gID(gid), f.XPpem, f.YPpem)
-	if err == nil {
-		return out
-	}
-
-	out, err = f.bitmap.glyphData(gID(gid), f.XPpem, f.YPpem)
-	if err == nil {
 		return out
 	}
 

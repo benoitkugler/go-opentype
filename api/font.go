@@ -167,6 +167,9 @@ type GlyphBitmap struct {
 	Data          []byte
 	Format        BitmapFormat
 	Width, Height int // number of columns and rows
+
+	// Outline may be specified to be drawn with bitmap
+	Outline *GlyphOutline
 }
 
 // BitmapFormat identifies the format on the glyph

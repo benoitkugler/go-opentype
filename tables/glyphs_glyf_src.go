@@ -16,7 +16,7 @@ func ParseLoca(src []byte, numGlyphs int, isLong bool) (out []uint32, err error)
 		size = (numGlyphs + 1) * 2
 	}
 	if L := len(src); L < size {
-		return nil, fmt.Errorf("EOF: expected length: %d, got %d", size, L)
+		return nil, fmt.Errorf("reading Loca: EOF: expected length: %d, got %d", size, L)
 	}
 	out = make([]uint32, numGlyphs+1)
 	if isLong {

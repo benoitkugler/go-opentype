@@ -8,6 +8,11 @@ import (
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
+// axis records
+type fvar []tables.VariationAxisRecord
+
+func newFvar(table tables.Fvar) fvar { return table.FvarRecords.Axis }
+
 type mvar struct {
 	store  tables.ItemVarStore
 	values []tables.VarValueRecord
@@ -476,4 +481,112 @@ func sanitizeGDEF(table tables.GDEF, axisCount int) error {
 		}
 	}
 	return nil
+}
+
+// ------------------------------------- external API -------------------------------------
+
+// Variation defines a value for a wanted variation axis.
+type Variation struct {
+	Tag   Tag     // Variation-axis identifier tag
+	Value float32 // In design units
+}
+
+// SetVariations applies a list of font-variation settings to a font,
+// defaulting to the values given in the `fvar` table.
+// Note that passing an empty slice will instead remove the coordinates.
+func (face *Face) SetVariations(variations []Variation) {
+	if len(variations) == 0 {
+		face.Coords = nil
+		return
+	}
+
+	fv := face.Font.fvar
+	if len(fv) == 0 { // the font is not variable...
+		face.Coords = nil
+		return
+	}
+
+	designCoords := fv.getDesignCoordsDefault(variations)
+
+	face.Coords = face.Font.normalizeVariations(designCoords)
+}
+
+// getDesignCoordsDefault returns the design coordinates corresponding to the given pairs of axis/value.
+// The default value of the axis is used when not specified in the variations.
+func (fv fvar) getDesignCoordsDefault(variations []Variation) []float32 {
+	designCoords := make([]float32, len(fv))
+	// start with default values
+	for i, axis := range fv {
+		designCoords[i] = axis.Default
+	}
+
+	fv.getDesignCoords(variations, designCoords)
+
+	return designCoords
+}
+
+// getDesignCoords updates the design coordinates, with the given pairs of axis/value.
+// It will panic if `designCoords` has not the length expected by the table, that is the number of axis.
+func (fv fvar) getDesignCoords(variations []Variation, designCoords []float32) {
+	for _, variation := range variations {
+		// allow for multiple axis with the same tag
+		for index, axis := range fv {
+			if axis.Tag == variation.Tag {
+				designCoords[index] = variation.Value
+			}
+		}
+	}
+}
+
+// normalize based on the [min,def,max] values for the axis to be [-1,0,1].
+func (fv fvar) normalizeCoordinates(coords []float32) []float32 {
+	normalized := make([]float32, len(coords))
+	for i, a := range fv {
+		coord := coords[i]
+
+		// out of range: clamping
+		if coord > a.Maximum {
+			coord = a.Maximum
+		} else if coord < a.Minimum {
+			coord = a.Minimum
+		}
+
+		if coord < a.Default {
+			normalized[i] = -(coord - a.Default) / (a.Minimum - a.Default)
+		} else if coord > a.Default {
+			normalized[i] = (coord - a.Default) / (a.Maximum - a.Default)
+		} else {
+			normalized[i] = 0
+		}
+	}
+	return normalized
+}
+
+// normalizeVariations the given design-space coordinates. The minimum and maximum
+// values for the axis are mapped to the interval [-1,1], with the default
+// axis value mapped to 0.
+// Any additional scaling defined in the face's `avar` table is also
+// applied, as described at https://docs.microsoft.com/en-us/typography/opentype/spec/avar
+func (f *Font) normalizeVariations(coords []float32) []float32 {
+	// ported from freetype2
+
+	// Axis normalization is a two-stage process.  First we normalize
+	// based on the [min,def,max] values for the axis to be [-1,0,1].
+	// Then, if there's an `avar' table, we renormalize this range.
+	normalized := f.fvar.normalizeCoordinates(coords)
+
+	// now applying 'avar'
+	for i, av := range f.avar.AxisSegmentMaps {
+		l := av.AxisValueMaps
+		for j := 1; j < len(l); j++ {
+			previous, pair := l[j-1], l[j]
+			if normalized[i] < pair.FromCoordinate {
+				normalized[i] = previous.ToCoordinate + (normalized[i]-previous.FromCoordinate)*
+					(pair.ToCoordinate-previous.ToCoordinate)/(pair.FromCoordinate-previous.FromCoordinate)
+				break
+			}
+		}
+	}
+
+	return normalized
 }

@@ -1,10 +1,14 @@
 package font
 
 import (
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 
+	td "github.com/benoitkugler/go-opentype-testdata/data"
 	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -467,5 +471,121 @@ func TestGlyphDataCrash(t *testing.T) {
 			_, isOutline := data.(api.GlyphOutline)
 			assert(t, isOutline)
 		}
+	}
+	for _, filename := range []string{
+		"toys/chromacheck-svg.ttf",
+	} {
+		font := loadFont(t, filename)
+		face := Face{Font: font}
+		iter := font.cmap.Iter()
+		for iter.Next() {
+			_, g := iter.Char()
+			_ = face.GlyphData(g)
+		}
+	}
+}
+
+func TestSbixGlyph(t *testing.T) {
+	ft := loadFont(t, "toys/Feat.ttf")
+	face := Face{Font: ft, XPpem: 100, YPpem: 100}
+	data := face.GlyphData(1)
+	asBitmap, ok := data.(api.GlyphBitmap)
+	assert(t, ok)
+	assert(t, asBitmap.Format == api.PNG)
+
+	ft = loadFont(t, "toys/Sbix3.ttf")
+	face = Face{Font: ft, XPpem: 100, YPpem: 100}
+	data = face.GlyphData(4)
+	asBitmap, ok = data.(api.GlyphBitmap)
+	assert(t, ok)
+	assert(t, asBitmap.Format == api.PNG)
+}
+
+func TestCblcGlyph(t *testing.T) {
+	for _, filename := range td.WithCBLC {
+		font := loadFont(t, filename.Path)
+		face := Face{Font: font, XPpem: 94, YPpem: 94}
+
+		for gid := filename.GlyphRange[0]; gid <= filename.GlyphRange[1]; gid++ {
+			data := face.GlyphData(api.GID(gid))
+			asBitmap, ok := data.(api.GlyphBitmap)
+			assert(t, ok)
+			assert(t, asBitmap.Format == api.PNG)
+			assert(t, asBitmap.Width == 136)
+			assert(t, asBitmap.Height == 128)
+		}
+	}
+}
+
+func TestEblcGlyph(t *testing.T) {
+	runess := [][]rune{
+		{1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579},
+		[]rune("The quick brown fox jumps over the lazy dog"),
+	}
+	for i, filename := range td.WithEBLC {
+		// bitmap/IBM3161-bitmap.otb has a corrupted loca table,
+		// so loadFont errors
+		ld := readFontFile(t, filename.Path)
+		eblc, _, err := tables.ParseCBLC(readTable(t, ld, "EBLC"))
+		assertNoErr(t, err)
+
+		bm, err := newBitmap(eblc, readTable(t, ld, "EBDT"))
+		assertNoErr(t, err)
+
+		cmapT, _, err := tables.ParseCmap(readTable(t, ld, "cmap"))
+		assertNoErr(t, err)
+
+		cmap, _, err := api.ProcessCmap(cmapT)
+		assertNoErr(t, err)
+
+		runes := runess[i]
+		for _, r := range runes {
+			gid, ok := cmap.Lookup(r)
+			assert(t, ok)
+
+			data, err := bm.glyphData(tables.GlyphID(gid), 94, 94)
+			assertNoErr(t, err)
+			assert(t, data.Format == api.BlackAndWhite)
+		}
+	}
+}
+
+func TestAppleBitmapGlyph(t *testing.T) {
+	filename := "collections/Gacha_9.dfont"
+	f, err := td.Files.ReadFile(filename)
+	assertNoErr(t, err)
+
+	fonts, err := loader.NewLoaders(bytes.NewReader(f))
+	assertNoErr(t, err)
+
+	ft, err := NewFont(fonts[0])
+	assertNoErr(t, err)
+
+	face := Face{Font: ft, XPpem: 94, YPpem: 94}
+
+	runes := []rune("The quick brown fox jumps over the lazy dog")
+	for _, r := range runes {
+		gid, ok := face.NominalGlyph(r)
+		assert(t, ok)
+
+		data := face.GlyphData(gid)
+		asBitmap, ok := data.(api.GlyphBitmap)
+		assert(t, ok)
+		assert(t, asBitmap.Format == api.BlackAndWhite)
+	}
+}
+
+func TestMixedGlyphs(t *testing.T) {
+	for _, filename := range filenames(t, "common") {
+		if strings.HasPrefix(filename, "common/SourceSans") {
+			continue
+		}
+		font := loadFont(t, filename)
+		space, ok := font.NominalGlyph(' ')
+		assert(t, ok)
+		face := Face{Font: font, XPpem: 94, YPpem: 94}
+
+		gd := face.GlyphData(space)
+		assert(t, gd != nil)
 	}
 }
