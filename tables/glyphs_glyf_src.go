@@ -109,14 +109,18 @@ func (sg *SimpleGlyph) parsePoints(src []byte, _ int) error {
 
 	// read flags
 	// to avoid costly length check, we also precompute the expected data size for coordinates
-	var coordinatesLengthX, coordinatesLengthY int
+	var (
+		coordinatesLengthX, coordinatesLengthY int
+		cursor                                 int
+		L                                      = len(src)
+	)
 	for i := 0; i < numPoints; i++ {
-		if len(src) == 0 {
+		if L <= cursor {
 			return errors.New("invalid simple glyph data flags (EOF)")
 		}
-		flag := src[0]
+		flag := src[cursor]
 		sg.Points[i].Flag = flag
-		src = src[1:]
+		cursor++
 
 		localLengthX, localLengthY := 0, 0
 		if flag&xShortVector != 0 {
@@ -131,11 +135,11 @@ func (sg *SimpleGlyph) parsePoints(src []byte, _ int) error {
 		}
 
 		if flag&repeatFlag != 0 {
-			if len(src) == 0 {
+			if L <= cursor {
 				return errors.New("invalid simple glyph data flags (EOF)")
 			}
-			repeatCount := int(src[0])
-			src = src[1:]
+			repeatCount := int(src[cursor])
+			cursor++
 			if i+repeatCount+1 > numPoints { // gracefully handle out of bounds
 				repeatCount = numPoints - i - 1
 			}
@@ -152,6 +156,7 @@ func (sg *SimpleGlyph) parsePoints(src []byte, _ int) error {
 		coordinatesLengthY += localLengthY
 	}
 
+	src = src[cursor:]
 	if L, E := len(src), coordinatesLengthX+coordinatesLengthY; L < E {
 		return fmt.Errorf("EOF: expected length: %d, got %d", E, L)
 	}
