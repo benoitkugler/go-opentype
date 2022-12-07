@@ -118,7 +118,7 @@ func (pp *PairPosData2) parseClass1Records(src []byte) error {
 
 	offset := headerSize
 	for i := range pp.class1Records {
-		vi := make([]Class2Record, pp.class2Count)
+		vi := make(Class1Record, pp.class2Count)
 		for j := range vi {
 			var err error
 			vi[j].ValueRecord1, offset, err = parseValueRecord(pp.valueFormat1, src, offset)
@@ -130,7 +130,7 @@ func (pp *PairPosData2) parseClass1Records(src []byte) error {
 				return err
 			}
 		}
-		pp.class1Records[i] = Class1Record{Class2Records: vi}
+		pp.class1Records[i] = vi
 	}
 	return nil
 }

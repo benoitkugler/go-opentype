@@ -630,9 +630,7 @@ type PairValueRecord struct {
 	ValueRecord2 ValueRecord //	Positioning data for the second glyph in the pair.
 }
 
-type Class1Record struct {
-	Class2Records []Class2Record //[class2Count]	Array of Class2 records, ordered by classes in classDef2.
-}
+type Class1Record []Class2Record //[class2Count]	Array of Class2 records, ordered by classes in classDef2.
 
 type Class2Record struct {
 	ValueRecord1 ValueRecord //	Positioning for first glyph — empty if valueFormat1 = 0.
