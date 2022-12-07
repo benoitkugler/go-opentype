@@ -202,3 +202,34 @@ func (la *Layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
 	}
 	return 0, false
 }
+
+// -------------------------------------- gdef --------------------------------------
+
+// GlyphProps is a 16-bit integer where the lower 8-bit have bits representing
+// glyph class, and high 8-bit the mark attachment type (if any).
+type GlyphProps = uint16
+
+const (
+	GPBaseGlyph GlyphProps = 1 << (iota + 1)
+	GPLigature
+	GPMark
+)
+
+// GlyphProps return a summary of the glyph properties.
+func (gd *GDEF) GlyphProps(glyph GlyphID) GlyphProps {
+	klass, _ := gd.GlyphClassDef.Class(glyph)
+	switch klass {
+	case 1:
+		return GPBaseGlyph
+	case 2:
+		return GPLigature
+	case 3:
+		var klass uint16 // it is actually a byte
+		if gd.MarkAttachClass != nil {
+			klass, _ = gd.MarkAttachClass.Class(glyph)
+		}
+		return GPMark | GlyphProps(klass)<<8
+	default:
+		return 0
+	}
+}
