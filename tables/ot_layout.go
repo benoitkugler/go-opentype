@@ -497,57 +497,58 @@ func parseValueRecord(format ValueFormat, data []byte, offset int) (out ValueRec
 		return out, 0, fmt.Errorf("invalid value record: %s", err)
 	}
 	// follow the order
+	cursor := 0
 	if format&XPlacement != 0 {
-		out.XPlacement = int16(values[0])
-		values = values[1:]
+		out.XPlacement = int16(values[cursor])
+		cursor++
 	}
 	if format&YPlacement != 0 {
-		out.YPlacement = int16(values[0])
-		values = values[1:]
+		out.YPlacement = int16(values[cursor])
+		cursor++
 	}
 	if format&XAdvance != 0 {
-		out.XAdvance = int16(values[0])
-		values = values[1:]
+		out.XAdvance = int16(values[cursor])
+		cursor++
 	}
 	if format&YAdvance != 0 {
-		out.YAdvance = int16(values[0])
-		values = values[1:]
+		out.YAdvance = int16(values[cursor])
+		cursor++
 	}
 	if format&XPlaDevice != 0 {
-		if devOffset := values[0]; devOffset != 0 {
+		if devOffset := values[cursor]; devOffset != 0 {
 			out.XPlaDevice, err = parseDeviceTable(data, devOffset)
 			if err != nil {
 				return out, 0, err
 			}
 		}
-		values = values[1:]
+		cursor++
 	}
 	if format&YPlaDevice != 0 {
-		if devOffset := values[0]; devOffset != 0 {
+		if devOffset := values[cursor]; devOffset != 0 {
 			out.YPlaDevice, err = parseDeviceTable(data, devOffset)
 			if err != nil {
 				return out, 0, err
 			}
 		}
-		values = values[1:]
+		cursor++
 	}
 	if format&XAdvDevice != 0 {
-		if devOffset := values[0]; devOffset != 0 {
+		if devOffset := values[cursor]; devOffset != 0 {
 			out.XAdvDevice, err = parseDeviceTable(data, devOffset)
 			if err != nil {
 				return out, 0, err
 			}
 		}
-		values = values[1:]
+		cursor++
 	}
 	if format&YAdvDevice != 0 {
-		if devOffset := values[0]; devOffset != 0 {
+		if devOffset := values[cursor]; devOffset != 0 {
 			out.YAdvDevice, err = parseDeviceTable(data, devOffset)
 			if err != nil {
 				return out, 0, err
 			}
 		}
-		_ = values[1:]
+		cursor++ // useless actually
 	}
 	return out, offset + 2*size, err
 }

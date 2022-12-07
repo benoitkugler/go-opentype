@@ -276,9 +276,10 @@ func unpackDeltas(data []byte, pointNumbersCount int) ([]int16, error) {
 		deltasAreWords    = 0x40
 		deltaRunCountMask = 0x3F
 	)
-	var out []int16
+	out := make([]int16, pointNumbersCount)
+	nbRead := 0 // number of point read : out[:nbRead] is valid
 	// The data is read until the expected logic count of deltas is obtained.
-	for len(out) < pointNumbersCount {
+	for nbRead < pointNumbersCount {
 		if len(data) == 0 {
 			return nil, errors.New("invalid packed deltas (EOF)")
 		}
@@ -286,7 +287,7 @@ func unpackDeltas(data []byte, pointNumbersCount int) ([]int16, error) {
 		count := control&deltaRunCountMask + 1
 		if isZero := control&deltasAreZero != 0; isZero {
 			//  no additional value to read, just fill with zeros
-			out = append(out, make([]int16, count)...)
+			nbRead += int(count)
 			data = data[1:]
 		} else {
 			isInt16 := control&deltasAreWords != 0
@@ -295,7 +296,8 @@ func unpackDeltas(data []byte, pointNumbersCount int) ([]int16, error) {
 					return nil, errors.New("invalid packed deltas (EOF)")
 				}
 				for i := byte(0); i < count; i++ { // count < 64 -> no overflow
-					out = append(out, int16(binary.BigEndian.Uint16(data[1+2*i:])))
+					out[nbRead] = int16(binary.BigEndian.Uint16(data[1+2*i:]))
+					nbRead++
 				}
 				data = data[1+2*count:]
 			} else {
@@ -303,7 +305,8 @@ func unpackDeltas(data []byte, pointNumbersCount int) ([]int16, error) {
 					return nil, errors.New("invalid packed deltas (EOF)")
 				}
 				for i := byte(0); i < count; i++ { // count < 64 -> no overflow
-					out = append(out, int16(int8(data[1+i])))
+					out[nbRead] = int16(int8(data[1+i]))
+					nbRead++
 				}
 				data = data[1+count:]
 			}
