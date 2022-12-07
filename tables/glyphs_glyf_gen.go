@@ -31,19 +31,17 @@ func ParseCompositeGlyph(src []byte) (CompositeGlyph, int, error) {
 	n := 0
 	{
 
-		read, err := item.parseGlyphs(src[:])
+		err := item.parseGlyphs(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CompositeGlyph: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseInstructions(src[:])
+		err := item.parseInstructions(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CompositeGlyph: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -75,11 +73,10 @@ func ParseGlyph(src []byte) (Glyph, int, error) {
 
 	{
 
-		read, err := item.parseData(src[10:])
+		err := item.parseData(src[10:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Glyph: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }
@@ -127,11 +124,10 @@ func ParseSimpleGlyph(src []byte, endPtsOfContoursCount int) (SimpleGlyph, int, 
 	}
 	{
 
-		read, err := item.parsePoints(src[n:], endPtsOfContoursCount)
+		err := item.parsePoints(src[n:], endPtsOfContoursCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading SimpleGlyph: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }

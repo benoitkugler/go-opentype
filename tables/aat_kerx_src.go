@@ -132,10 +132,10 @@ func parseKernx1Values(src []byte, entries []AATStateEntry, valueTableOffset, tu
 	return out, nil
 }
 
-func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) (int, error) {
+func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) error {
 	var err error
 	kx.Values, err = parseKernx1Values(src, kx.Entries, int(kx.valueTable), tupleCount)
-	return len(src), err
+	return err
 }
 
 type KerxData2 struct {
@@ -164,12 +164,12 @@ func (kd KerxData4) nAnchors() int {
 	return int(maxi) + 1
 }
 
-func (kd *KerxData4) parseAnchors(src []byte, _ int) (int, error) {
+func (kd *KerxData4) parseAnchors(src []byte, _ int) error {
 	nAnchors := kd.nAnchors()
 	const Offset = 0x00FFFFFF // Masks the offset in bytes from the beginning of the subtable to the beginning of the control point table.
 	controlOffset := int(kd.Flags & Offset)
 	if L := len(src); L < controlOffset {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", controlOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", controlOffset, L)
 	}
 	var err error
 	switch kd.ActionType() {
@@ -180,12 +180,9 @@ func (kd *KerxData4) parseAnchors(src []byte, _ int) (int, error) {
 	case 2:
 		kd.Anchors, _, err = ParseKerxAnchorCoordinates(src[controlOffset:], nAnchors)
 	default:
-		return 0, fmt.Errorf("invalid Kerx4 anchor format %d", kd.ActionType())
+		return fmt.Errorf("invalid Kerx4 anchor format %d", kd.ActionType())
 	}
-	if err != nil {
-		return 0, err
-	}
-	return len(src), nil
+	return err
 }
 
 // ActionType returns 0, 1 or 2, according to the anchor format :
@@ -244,10 +241,10 @@ type KerxData6 struct {
 	kernings []int16 `isOpaque:""  offsetRelativeTo:"Parent"`
 }
 
-func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) (int, error) {
+func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) error {
 	isExtended := kd.flags&1 != 0
 	if L := len(parentSrc); L < int(kd.rowIndexTableOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", kd.rowIndexTableOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", kd.rowIndexTableOffset, L)
 	}
 	var err error
 	if isExtended {
@@ -255,13 +252,13 @@ func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) (int, err
 	} else {
 		kd.row, _, err = ParseAATLookup(parentSrc[kd.rowIndexTableOffset:], valuesCount)
 	}
-	return 0, err
+	return err
 }
 
-func (kd *KerxData6) parseColumn(_, parentSrc []byte, _, valuesCount int) (int, error) {
+func (kd *KerxData6) parseColumn(_, parentSrc []byte, _, valuesCount int) error {
 	isExtended := kd.flags&1 != 0
 	if L := len(parentSrc); L < int(kd.columnIndexTableOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", kd.columnIndexTableOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", kd.columnIndexTableOffset, L)
 	}
 	var err error
 	if isExtended {
@@ -269,17 +266,17 @@ func (kd *KerxData6) parseColumn(_, parentSrc []byte, _, valuesCount int) (int, 
 	} else {
 		kd.column, _, err = ParseAATLookup(parentSrc[kd.columnIndexTableOffset:], valuesCount)
 	}
-	return 0, err
+	return err
 }
 
-func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int, error) {
+func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) error {
 	isExtended := kd.flags&1 != 0
 
 	length := int(kd.rowCount) * int(kd.columnCount)
 	var tmp []uint32
 	if isExtended {
 		if L, E := len(parentSrc), int(kd.kerningArrayOffset)+length*4; L < E {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", E, L)
 		}
 		tmp = make([]uint32, length)
 		for i := range tmp {
@@ -287,7 +284,7 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int,
 		}
 	} else {
 		if L, E := len(parentSrc), int(kd.kerningArrayOffset)+length*2; L < E {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", E, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", E, L)
 		}
 		tmp = make([]uint32, length)
 		for i := range tmp {
@@ -302,7 +299,7 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int,
 		for i, v := range tmp {
 			kerningOffset := int(kd.kerningVectorOffset) + int(v)
 			if L := len(parentSrc); L < kerningOffset+2 {
-				return 0, fmt.Errorf("EOF: expected length: %d, got %d", kerningOffset+2, L)
+				return fmt.Errorf("EOF: expected length: %d, got %d", kerningOffset+2, L)
 			}
 			kd.kernings[i] = int16(binary.BigEndian.Uint16(parentSrc[kerningOffset:]))
 		}
@@ -312,7 +309,7 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) (int,
 			kd.kernings[i] = int16(v)
 		}
 	}
-	return len(parentSrc), nil
+	return nil
 }
 
 type dummy struct {

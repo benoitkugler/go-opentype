@@ -136,9 +136,9 @@ const (
 
 // the LigActions length is not specified. Instead, we have to parse uint32 one by one
 // until we reach last action or reach EOF
-func (lig *MorxSubtableLigature) parseLigActions(src []byte, _ int) (int, error) {
+func (lig *MorxSubtableLigature) parseLigActions(src []byte, _ int) error {
 	if L := len(src); L < int(lig.ligActionOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", lig.ligActionOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", lig.ligActionOffset, L)
 	}
 	src = src[lig.ligActionOffset:]
 	for len(src) >= 4 { // stop gracefully if the last action was not found
@@ -150,16 +150,16 @@ func (lig *MorxSubtableLigature) parseLigActions(src []byte, _ int) (int, error)
 			break
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
-func (lig *MorxSubtableLigature) parseComponents(src []byte, _ int) (int, error) {
+func (lig *MorxSubtableLigature) parseComponents(src []byte, _ int) error {
 	// we rely on offset being sorted, which seems to be the case in practice
 	if lig.componentOffset > lig.ligatureOffset {
-		return 0, errors.New("unsupported non sorted offsets")
+		return errors.New("unsupported non sorted offsets")
 	}
 	if L := len(src); L < int(lig.componentOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", lig.componentOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", lig.componentOffset, L)
 	}
 	src = src[lig.componentOffset:]
 	componentCount := (lig.ligatureOffset - lig.componentOffset) / 2
@@ -167,12 +167,12 @@ func (lig *MorxSubtableLigature) parseComponents(src []byte, _ int) (int, error)
 	for i := range lig.Components {
 		lig.Components[i] = binary.BigEndian.Uint16(src[2*i:])
 	}
-	return len(src), nil
+	return nil
 }
 
-func (lig *MorxSubtableLigature) parseLigatures(src []byte, _ int) (int, error) {
+func (lig *MorxSubtableLigature) parseLigatures(src []byte, _ int) error {
 	if L := len(src); L < int(lig.ligatureOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", lig.ligatureOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", lig.ligatureOffset, L)
 	}
 	src = src[lig.ligatureOffset:]
 	ligatureCount := len(src) / 2
@@ -180,7 +180,7 @@ func (lig *MorxSubtableLigature) parseLigatures(src []byte, _ int) (int, error) 
 	for i := range lig.Ligatures {
 		lig.Ligatures[i] = GlyphID(binary.BigEndian.Uint16(src[2*i:]))
 	}
-	return len(src), nil
+	return nil
 }
 
 type MorxSubtableNonContextual struct {

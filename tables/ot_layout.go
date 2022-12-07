@@ -665,28 +665,22 @@ type AnchorFormat3 struct {
 	YDevice       DeviceTable `isOpaque:""` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
 }
 
-func (af AnchorFormat3) parseXDevice(src []byte) (int, error) {
+func (af AnchorFormat3) parseXDevice(src []byte) error {
 	if af.xDeviceOffset == 0 {
-		return 0, nil
+		return nil
 	}
 	var err error
 	af.XDevice, err = parseDeviceTable(src, uint16(af.xDeviceOffset))
-	if err != nil {
-		return 0, err
-	}
-	return 0, nil
+	return err
 }
 
-func (af AnchorFormat3) parseYDevice(src []byte) (int, error) {
+func (af AnchorFormat3) parseYDevice(src []byte) error {
 	if af.yDeviceOffset == 0 {
-		return 0, nil
+		return nil
 	}
 	var err error
 	af.YDevice, err = parseDeviceTable(src, uint16(af.yDeviceOffset))
-	if err != nil {
-		return 0, err
-	}
-	return 0, nil
+	return err
 }
 
 type MarkArray struct {
@@ -694,19 +688,19 @@ type MarkArray struct {
 	MarkAnchors []Anchor     `isOpaque:""`              // with same length as MarkRecords
 }
 
-func (ma *MarkArray) parseMarkAnchors(src []byte) (int, error) {
+func (ma *MarkArray) parseMarkAnchors(src []byte) error {
 	ma.MarkAnchors = make([]Anchor, len(ma.MarkRecords))
 	var err error
 	for i, rec := range ma.MarkRecords {
 		if L := len(src); L < int(rec.markAnchorOffset) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.markAnchorOffset, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", rec.markAnchorOffset, L)
 		}
 		ma.MarkAnchors[i], _, err = ParseAnchor(src[rec.markAnchorOffset:])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type MarkRecord struct {

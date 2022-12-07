@@ -262,11 +262,10 @@ func ParseScript(src []byte) (Script, int, error) {
 	}
 	{
 
-		read, err := item.parseLangSys(src[:])
+		err := item.parseLangSys(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Script: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -294,11 +293,10 @@ func parseFeatureList(src []byte) (featureList, int, error) {
 	}
 	{
 
-		read, err := item.parseFeatures(src[:])
+		err := item.parseFeatures(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading featureList: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -309,28 +307,34 @@ func parseLookupList(src []byte) (lookupList, int, error) {
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: 2, got %d", L)
 	}
-	arrayLengthRecords := int(binary.BigEndian.Uint16(src[0:]))
+	arrayLengthLookups := int(binary.BigEndian.Uint16(src[0:]))
 	n += 2
 
 	{
 
-		if L := len(src); L < 2+arrayLengthRecords*2 {
-			return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: %d, got %d", 2+arrayLengthRecords*2, L)
+		if L := len(src); L < 2+arrayLengthLookups*2 {
+			return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: %d, got %d", 2+arrayLengthLookups*2, L)
 		}
 
-		item.records = make([]Offset16, arrayLengthRecords) // allocation guarded by the previous check
-		for i := range item.records {
-			item.records[i] = Offset16(binary.BigEndian.Uint16(src[2+i*2:]))
-		}
-		n += arrayLengthRecords * 2
-	}
-	{
+		item.Lookups = make([]Lookup, arrayLengthLookups) // allocation guarded by the previous check
+		for i := range item.Lookups {
+			offset := int(binary.BigEndian.Uint16(src[2+i*2:]))
+			// ignore null offsets
+			if offset == 0 {
+				continue
+			}
 
-		read, err := item.parseLookups(src[:])
-		if err != nil {
-			return item, 0, fmt.Errorf("reading lookupList: %s", err)
+			if L := len(src); L < offset {
+				return item, 0, fmt.Errorf("reading lookupList: "+"EOF: expected length: %d, got %d", offset, L)
+			}
+
+			var err error
+			item.Lookups[i], _, err = ParseLookup(src[offset:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading lookupList: %s", err)
+			}
 		}
-		n = read
+		n += arrayLengthLookups * 2
 	}
 	return item, n, nil
 }
@@ -358,11 +362,10 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 	}
 	{
 
-		read, err := item.parseScripts(src[:])
+		err := item.parseScripts(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading scriptList: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

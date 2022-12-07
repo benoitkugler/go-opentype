@@ -171,11 +171,10 @@ func ParseCBLC(src []byte) (CBLC, int, error) {
 	}
 	{
 
-		read, err := item.parseIndexSubTables(src[:])
+		err := item.parseIndexSubTables(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CBLC: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

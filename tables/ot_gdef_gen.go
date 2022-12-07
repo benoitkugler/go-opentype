@@ -172,11 +172,10 @@ func ParseCaretValue3(src []byte) (CaretValue3, int, error) {
 
 	{
 
-		read, err := item.parseDevice(src[:])
+		err := item.parseDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CaretValue3: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

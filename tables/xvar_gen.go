@@ -55,11 +55,10 @@ func ParseDeltaSetMapping(src []byte) (DeltaSetMapping, int, error) {
 
 	{
 
-		read, err := item.parseMap(src[2:])
+		err := item.parseMap(src[2:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading DeltaSetMapping: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }
@@ -83,11 +82,10 @@ func ParseFvar(src []byte) (Fvar, int, error) {
 
 	{
 
-		read, err := item.parseFvarRecords(src[:])
+		err := item.parseFvarRecords(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Fvar: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -109,11 +107,10 @@ func ParseFvarRecords(src []byte, axisCount int, instanceCount int, instanceSize
 	}
 	{
 
-		read, err := item.parseInstances(src[n:], axisCount, instanceCount, instanceSize)
+		err := item.parseInstances(src[n:], axisCount, instanceCount, instanceSize)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading FvarRecords: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }
@@ -195,19 +192,17 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 	}
 	{
 
-		read, err := item.parseGlyphVariationDataOffsets(src[20:])
+		err := item.parseGlyphVariationDataOffsets(src[20:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Gvar: %s", err)
 		}
-		n += read
 	}
 	{
 
-		read, err := item.parseGlyphVariationDatas(src[:])
+		err := item.parseGlyphVariationDatas(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Gvar: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -431,11 +426,10 @@ func ParseItemVariationData(src []byte) (ItemVariationData, int, error) {
 	}
 	{
 
-		read, err := item.parseDeltaSets(src[n:])
+		err := item.parseDeltaSets(src[n:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading ItemVariationData: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }
@@ -476,11 +470,10 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 	}
 	{
 
-		read, err := item.parseValueRecords(src[12:])
+		err := item.parseValueRecords(src[12:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MVAR: %s", err)
 		}
-		n += read
 	}
 	return item, n, nil
 }

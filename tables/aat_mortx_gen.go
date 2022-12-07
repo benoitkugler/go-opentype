@@ -245,27 +245,24 @@ func ParseMorxSubtableLigature(src []byte, valuesCount int) (MorxSubtableLigatur
 
 	{
 
-		read, err := item.parseLigActions(src[:], valuesCount)
+		err := item.parseLigActions(src[:], valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MorxSubtableLigature: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseComponents(src[:], valuesCount)
+		err := item.parseComponents(src[:], valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MorxSubtableLigature: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseLigatures(src[:], valuesCount)
+		err := item.parseLigatures(src[:], valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MorxSubtableLigature: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

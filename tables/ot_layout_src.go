@@ -36,13 +36,13 @@ func (lt *Layout) parseFeatureVariations(src []byte) (int, error) {
 	if L := len(src); L < int(offset) {
 		return 0, fmt.Errorf("reading Layout: EOF: expected length: %d, got %d", offset, L)
 	}
-	fv, read, err := ParseFeatureVariation(src[offset:])
+	fv, _, err := ParseFeatureVariation(src[offset:])
 	if err != nil {
 		return 0, err
 	}
 	lt.featureVariations = &fv
 
-	return read, nil
+	return 4, nil
 }
 
 type tagOffsetRecord struct {
@@ -55,19 +55,19 @@ type scriptList struct {
 	Scripts []Script          `isOpaque:""`
 }
 
-func (sl *scriptList) parseScripts(src []byte) (int, error) {
+func (sl *scriptList) parseScripts(src []byte) error {
 	sl.Scripts = make([]Script, len(sl.records))
 	for i, rec := range sl.records {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
 		}
 		sl.Scripts[i], _, err = ParseScript(src[rec.Offset:])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type Script struct {
@@ -76,19 +76,19 @@ type Script struct {
 	LangSys        []LangSys         `isOpaque:""`
 }
 
-func (sc *Script) parseLangSys(src []byte) (int, error) {
+func (sc *Script) parseLangSys(src []byte) error {
 	sc.LangSys = make([]LangSys, len(sc.langSysRecords))
 	for i, rec := range sc.langSysRecords {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
 		}
 		sc.LangSys[i], _, err = ParseLangSys(src[rec.Offset:])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type LangSys struct {
@@ -102,19 +102,19 @@ type featureList struct {
 	Features []Feature         `isOpaque:""`
 }
 
-func (fl *featureList) parseFeatures(src []byte) (int, error) {
+func (fl *featureList) parseFeatures(src []byte) error {
 	fl.Features = make([]Feature, len(fl.records))
 	for i, rec := range fl.records {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
 		}
 		fl.Features[i], _, err = ParseFeature(src[rec.Offset:])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type Feature struct {
@@ -123,23 +123,7 @@ type Feature struct {
 }
 
 type lookupList struct {
-	records []Offset16 `arrayCount:"FirstUint16"` // Array of offsets to Lookup tables, from beginning of LookupList — zero based (first lookup is Lookup index = 0)
-	Lookups []Lookup   `isOpaque:""`
-}
-
-func (ll *lookupList) parseLookups(src []byte) (int, error) {
-	var err error
-	ll.Lookups = make([]Lookup, len(ll.records))
-	for i, offset := range ll.records {
-		if L := len(src); L < int(offset) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", offset, L)
-		}
-		ll.Lookups[i], _, err = ParseLookup(src[offset:])
-		if err != nil {
-			return 0, err
-		}
-	}
-	return len(src), nil
+	Lookups []Lookup `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to Lookup tables, from beginning of LookupList — zero based (first lookup is Lookup index = 0)
 }
 
 // Lookup is the common format for GSUB and GPOS lookups

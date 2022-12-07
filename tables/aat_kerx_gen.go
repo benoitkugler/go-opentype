@@ -258,11 +258,10 @@ func ParseAATStateTableExt(src []byte, valuesCount int, entryDataSize int) (AATS
 	}
 	{
 
-		read, err := item.parseStates(src[:], valuesCount, entryDataSize)
+		err := item.parseStates(src[:], valuesCount, entryDataSize)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AATStateTableExt: %s", err)
 		}
-		n = read
 	}
 	{
 
@@ -415,11 +414,10 @@ func ParseKerxData1(src []byte, tupleCount int, valuesCount int) (KerxData1, int
 
 	{
 
-		read, err := item.parseValues(src[:], tupleCount, valuesCount)
+		err := item.parseValues(src[:], tupleCount, valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KerxData1: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -503,11 +501,10 @@ func ParseKerxData4(src []byte, valuesCount int) (KerxData4, int, error) {
 
 	{
 
-		read, err := item.parseAnchors(src[:], valuesCount)
+		err := item.parseAnchors(src[:], valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KerxData4: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -530,27 +527,24 @@ func ParseKerxData6(src []byte, parentSrc []byte, tupleCount int, valuesCount in
 
 	{
 
-		read, err := item.parseRow(src[:], parentSrc, tupleCount, valuesCount)
+		err := item.parseRow(src[:], parentSrc, tupleCount, valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KerxData6: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseColumn(src[:], parentSrc, tupleCount, valuesCount)
+		err := item.parseColumn(src[:], parentSrc, tupleCount, valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KerxData6: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseKernings(src[:], parentSrc, tupleCount, valuesCount)
+		err := item.parseKernings(src[:], parentSrc, tupleCount, valuesCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KerxData6: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

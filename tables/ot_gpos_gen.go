@@ -101,19 +101,17 @@ func ParseAnchorFormat3(src []byte) (AnchorFormat3, int, error) {
 
 	{
 
-		read, err := item.parseXDevice(src[:])
+		err := item.parseXDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AnchorFormat3: %s", err)
 		}
-		n = read
 	}
 	{
 
-		read, err := item.parseYDevice(src[:])
+		err := item.parseYDevice(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AnchorFormat3: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -142,11 +140,10 @@ func ParseBaseArray(src []byte, offsetsCount int) (BaseArray, int, error) {
 	}
 	{
 
-		read, err := item.parseBaseAnchors(src[:], offsetsCount)
+		err := item.parseBaseAnchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading BaseArray: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1086,11 +1083,10 @@ func ParseCursivePos(src []byte) (CursivePos, int, error) {
 	}
 	{
 
-		read, err := item.parseEntryExits(src[:])
+		err := item.parseEntryExits(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading CursivePos: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1216,11 +1212,10 @@ func ParseLigatureAttach(src []byte, offsetsCount int) (LigatureAttach, int, err
 	}
 	{
 
-		read, err := item.parseComponentAnchors(src[:], offsetsCount)
+		err := item.parseComponentAnchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading LigatureAttach: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1249,11 +1244,10 @@ func ParseMark2Array(src []byte, offsetsCount int) (Mark2Array, int, error) {
 	}
 	{
 
-		read, err := item.parseMark2Anchors(src[:], offsetsCount)
+		err := item.parseMark2Anchors(src[:], offsetsCount)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Mark2Array: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1281,11 +1275,10 @@ func ParseMarkArray(src []byte) (MarkArray, int, error) {
 	}
 	{
 
-		read, err := item.parseMarkAnchors(src[:])
+		err := item.parseMarkAnchors(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading MarkArray: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1743,11 +1736,10 @@ func ParsePairPosData2(src []byte) (PairPosData2, int, error) {
 	}
 	{
 
-		read, err := item.parseClass1Records(src[:])
+		err := item.parseClass1Records(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading PairPosData2: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1763,11 +1755,10 @@ func ParsePairSet(src []byte, valueFormat1 ValueFormat, valueFormat2 ValueFormat
 
 	{
 
-		read, err := item.parsePairValueRecords(src[:], valueFormat1, valueFormat2)
+		err := item.parsePairValueRecords(src[:], valueFormat1, valueFormat2)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading PairSet: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1925,11 +1916,10 @@ func ParseSinglePosData1(src []byte) (SinglePosData1, int, error) {
 	}
 	{
 
-		read, err := item.parseValueRecord(src[:])
+		err := item.parseValueRecord(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading SinglePosData1: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -1967,11 +1957,10 @@ func ParseSinglePosData2(src []byte) (SinglePosData2, int, error) {
 	}
 	{
 
-		read, err := item.parseValueRecords(src[:])
+		err := item.parseValueRecords(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading SinglePosData2: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

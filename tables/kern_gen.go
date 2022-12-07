@@ -85,11 +85,10 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 	}
 	{
 
-		read, err := item.parseStates(src[:])
+		err := item.parseStates(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading AATStateTable: %s", err)
 		}
-		n = read
 	}
 	{
 
@@ -153,11 +152,10 @@ func ParseKernData1(src []byte) (KernData1, int, error) {
 
 	{
 
-		read, err := item.parseValues(src[:])
+		err := item.parseValues(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KernData1: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }
@@ -215,11 +213,10 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 	}
 	{
 
-		read, err := item.parseKerningData(src[:], parentSrc)
+		err := item.parseKerningData(src[:], parentSrc)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading KernData2: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

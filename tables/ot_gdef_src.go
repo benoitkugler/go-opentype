@@ -98,9 +98,9 @@ type CaretValue3 struct {
 	Device           DeviceTable `isOpaque:""`
 }
 
-func (cv *CaretValue3) parseDevice(src []byte) (read int, err error) {
+func (cv *CaretValue3) parseDevice(src []byte) (err error) {
 	cv.Device, err = parseDeviceTable(src, uint16(cv.deviceOffset))
-	return len(src), err
+	return err
 }
 
 type MarkGlyphSets struct {

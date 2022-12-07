@@ -11,16 +11,16 @@ type CBLC struct {
 	IndexSubTables [][]BitmapSubtable `isOpaque:""`              // with same length as [BitmapSizes]
 }
 
-func (cb *CBLC) parseIndexSubTables(src []byte) (int, error) {
+func (cb *CBLC) parseIndexSubTables(src []byte) error {
 	cb.IndexSubTables = make([][]BitmapSubtable, len(cb.BitmapSizes))
 	for i, size := range cb.BitmapSizes {
 		start := int(size.indexSubTableArrayOffset)
 		if L := len(src); L < start {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", start, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", start, L)
 		}
 		subtables, _, err := ParseIndexSubTableArray(src[start:], int(size.numberOfIndexSubTables))
 		if err != nil {
-			return 0, err
+			return err
 		}
 		sizeSubtables := make([]BitmapSubtable, len(subtables.Subtables))
 		for j, subtable := range subtables.Subtables {
@@ -31,12 +31,12 @@ func (cb *CBLC) parseIndexSubTables(src []byte) (int, error) {
 			sizeSubtables[j].LastGlyph = subtable.LastGlyph
 			sizeSubtables[j].IndexSubHeader, _, err = ParseIndexSubHeader(src[subtableStart:], numGlyphs+1)
 			if err != nil {
-				return 0, err
+				return err
 			}
 		}
 		cb.IndexSubTables[i] = sizeSubtables
 	}
-	return len(src), nil
+	return nil
 }
 
 type BitmapSize struct {

@@ -23,9 +23,9 @@ type SinglePosData1 struct {
 	ValueRecord ValueRecord `isOpaque:""` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
 }
 
-func (sp *SinglePosData1) parseValueRecord(src []byte) (read int, err error) {
-	sp.ValueRecord, read, err = parseValueRecord(sp.valueFormat, src, 6)
-	return read, err
+func (sp *SinglePosData1) parseValueRecord(src []byte) (err error) {
+	sp.ValueRecord, _, err = parseValueRecord(sp.valueFormat, src, 6)
+	return err
 }
 
 type SinglePosData2 struct {
@@ -36,17 +36,17 @@ type SinglePosData2 struct {
 	ValueRecords []ValueRecord `isOpaque:""` //[valueCount]	Array of ValueRecords — positioning values applied to glyphs.
 }
 
-func (sp *SinglePosData2) parseValueRecords(src []byte) (read int, err error) {
+func (sp *SinglePosData2) parseValueRecords(src []byte) (err error) {
 	offset := 8
 	sp.ValueRecords = make([]ValueRecord, sp.valueCount)
 	for i := range sp.ValueRecords {
 		sp.ValueRecords[i], offset, err = parseValueRecord(sp.valueFormat, src, offset)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	return offset, err
+	return err
 }
 
 type PairPos struct {
@@ -76,25 +76,25 @@ type PairSet struct {
 	PairValueRecords []PairValueRecord `isOpaque:""` // [pairValueCount] Array of PairValueRecords, ordered by glyph ID of the second glyph.
 }
 
-func (ps *PairSet) parsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) (int, error) {
+func (ps *PairSet) parsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) error {
 	out := make([]PairValueRecord, ps.pairValueCount)
 	offsetR := 2
 	var err error
 	for i := range out {
 		if L := len(src); L < 2+offsetR {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", 2+offsetR, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", 2+offsetR, L)
 		}
 		out[i].SecondGlyph = GlyphID(binary.BigEndian.Uint16(src[offsetR:]))
 		out[i].ValueRecord1, offsetR, err = parseValueRecord(fmt1, src, offsetR+2)
 		if err != nil {
-			return 0, fmt.Errorf("invalid pair set table: %s", err)
+			return fmt.Errorf("invalid pair set table: %s", err)
 		}
 		out[i].ValueRecord2, offsetR, err = parseValueRecord(fmt2, src, offsetR)
 		if err != nil {
-			return 0, fmt.Errorf("invalid pair set table: %s", err)
+			return fmt.Errorf("invalid pair set table: %s", err)
 		}
 	}
-	return offsetR, nil
+	return nil
 }
 
 type PairPosData2 struct {
@@ -111,7 +111,7 @@ type PairPosData2 struct {
 	class1Records []Class1Record `isOpaque:""` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
 }
 
-func (pp *PairPosData2) parseClass1Records(src []byte) (int, error) {
+func (pp *PairPosData2) parseClass1Records(src []byte) error {
 	const headerSize = 16 // including posFormat and coverageOffset
 
 	pp.class1Records = make([]Class1Record, pp.class1Count)
@@ -123,16 +123,16 @@ func (pp *PairPosData2) parseClass1Records(src []byte) (int, error) {
 			var err error
 			vi[j].ValueRecord1, offset, err = parseValueRecord(pp.valueFormat1, src, offset)
 			if err != nil {
-				return 0, err
+				return err
 			}
 			vi[j].ValueRecord2, offset, err = parseValueRecord(pp.valueFormat2, src, offset)
 			if err != nil {
-				return 0, err
+				return err
 			}
 		}
 		pp.class1Records[i] = Class1Record{Class2Records: vi}
 	}
-	return offset, nil
+	return nil
 }
 
 // DeviceTableHeader is the common header for DeviceTable
@@ -164,30 +164,30 @@ type entryExitRecord struct {
 	exitAnchorOffset  Offset16 // Offset to exitAnchor table, from beginning of CursivePos subtable (may be NULL).
 }
 
-func (cp *CursivePos) parseEntryExits(src []byte) (int, error) {
+func (cp *CursivePos) parseEntryExits(src []byte) error {
 	cp.EntryExits = make([]EntryExit, len(cp.entryExitRecords))
 	var err error
 	for i, rec := range cp.entryExitRecords {
 		if rec.entryAnchorOffset != 0 {
 			if L := len(src); L < int(rec.entryAnchorOffset) {
-				return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.entryAnchorOffset, L)
+				return fmt.Errorf("EOF: expected length: %d, got %d", rec.entryAnchorOffset, L)
 			}
 			cp.EntryExits[i].EntryAnchor, _, err = ParseAnchor(src[rec.entryAnchorOffset:])
 			if err != nil {
-				return 0, err
+				return err
 			}
 		}
 		if rec.exitAnchorOffset != 0 {
 			if L := len(src); L < int(rec.exitAnchorOffset) {
-				return 0, fmt.Errorf("EOF: expected length: %d, got %d", rec.exitAnchorOffset, L)
+				return fmt.Errorf("EOF: expected length: %d, got %d", rec.exitAnchorOffset, L)
 			}
 			cp.EntryExits[i].ExitAnchor, _, err = ParseAnchor(src[rec.exitAnchorOffset:])
 			if err != nil {
-				return 0, err
+				return err
 			}
 		}
 	}
-	return 0, nil
+	return nil
 }
 
 type MarkBasePos struct {
@@ -204,10 +204,9 @@ type BaseArray struct {
 	BaseAnchors [][]Anchor      `isOpaque:""`
 }
 
-func (ba *BaseArray) parseBaseAnchors(src []byte, _ int) (int, error) {
-	var err error
+func (ba *BaseArray) parseBaseAnchors(src []byte, _ int) (err error) {
 	ba.BaseAnchors, err = resolveAnchorOffsets(ba.baseRecords, src)
-	return len(src), err
+	return err
 }
 
 type anchorOffsets struct {
@@ -258,10 +257,9 @@ type LigatureAttach struct {
 	ComponentAnchors [][]Anchor      `isOpaque:""`
 }
 
-func (la *LigatureAttach) parseComponentAnchors(src []byte, _ int) (int, error) {
-	var err error
+func (la *LigatureAttach) parseComponentAnchors(src []byte, _ int) (err error) {
 	la.ComponentAnchors, err = resolveAnchorOffsets(la.componentRecords, src)
-	return len(src), err
+	return err
 }
 
 type MarkMarkPos struct {
@@ -280,10 +278,9 @@ type Mark2Array struct {
 	Mark2Anchors [][]Anchor      `isOpaque:""`
 }
 
-func (ma *Mark2Array) parseMark2Anchors(src []byte, _ int) (int, error) {
-	var err error
+func (ma *Mark2Array) parseMark2Anchors(src []byte, _ int) (err error) {
 	ma.Mark2Anchors, err = resolveAnchorOffsets(ma.mark2Records, src)
-	return len(src), err
+	return err
 }
 
 type ContextualPos struct {

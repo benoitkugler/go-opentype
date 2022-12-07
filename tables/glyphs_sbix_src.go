@@ -22,11 +22,11 @@ type Strike struct {
 	GlyphDatas []BitmapGlyphData `isOpaque:""` //[numGlyphs+1] Offset from the beginning of the strike data header to bitmap data for an individual glyph ID.
 }
 
-func (st *Strike) parseGlyphDatas(src []byte, numGlyphs int) (int, error) {
+func (st *Strike) parseGlyphDatas(src []byte, numGlyphs int) error {
 	const headerSize = 4
 	offsets, err := ParseLoca(src[4:], numGlyphs, true)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	st.GlyphDatas = make([]BitmapGlyphData, numGlyphs)
 	for i := range st.GlyphDatas {
@@ -36,19 +36,19 @@ func (st *Strike) parseGlyphDatas(src []byte, numGlyphs int) (int, error) {
 		}
 
 		if start > end {
-			return 0, fmt.Errorf("invalid strike offsets %d > %d", start, end)
+			return fmt.Errorf("invalid strike offsets %d > %d", start, end)
 		}
 
 		if L := len(src); L < int(end) {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", end, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", end, L)
 		}
 
 		st.GlyphDatas[i], _, err = ParseBitmapGlyphData(src[start:end])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return int(offsets[numGlyphs]), nil
+	return nil
 }
 
 type BitmapGlyphData struct {

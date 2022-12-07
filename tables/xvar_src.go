@@ -22,11 +22,11 @@ type Fvar struct {
 	FvarRecords     `isOpaque:""`
 }
 
-func (fv *Fvar) parseFvarRecords(src []byte) (read int, err error) {
+func (fv *Fvar) parseFvarRecords(src []byte) (err error) {
 	if L := len(src); L < int(fv.axesArrayOffset) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", fv.axesArrayOffset, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", fv.axesArrayOffset, L)
 	}
-	fv.FvarRecords, read, err = ParseFvarRecords(src[fv.axesArrayOffset:], int(fv.axisCount), int(fv.instanceCount), int(fv.axisCount))
+	fv.FvarRecords, _, err = ParseFvarRecords(src[fv.axesArrayOffset:], int(fv.axisCount), int(fv.instanceCount), int(fv.axisCount))
 	return
 }
 
@@ -37,19 +37,19 @@ type FvarRecords struct {
 	Instances []InstanceRecord `isOpaque:"" subsliceStart:"AtCurrent"`
 }
 
-func (fvr *FvarRecords) parseInstances(src []byte, axisCount, instanceCount, instanceSize int) (int, error) {
+func (fvr *FvarRecords) parseInstances(src []byte, axisCount, instanceCount, instanceSize int) error {
 	if L := len(src); L < instanceCount*instanceSize {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", instanceCount*instanceSize, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", instanceCount*instanceSize, L)
 	}
 	fvr.Instances = make([]InstanceRecord, instanceCount)
 	for i := range fvr.Instances {
 		var err error
 		fvr.Instances[i], _, err = ParseInstanceRecord(src[instanceSize*i:], axisCount)
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type VariationAxisRecord struct {
@@ -126,13 +126,13 @@ type ItemVariationData struct {
 	DeltaSets        [][]int16 `isOpaque:"" subsliceStart:"AtCurrent"`       //[itemCount]	Delta-set rows.
 }
 
-func (ivd *ItemVariationData) parseDeltaSets(src []byte) (int, error) {
+func (ivd *ItemVariationData) parseDeltaSets(src []byte) error {
 	const (
 		LONG_WORDS            = 0x8000 // Flag indicating that “word” deltas are long (int32)
 		WORD_DELTA_COUNT_MASK = 0x7FFF // Count of “word” delt
 	)
 	if ivd.wordDeltaCount&LONG_WORDS != 0 {
-		return 0, errors.New("LONG_WORDS not implemented in DeltaSets")
+		return errors.New("LONG_WORDS not implemented in DeltaSets")
 	}
 	itemCount := int(ivd.itemCount)
 	shortDeltaCount := int(WORD_DELTA_COUNT_MASK & ivd.wordDeltaCount)
@@ -140,10 +140,10 @@ func (ivd *ItemVariationData) parseDeltaSets(src []byte) (int, error) {
 
 	rowLength := shortDeltaCount + regionIndexCount
 	if L := len(src); L < itemCount*rowLength {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", itemCount*rowLength, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", itemCount*rowLength, L)
 	}
 	if shortDeltaCount > regionIndexCount {
-		return 0, errors.New("invalid item variation data subtable")
+		return errors.New("invalid item variation data subtable")
 	}
 	ivd.DeltaSets = make([][]int16, itemCount)
 	for i := range ivd.DeltaSets {
@@ -158,7 +158,7 @@ func (ivd *ItemVariationData) parseDeltaSets(src []byte) (int, error) {
 		ivd.DeltaSets[i] = vi
 		src = src[rowLength:]
 	}
-	return len(src), nil
+	return nil
 }
 
 // ------------------------------------ GVAR ------------------------------------
@@ -177,13 +177,13 @@ type Gvar struct {
 	GlyphVariationDatas           []GlyphVariationData                                                                           `isOpaque:""`
 }
 
-func (gv *Gvar) parseGlyphVariationDataOffsets(src []byte) (int, error) {
+func (gv *Gvar) parseGlyphVariationDataOffsets(src []byte) error {
 	var err error
 	gv.glyphVariationDataOffsets, err = ParseLoca(src, int(gv.glyphCount), gv.flags&1 != 0)
-	return len(src), err
+	return err
 }
 
-func (gv *Gvar) parseGlyphVariationDatas(src []byte) (int, error) {
+func (gv *Gvar) parseGlyphVariationDatas(src []byte) error {
 	gv.GlyphVariationDatas = make([]GlyphVariationData, gv.glyphCount)
 	startArray := uint32(gv.glyphVariationDataArrayOffset)
 	for i := range gv.GlyphVariationDatas {
@@ -193,20 +193,20 @@ func (gv *Gvar) parseGlyphVariationDatas(src []byte) (int, error) {
 		}
 
 		if start > end {
-			return 0, fmt.Errorf("invalid offsets %d > %d", start, end)
+			return fmt.Errorf("invalid offsets %d > %d", start, end)
 		}
 
 		if L := len(src); L < end {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", end, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", end, L)
 		}
 
 		var err error
 		gv.GlyphVariationDatas[i], _, err = ParseGlyphVariationData(src[start:end], int(gv.axisCount))
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return len(src), nil
+	return nil
 }
 
 type SharedTuples struct {
@@ -315,23 +315,23 @@ func (m DeltaSetMapping) Index(glyph GlyphID) VariationStoreIndex {
 	return m.Map[glyph]
 }
 
-func (ds *DeltaSetMapping) parseMap(src []byte) (int, error) {
+func (ds *DeltaSetMapping) parseMap(src []byte) error {
 	var mapCount int
 	switch ds.format {
 	case 0:
 		if L := len(src); L < 2 {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", 2, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", 2, L)
 		}
 		mapCount = int(binary.BigEndian.Uint16(src))
 		src = src[2:]
 	case 1:
 		if L := len(src); L < 4 {
-			return 0, fmt.Errorf("EOF: expected length: %d, got %d", 4, L)
+			return fmt.Errorf("EOF: expected length: %d, got %d", 4, L)
 		}
 		mapCount = int(binary.BigEndian.Uint32(src))
 		src = src[4:]
 	default:
-		return 0, fmt.Errorf("unsupported DeltaSetMapping format %d", ds.format)
+		return fmt.Errorf("unsupported DeltaSetMapping format %d", ds.format)
 	}
 
 	const (
@@ -341,7 +341,7 @@ func (ds *DeltaSetMapping) parseMap(src []byte) (int, error) {
 	innerBitSize := ds.entryFormat&INNER_INDEX_BIT_COUNT_MASK + 1
 	entrySize := int((ds.entryFormat&MAP_ENTRY_SIZE_MASK)>>4 + 1)
 	if entrySize > 4 || len(src) < entrySize*mapCount {
-		return 0, fmt.Errorf("invalid delta-set mapping (length %d, entrySize %d, mapCount %d)", len(src), entrySize, mapCount)
+		return fmt.Errorf("invalid delta-set mapping (length %d, entrySize %d, mapCount %d)", len(src), entrySize, mapCount)
 	}
 	ds.Map = make([]VariationStoreIndex, mapCount)
 	for i := range ds.Map {
@@ -352,7 +352,7 @@ func (ds *DeltaSetMapping) parseMap(src []byte) (int, error) {
 		ds.Map[i].DeltaSetOuter = uint16(v >> innerBitSize)
 		ds.Map[i].DeltaSetInner = uint16(v & (1<<innerBitSize - 1))
 	}
-	return len(src), nil
+	return nil
 }
 
 // See - https://learn.microsoft.com/fr-fr/typography/opentype/spec/vvar
@@ -396,16 +396,16 @@ type MVAR struct {
 // Future, minor version updates of the MVAR table may define compatible
 // extensions to the value record format with additional fields.
 // Implementations must use the valueRecordSize field to determine the start of each record."
-func (mv *MVAR) parseValueRecords(src []byte) (int, error) {
+func (mv *MVAR) parseValueRecords(src []byte) error {
 	expectedL := int(mv.valueRecordSize) * int(mv.valueRecordCount)
 	if L := len(src); L < expectedL {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", expectedL, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", expectedL, L)
 	}
 	mv.ValueRecords = make([]VarValueRecord, mv.valueRecordCount)
 	for i := range mv.ValueRecords {
 		mv.ValueRecords[i].mustParse(src[int(mv.valueRecordSize)*i:])
 	}
-	return len(src), nil
+	return nil
 }
 
 type VarValueRecord struct {

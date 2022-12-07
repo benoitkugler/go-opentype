@@ -81,11 +81,10 @@ func ParseStrike(src []byte, numGlyphs int) (Strike, int, error) {
 
 	{
 
-		read, err := item.parseGlyphDatas(src[:], numGlyphs)
+		err := item.parseGlyphDatas(src[:], numGlyphs)
 		if err != nil {
 			return item, 0, fmt.Errorf("reading Strike: %s", err)
 		}
-		n = read
 	}
 	return item, n, nil
 }

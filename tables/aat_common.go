@@ -18,26 +18,26 @@ type AATStateTable struct {
 	Entries    []AATStateEntry `isOpaque:""` // entry data are empty
 }
 
-func (state *AATStateTable) parseStates(src []byte) (int, error) {
+func (state *AATStateTable) parseStates(src []byte) error {
 	if state.stateArray > state.entryTable {
-		return 0, fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
+		return fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
 	}
 	if L := len(src); L < int(state.entryTable) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
 	}
 	states := src[state.stateArray:state.entryTable]
 
 	nC := int(state.stateSize)
 	// Ensure pre-defined classes fit.
 	if nC < 4 {
-		return 0, fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
+		return fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
 	}
 	state.States = make([][]uint8, len(states)/nC)
 	for i := range state.States {
 		state.States[i] = states[i*nC : (i+1)*nC]
 	}
 
-	return int(state.entryTable), nil
+	return nil
 }
 
 func (state *AATStateTable) parseEntries(src []byte) (int, error) {
@@ -102,30 +102,30 @@ type AATStateTableExt struct {
 	Entries    []AATStateEntry `isOpaque:""`
 }
 
-func (state *AATStateTableExt) parseStates(src []byte, _, _ int) (int, error) {
+func (state *AATStateTableExt) parseStates(src []byte, _, _ int) error {
 	if state.stateArray > state.entryTable {
-		return 0, fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
+		return fmt.Errorf("invalid AAT state offsets (%d > %d)", state.stateArray, state.entryTable)
 	}
 	if L := len(src); L < int(state.entryTable) {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", state.entryTable, L)
 	}
 
 	statesArray := src[state.stateArray:state.entryTable]
 	states, err := ParseUint16s(statesArray, len(statesArray)/2)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	nC := int(state.stateSize)
 	// Ensure pre-defined classes fit.
 	if nC < 4 {
-		return 0, fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
+		return fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
 	}
 	state.States = make([][]uint16, len(states)/nC)
 	for i := range state.States {
 		state.States[i] = states[i*nC : (i+1)*nC]
 	}
-	return 0, nil
+	return nil
 }
 
 func (state *AATStateTableExt) parseEntries(src []byte, _, entryDataSize int) (int, error) {

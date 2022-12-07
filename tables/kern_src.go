@@ -84,7 +84,7 @@ type KernData1 struct {
 	Values     []int16 `isOpaque:""`
 }
 
-func (kd *KernData1) parseValues(src []byte) (int, error) {
+func (kd *KernData1) parseValues(src []byte) error {
 	valuesOffset := int(kd.valueTable)
 	// start by resolving offset -> index
 	for i := range kd.Entries {
@@ -99,7 +99,7 @@ func (kd *KernData1) parseValues(src []byte) (int, error) {
 	}
 	var err error
 	kd.Values, err = parseKernx1Values(src, kd.Entries, valuesOffset, 0)
-	return len(src), err
+	return err
 }
 
 type KernData2 struct {
@@ -110,9 +110,9 @@ type KernData2 struct {
 	kerningData []byte          `isOpaque:"" offsetRelativeTo:"Parent"` // indexed by Left + Right
 }
 
-func (kd *KernData2) parseKerningData(_ []byte, parentSrc []byte) (int, error) {
+func (kd *KernData2) parseKerningData(_ []byte, parentSrc []byte) error {
 	kd.kerningData = parentSrc
-	return 0, nil
+	return nil
 }
 
 type KernData3 struct {
