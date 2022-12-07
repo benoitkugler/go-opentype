@@ -821,26 +821,26 @@ func ParseMultipleSubs(src []byte) (MultipleSubs, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
 	arrayLengthSequences := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetCoverageOffset != 0 { // ignore null offset
-			if L := len(src); L < offsetCoverageOffset {
-				return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", offsetCoverageOffset, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading MultipleSubs: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverageOffset:])
+			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MultipleSubs: %s", err)
 			}
-			offsetCoverageOffset += read
+			offsetCoverage += read
 		}
 	}
 	{
