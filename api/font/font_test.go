@@ -31,3 +31,11 @@ func TestCrashes(t *testing.T) {
 		loadFont(t, filepath)
 	}
 }
+
+func BenchmarkLoad(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		for _, filepath := range filenames(b, "common") {
+			loadFont(b, filepath)
+		}
+	}
+}

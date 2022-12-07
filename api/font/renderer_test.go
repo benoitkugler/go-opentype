@@ -12,7 +12,7 @@ import (
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
-func loadFont(t *testing.T, filename string) *Font {
+func loadFont(t testing.TB, filename string) *Font {
 	t.Helper()
 
 	fp := readFontFile(t, filename)
