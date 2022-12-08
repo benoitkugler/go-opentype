@@ -10,9 +10,9 @@ import (
 func (item *ConditionFormat1) mustParse(src []byte) {
 	_ = src[7] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	item.axisIndex = binary.BigEndian.Uint16(src[2:])
-	item.filterRangeMinValue = Float214FromUint(binary.BigEndian.Uint16(src[4:]))
-	item.filterRangeMaxValue = Float214FromUint(binary.BigEndian.Uint16(src[6:]))
+	item.AxisIndex = binary.BigEndian.Uint16(src[2:])
+	item.FilterRangeMinValue = Float214FromUint(binary.BigEndian.Uint16(src[4:]))
+	item.FilterRangeMaxValue = Float214FromUint(binary.BigEndian.Uint16(src[6:]))
 }
 
 func ParseConditionFormat1(src []byte) (ConditionFormat1, int, error) {
@@ -41,8 +41,8 @@ func ParseConditionSet(src []byte) (ConditionSet, int, error) {
 			return item, 0, fmt.Errorf("reading ConditionSet: "+"EOF: expected length: %d, got %d", 2+arrayLengthConditions*4, L)
 		}
 
-		item.conditions = make([]ConditionFormat1, arrayLengthConditions) // allocation guarded by the previous check
-		for i := range item.conditions {
+		item.Conditions = make([]ConditionFormat1, arrayLengthConditions) // allocation guarded by the previous check
+		for i := range item.Conditions {
 			offset := int(binary.BigEndian.Uint32(src[2+i*4:]))
 			// ignore null offsets
 			if offset == 0 {
@@ -54,7 +54,7 @@ func ParseConditionSet(src []byte) (ConditionSet, int, error) {
 			}
 
 			var err error
-			item.conditions[i], _, err = ParseConditionFormat1(src[offset:])
+			item.Conditions[i], _, err = ParseConditionFormat1(src[offset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ConditionSet: %s", err)
 			}
@@ -110,7 +110,7 @@ func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 			if err != nil {
 				return item, 0, fmt.Errorf("reading FeatureVariation: %s", err)
 			}
-			item.featureVariationRecords = append(item.featureVariationRecords, elem)
+			item.FeatureVariationRecords = append(item.FeatureVariationRecords, elem)
 			offset += read
 		}
 		n = offset
@@ -142,7 +142,7 @@ func ParseFeatureVariationRecord(src []byte, parentSrc []byte) (FeatureVariation
 			}
 
 			var err error
-			item.conditionSet, _, err = ParseConditionSet(parentSrc[offsetConditionSet:])
+			item.ConditionSet, _, err = ParseConditionSet(parentSrc[offsetConditionSet:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading FeatureVariationRecord: %s", err)
 			}
@@ -201,7 +201,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 			}
 
 			var err error
-			item.scriptList, _, err = parseScriptList(src[offsetScriptList:])
+			item.ScriptList, _, err = parseScriptList(src[offsetScriptList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
@@ -216,7 +216,7 @@ func ParseLayout(src []byte) (Layout, int, error) {
 			}
 
 			var err error
-			item.featureList, _, err = parseFeatureList(src[offsetFeatureList:])
+			item.FeatureList, _, err = parseFeatureList(src[offsetFeatureList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
@@ -321,9 +321,9 @@ func ParseScript(src []byte) (Script, int, error) {
 			return item, 0, fmt.Errorf("reading Script: "+"EOF: expected length: %d, got %d", 4+arrayLengthLangSysRecords*6, L)
 		}
 
-		item.langSysRecords = make([]tagOffsetRecord, arrayLengthLangSysRecords) // allocation guarded by the previous check
-		for i := range item.langSysRecords {
-			item.langSysRecords[i].mustParse(src[4+i*6:])
+		item.LangSysRecords = make([]TagOffsetRecord, arrayLengthLangSysRecords) // allocation guarded by the previous check
+		for i := range item.LangSysRecords {
+			item.LangSysRecords[i].mustParse(src[4+i*6:])
 		}
 		n += arrayLengthLangSysRecords * 6
 	}
@@ -337,8 +337,8 @@ func ParseScript(src []byte) (Script, int, error) {
 	return item, n, nil
 }
 
-func parseFeatureList(src []byte) (featureList, int, error) {
-	var item featureList
+func parseFeatureList(src []byte) (FeatureList, int, error) {
+	var item FeatureList
 	n := 0
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: 2, got %d", L)
@@ -352,9 +352,9 @@ func parseFeatureList(src []byte) (featureList, int, error) {
 			return item, 0, fmt.Errorf("reading featureList: "+"EOF: expected length: %d, got %d", 2+arrayLengthRecords*6, L)
 		}
 
-		item.records = make([]tagOffsetRecord, arrayLengthRecords) // allocation guarded by the previous check
-		for i := range item.records {
-			item.records[i].mustParse(src[2+i*6:])
+		item.Records = make([]TagOffsetRecord, arrayLengthRecords) // allocation guarded by the previous check
+		for i := range item.Records {
+			item.Records[i].mustParse(src[2+i*6:])
 		}
 		n += arrayLengthRecords * 6
 	}
@@ -406,8 +406,8 @@ func parseLookupList(src []byte) (lookupList, int, error) {
 	return item, n, nil
 }
 
-func parseScriptList(src []byte) (scriptList, int, error) {
-	var item scriptList
+func parseScriptList(src []byte) (ScriptList, int, error) {
+	var item ScriptList
 	n := 0
 	if L := len(src); L < 2 {
 		return item, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: 2, got %d", L)
@@ -421,9 +421,9 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 			return item, 0, fmt.Errorf("reading scriptList: "+"EOF: expected length: %d, got %d", 2+arrayLengthRecords*6, L)
 		}
 
-		item.records = make([]tagOffsetRecord, arrayLengthRecords) // allocation guarded by the previous check
-		for i := range item.records {
-			item.records[i].mustParse(src[2+i*6:])
+		item.Records = make([]TagOffsetRecord, arrayLengthRecords) // allocation guarded by the previous check
+		for i := range item.Records {
+			item.Records[i].mustParse(src[2+i*6:])
 		}
 		n += arrayLengthRecords * 6
 	}
@@ -437,7 +437,7 @@ func parseScriptList(src []byte) (scriptList, int, error) {
 	return item, n, nil
 }
 
-func (item *tagOffsetRecord) mustParse(src []byte) {
+func (item *TagOffsetRecord) mustParse(src []byte) {
 	_ = src[5] // early bound checking
 	item.Tag = Tag(binary.BigEndian.Uint32(src[0:]))
 	item.Offset = binary.BigEndian.Uint16(src[4:])

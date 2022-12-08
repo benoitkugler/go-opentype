@@ -15,10 +15,10 @@ import (
 type Layout struct {
 	majorVersion      uint16            // Major version of the GPOS table, = 1
 	minorVersion      uint16            // Minor version of the GPOS table, = 0 or 1
-	scriptList        scriptList        `offsetSize:"Offset16"` // Offset to ScriptList table, from beginning of GPOS table
-	featureList       featureList       `offsetSize:"Offset16"` // Offset to FeatureList table, from beginning of GPOS table
+	ScriptList        ScriptList        `offsetSize:"Offset16"` // Offset to ScriptList table, from beginning of GPOS table
+	FeatureList       FeatureList       `offsetSize:"Offset16"` // Offset to FeatureList table, from beginning of GPOS table
 	LookupList        lookupList        `offsetSize:"Offset16"` // Offset to LookupList table, from beginning of GPOS table
-	featureVariations *FeatureVariation `isOpaque:""`           // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
+	FeatureVariations *FeatureVariation `isOpaque:""`           // Offset to FeatureVariations table, from beginning of GPOS table (may be NULL)
 }
 
 func (lt *Layout) parseFeatureVariations(src []byte) (int, error) {
@@ -40,24 +40,24 @@ func (lt *Layout) parseFeatureVariations(src []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	lt.featureVariations = &fv
+	lt.FeatureVariations = &fv
 
 	return 4, nil
 }
 
-type tagOffsetRecord struct {
+type TagOffsetRecord struct {
 	Tag    Tag    // 4-byte script tag identifier
 	Offset uint16 // Offset to object from beginning of list
 }
 
-type scriptList struct {
-	records []tagOffsetRecord `arrayCount:"FirstUint16"` // Array of ScriptRecords, listed alphabetically by script tag
+type ScriptList struct {
+	Records []TagOffsetRecord `arrayCount:"FirstUint16"` // Array of ScriptRecords, listed alphabetically by script tag
 	Scripts []Script          `isOpaque:""`
 }
 
-func (sl *scriptList) parseScripts(src []byte) error {
-	sl.Scripts = make([]Script, len(sl.records))
-	for i, rec := range sl.records {
+func (sl *ScriptList) parseScripts(src []byte) error {
+	sl.Scripts = make([]Script, len(sl.Records))
+	for i, rec := range sl.Records {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
 			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
@@ -72,13 +72,13 @@ func (sl *scriptList) parseScripts(src []byte) error {
 
 type Script struct {
 	DefaultLangSys *LangSys          `offsetSize:"Offset16"`    // Offset to default LangSys table, from beginning of Script table — may be NULL
-	langSysRecords []tagOffsetRecord `arrayCount:"FirstUint16"` // [langSysCount]	Array of LangSysRecords, listed alphabetically by LangSys tag
+	LangSysRecords []TagOffsetRecord `arrayCount:"FirstUint16"` // [langSysCount]	Array of LangSysRecords, listed alphabetically by LangSys tag
 	LangSys        []LangSys         `isOpaque:""`              // same length as langSysRecords
 }
 
 func (sc *Script) parseLangSys(src []byte) error {
-	sc.LangSys = make([]LangSys, len(sc.langSysRecords))
-	for i, rec := range sc.langSysRecords {
+	sc.LangSys = make([]LangSys, len(sc.LangSysRecords))
+	for i, rec := range sc.LangSysRecords {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
 			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
@@ -97,14 +97,14 @@ type LangSys struct {
 	FeatureIndices       []uint16 `arrayCount:"FirstUint16"` // [featureIndexCount]	Array of indices into the FeatureList, in arbitrary order
 }
 
-type featureList struct {
-	records  []tagOffsetRecord `arrayCount:"FirstUint16"` // Array of FeatureRecords — zero-based (first feature has FeatureIndex = 0), listed alphabetically by feature tag
+type FeatureList struct {
+	Records  []TagOffsetRecord `arrayCount:"FirstUint16"` // Array of FeatureRecords — zero-based (first feature has FeatureIndex = 0), listed alphabetically by feature tag
 	Features []Feature         `isOpaque:""`
 }
 
-func (fl *featureList) parseFeatures(src []byte) error {
-	fl.Features = make([]Feature, len(fl.records))
-	for i, rec := range fl.records {
+func (fl *FeatureList) parseFeatures(src []byte) error {
+	fl.Features = make([]Feature, len(fl.Records))
+	for i, rec := range fl.Records {
 		var err error
 		if L := len(src); L < int(rec.Offset) {
 			return fmt.Errorf("EOF: expected length: %d, got %d", rec.Offset, L)
@@ -138,23 +138,23 @@ type Lookup struct {
 type FeatureVariation struct {
 	majorVersion            uint16                   // Major version of the FeatureVariations table — set to 1.
 	minorVersion            uint16                   // Minor version of the FeatureVariations table — set to 0.
-	featureVariationRecords []FeatureVariationRecord `arrayCount:"FirstUint32"` //[featureVariationRecordCount]	Array of feature variation records.
+	FeatureVariationRecords []FeatureVariationRecord `arrayCount:"FirstUint32"` //[featureVariationRecordCount]	Array of feature variation records.
 	rawData                 []byte                   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
 }
 
 type FeatureVariationRecord struct {
-	conditionSet                   ConditionSet `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a condition set table, from beginning of FeatureVariations table.
+	ConditionSet                   ConditionSet `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a condition set table, from beginning of FeatureVariations table.
 	featureTableSubstitutionOffset uint32       // Offset to a feature table substitution table, from beginning of the FeatureVariations table.
 }
 
 type ConditionSet struct {
-	// uint16	conditionCount	Number of conditions for this condition set.
-	conditions []ConditionFormat1 `arrayCount:"FirstUint16" offsetsArray:"Offset32"` // [conditionCount]	Array of offsets to condition tables, from beginning of the ConditionSet table.
+	// uint16	conditionCount	Number of Conditions for this condition set.
+	Conditions []ConditionFormat1 `arrayCount:"FirstUint16" offsetsArray:"Offset32"` // [conditionCount]	Array of offsets to condition tables, from beginning of the ConditionSet table.
 }
 
 type ConditionFormat1 struct {
 	format              uint16   // Format, = 1
-	axisIndex           uint16   // Index (zero-based) for the variation axis within the 'fvar' table.
-	filterRangeMinValue Float214 // Minimum value of the font variation instances that satisfy this condition.
-	filterRangeMaxValue Float214 // Maximum value of the font variation instances that satisfy this condition.
+	AxisIndex           uint16   // Index (zero-based) for the variation axis within the 'fvar' table.
+	FilterRangeMinValue Float214 // Minimum value of the font variation instances that satisfy this condition.
+	FilterRangeMaxValue Float214 // Maximum value of the font variation instances that satisfy this condition.
 }

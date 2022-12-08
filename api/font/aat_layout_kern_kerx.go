@@ -85,7 +85,7 @@ func newKerxSubtable(table tables.KerxSubtable) (out KernSubtable) {
 	case tables.KerxData2:
 		out.Data = Kern2(data)
 	case tables.KerxData4:
-		out.Data = Kern4(data)
+		out.Data = newKern4(data)
 	case tables.KerxData6:
 		out.Data = Kern6(data)
 	}
@@ -199,12 +199,7 @@ func newKern1(k tables.KernData1) Kern1 {
 }
 
 func newKern1x(k tables.KerxData1) Kern1 {
-	return Kern1{Values: k.Values, Machine: AATStateTable{
-		nClass:  k.StateSize,
-		class:   k.Class,
-		states:  k.States,
-		entries: k.Entries,
-	}}
+	return Kern1{Values: k.Values, Machine: newAATStableTable(k.AATStateTableExt)}
 }
 
 type Kern2 tables.KerxData2
@@ -242,7 +237,25 @@ func (kd Kern3) KernPair(left, right GID) int16 {
 	return kd.Kernings[index]                            // sanitized during parsing
 }
 
-type Kern4 tables.KerxData4
+type Kern4 struct {
+	Anchors tables.KerxAnchors
+	Machine AATStateTable
+	flags   uint32
+}
+
+func newKern4(k tables.KerxData4) Kern4 {
+	return Kern4{
+		Machine: newAATStableTable(k.AATStateTableExt),
+		Anchors: k.Anchors,
+		flags:   k.Flags,
+	}
+}
+
+// ActionType returns 0, 1 or 2 .
+func (k Kern4) ActionType() uint8 {
+	const ActionType = 0xC0000000 // A two-bit field containing the action type.
+	return uint8(k.flags & ActionType >> 30)
+}
 
 type Kern6 tables.KerxData6
 
@@ -264,6 +277,15 @@ type AATStateTable struct {
 	class   tables.AATLookup
 	states  [][]uint16             // each sub array has length stateSize
 	entries []tables.AATStateEntry // length is the maximum state + 1
+}
+
+func newAATStableTable(k tables.AATStateTableExt) AATStateTable {
+	return AATStateTable{
+		nClass:  k.StateSize,
+		class:   k.Class,
+		states:  k.States,
+		entries: k.Entries,
+	}
 }
 
 // GetClass return the class for the given glyph, with the correct default value.

@@ -54,7 +54,7 @@ type Font struct {
 	Trak tables.Trak
 	Ankr tables.Ankr
 	Feat tables.Feat
-	Morx tables.Morx
+	Morx Morx
 	Kern Kernx
 	Kerx Kernx
 	GSUB GSUB // An absent table has a nil slice of lookups
@@ -329,10 +329,11 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 
 	raw, err = ld.RawTable(loader.MustNewTag("morx"))
 	if err == nil { // error only if the table is present and invalid
-		out.Morx, _, err = tables.ParseMorx(raw, int(maxp.NumGlyphs))
+		morx, _, err := tables.ParseMorx(raw, int(maxp.NumGlyphs))
 		if err != nil {
 			return nil, err
 		}
+		out.Morx = newMorx(morx)
 	}
 	raw, err = ld.RawTable(loader.MustNewTag("kerx"))
 	if err == nil { // error only if the table is present and invalid

@@ -114,10 +114,10 @@ func (cl ClassDef2) Extent() int {
 // or -1 if the tag is not found.
 func (sc Script) FindLanguage(language Tag) int {
 	// LangSys is sorted: binary search
-	low, high := 0, len(sc.langSysRecords)
+	low, high := 0, len(sc.LangSysRecords)
 	for low < high {
 		mid := low + (high-low)/2 // avoid overflow when computing mid
-		p := sc.langSysRecords[mid].Tag
+		p := sc.LangSysRecords[mid].Tag
 		if language < p {
 			high = mid
 		} else if language > p {
@@ -139,68 +139,6 @@ func (sc Script) GetLangSys(index uint16) LangSys {
 		return LangSys{}
 	}
 	return sc.LangSys[index]
-}
-
-// FindScript looks for [script] and return its index into the Scripts slice,
-// or -1 if the tag is not found.
-func (la *Layout) FindScript(script Tag) int {
-	// Scripts is sorted: binary search
-	low, high := 0, len(la.scriptList.records)
-	for low < high {
-		mid := low + (high-low)/2 // avoid overflow when computing mid
-		p := la.scriptList.records[mid].Tag
-		if script < p {
-			high = mid
-		} else if script > p {
-			low = mid + 1
-		} else {
-			return mid
-		}
-	}
-	return -1
-}
-
-// FindVariationIndex returns the first feature variation matching
-// the specified variation coordinates, as an index in the
-// `FeatureVariations` field.
-// It returns `-1` if not found.
-func (la *Layout) FindVariationIndex(coords []float32) int {
-	for i, record := range la.featureVariations.featureVariationRecords {
-		if record.evaluate(coords) {
-			return i
-		}
-	}
-	return -1
-}
-
-// returns `true` if the feature is concerned by the `coords`
-func (fv FeatureVariationRecord) evaluate(coords []float32) bool {
-	for _, c := range fv.conditionSet.conditions {
-		if !c.evaluate(coords) {
-			return false
-		}
-	}
-	return true
-}
-
-// returns `true` if `coords` match the condition `c`
-func (c ConditionFormat1) evaluate(coords []float32) bool {
-	var coord float32
-	if int(c.axisIndex) < len(coords) {
-		coord = coords[c.axisIndex]
-	}
-	return c.filterRangeMinValue <= coord && coord <= c.filterRangeMaxValue
-}
-
-// FindFeatureIndex fetches the index for a given feature tag in the GSUB or GPOS table.
-// Returns false if not found
-func (la *Layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
-	for i, feat := range la.featureList.records { // i fits in uint16
-		if featureTag == feat.Tag {
-			return uint16(i), true
-		}
-	}
-	return 0, false
 }
 
 // --------------------------------------- gsub ---------------------------------------

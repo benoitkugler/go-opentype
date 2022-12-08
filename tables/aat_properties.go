@@ -241,3 +241,26 @@ func (lk AATLoopkupExt10) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
+
+// GetFeature performs a binary seach into the names, using `Feature` as key,
+// returning `nil` if not found.
+func (ft Feat) GetFeature(feature uint16) *FeatureName {
+	for i, j := 0, len(ft.Names); i < j; {
+		h := i + (j-i)/2
+		entry := ft.Names[h].Feature
+		if feature < entry {
+			j = h
+		} else if entry < feature {
+			i = h + 1
+		} else {
+			return &ft.Names[h]
+		}
+	}
+	return nil
+}
+
+// IsExclusive returns true if the feature settings are mutually exclusive.
+func (feature *FeatureName) IsExclusive() bool {
+	const Exclusive = 0x8000
+	return feature.FeatureFlags&Exclusive != 0
+}

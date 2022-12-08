@@ -3,7 +3,6 @@ package tables
 import (
 	"fmt"
 	"reflect"
-	"sort"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
@@ -81,7 +80,7 @@ func TestGSUBIndic(t *testing.T) {
 				RequiredFeatureIndex: 0xFFFF,
 				FeatureIndices:       []uint16{0, 2},
 			},
-			langSysRecords: []tagOffsetRecord{},
+			LangSysRecords: []TagOffsetRecord{},
 			LangSys:        []LangSys{},
 		},
 		{
@@ -90,7 +89,7 @@ func TestGSUBIndic(t *testing.T) {
 				RequiredFeatureIndex: 0xFFFF,
 				FeatureIndices:       []uint16{1, 2},
 			},
-			langSysRecords: []tagOffsetRecord{},
+			LangSysRecords: []TagOffsetRecord{},
 			LangSys:        []LangSys{},
 		},
 	}
@@ -182,10 +181,10 @@ func TestGSUBIndic(t *testing.T) {
 		expectedLoopkup1, expectedLoopkup2, expectedLoopkup3, expectedLoopkup4,
 	}
 
-	if exp, got := expectedScripts, gsub.scriptList.Scripts; !reflect.DeepEqual(exp, got) {
+	if exp, got := expectedScripts, gsub.ScriptList.Scripts; !reflect.DeepEqual(exp, got) {
 		t.Fatalf("expected %v, got %v", exp, got)
 	}
-	if exp, got := expectedFeatures, gsub.featureList.Features; !reflect.DeepEqual(exp, got) {
+	if exp, got := expectedFeatures, gsub.FeatureList.Features; !reflect.DeepEqual(exp, got) {
 		t.Fatalf("expected %v, got %v", exp, got)
 	}
 	for i, lk := range gsub.LookupList.Lookups {
@@ -343,67 +342,4 @@ func TestGDEFVarStore(t *testing.T) {
 
 	tu.Assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
 	tu.Assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
-}
-
-func TestGetProps(t *testing.T) {
-	file := readFontFile(t, "common/Raleway-v4020-Regular.otf")
-
-	gpos, _, err := ParseLayout(readTable(t, file, "GPOS"))
-	tu.AssertNoErr(t, err)
-	gsub, _, err := ParseLayout(readTable(t, file, "GSUB"))
-	tu.AssertNoErr(t, err)
-
-	for _, table := range []Layout{gpos, gsub} {
-		var tags []int
-		for _, s := range table.scriptList.records {
-			tags = append(tags, int(s.Tag))
-		}
-		tu.Assert(t, sort.IntsAreSorted(tags))
-
-		for i, s := range table.scriptList.records {
-			ptr := table.FindScript(s.Tag)
-			tu.Assert(t, ptr == i)
-		}
-
-		s := table.FindScript(Tag(0)) // invalid
-		tu.Assert(t, s == -1)
-
-		for _, feat := range table.featureList.records {
-			_, ok := table.FindFeatureIndex(feat.Tag)
-			tu.Assert(t, ok)
-		}
-		_, ok := table.FindFeatureIndex(Tag(0)) // invalid
-		tu.Assert(t, !ok)
-
-		// now check the languages
-
-		for _, script := range table.scriptList.Scripts {
-			var tags []int
-			for _, s := range script.langSysRecords {
-				tags = append(tags, int(s.Tag))
-			}
-			tu.Assert(t, sort.IntsAreSorted(tags))
-
-			for i, l := range script.langSysRecords {
-				ptr := script.FindLanguage(l.Tag)
-				tu.Assert(t, ptr == i)
-			}
-
-			s := script.FindLanguage(Tag(0)) // invalid
-			tu.Assert(t, s == -1)
-
-			tu.Assert(t, script.DefaultLangSys != nil)
-			tu.Assert(t, reflect.DeepEqual(script.GetLangSys(0xFFFF), *script.DefaultLangSys))
-		}
-	}
-}
-
-func TestOTFeatureVariation(t *testing.T) {
-	ft := readFontFile(t, "common/Commissioner-VF.ttf")
-
-	gsub, _, err := ParseLayout(readTable(t, ft, "GSUB"))
-	tu.AssertNoErr(t, err)
-
-	tu.Assert(t, gsub.FindVariationIndex([]float32{0.8}) == 0)
-	tu.Assert(t, gsub.FindVariationIndex([]float32{0.4}) == -1)
 }
