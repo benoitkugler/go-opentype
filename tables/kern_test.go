@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"fmt"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
@@ -12,6 +11,11 @@ func TestParseKern(t *testing.T) {
 	filepath := "common/FreeSerif.ttf"
 	fp := readFontFile(t, filepath)
 	_, _, err := ParseKern(readTable(t, fp, "kern"))
+	tu.AssertNoErr(t, err)
+
+	filepath = "toys/Kern2.ttf"
+	fp = readFontFile(t, filepath)
+	_, _, err = ParseKern(readTable(t, fp, "kern"))
 	tu.AssertNoErr(t, err)
 
 	for _, filepath := range []string{
@@ -30,144 +34,6 @@ func TestParseKern(t *testing.T) {
 		for _, subtable := range kern.Tables {
 			tu.Assert(t, subtable.Data() != nil)
 		}
-	}
-}
-
-func TestParseKern0(t *testing.T) {
-	table, err := td.Files.ReadFile("toys/tables/kern0Exp.bin")
-	tu.AssertNoErr(t, err)
-
-	kern, _, err := ParseKern(table)
-	tu.AssertNoErr(t, err)
-	tu.Assert(t, len(kern.Tables) == 1)
-	data, ok := kern.Tables[0].Data().(KernData0)
-	tu.Assert(t, ok)
-
-	expecteds := []struct { // value extracted from harfbuzz run
-		left, right GlyphID
-		kerning     int16
-	}{
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 104, 0},
-		{104, 504, -42},
-		{504, 1108, 0},
-		{1108, 65535, 0},
-		{65535, 552, 0},
-		{552, 573, 0},
-		{573, 1059, 0},
-		{1059, 65535, 0},
-	}
-
-	for _, exp := range expecteds {
-		got := data.KernPair(exp.left, exp.right)
-		tu.Assert(t, got == exp.kerning)
-	}
-}
-
-func TestKern2(t *testing.T) {
-	filepath := "toys/Kern2.ttf"
-	fp := readFontFile(t, filepath)
-	kern, _, err := ParseKern(readTable(t, fp, "kern"))
-	tu.AssertNoErr(t, err)
-
-	tu.Assert(t, len(kern.Tables) == 3)
-
-	k0, k1, k2 := kern.Tables[0].Data(), kern.Tables[1].Data(), kern.Tables[2].Data()
-	_, is0 := k0.(KernData0)
-	tu.Assert(t, is0)
-
-	type2, ok := k1.(KernData2)
-	tu.Assert(t, ok)
-	expectedSubtable := map[[2]GlyphID]int16{
-		{67, 68}: 0,
-		{68, 69}: 0,
-		{69, 70}: -30,
-		{70, 71}: 0,
-		{71, 72}: 0,
-		{72, 73}: -20,
-		{73, 74}: 0,
-		{74, 75}: 0,
-		{75, 76}: 0,
-		{76, 77}: 0,
-		{77, 78}: 0,
-		{78, 79}: 0,
-		{79, 80}: 0,
-		{80, 81}: 0,
-		{81, 82}: 0,
-		{36, 57}: 0,
-	}
-	for k, exp := range expectedSubtable {
-		got := type2.KernPair(k[0], k[1])
-		tu.AssertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
-	}
-
-	type2, ok = k2.(KernData2)
-	tu.Assert(t, ok)
-	expectedSubtable = map[[2]GlyphID]int16{
-		{36, 57}: -80,
-	}
-	for k, exp := range expectedSubtable {
-		got := type2.KernPair(k[0], k[1])
-		tu.Assert(t, exp == got)
-		tu.AssertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
 	}
 }
 
@@ -190,8 +56,8 @@ func TestKern3(t *testing.T) {
 		data, ok := kern.Tables[i].Data().(KernData3)
 		tu.Assert(t, ok)
 		exp := expectedsLengths[i]
-		tu.Assert(t, len(data.leftClass) == exp[0])
-		tu.Assert(t, len(data.kernIndex) == exp[1])
-		tu.Assert(t, len(data.kernings) == exp[2])
+		tu.Assert(t, len(data.LeftClass) == exp[0])
+		tu.Assert(t, len(data.KernIndex) == exp[1])
+		tu.Assert(t, len(data.Kernings) == exp[2])
 	}
 }

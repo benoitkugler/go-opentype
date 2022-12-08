@@ -139,11 +139,11 @@ func (kx *KerxData1) parseValues(src []byte, tupleCount, _ int) error {
 }
 
 type KerxData2 struct {
-	rowWidth    uint32    // The number of bytes in each row of the kerning value array
-	Left        AATLookup `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset from beginning of this subtable to the left-hand offset table.
-	Right       AATLookup `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset from beginning of this subtable to right-hand offset table.
-	array       Offset32  // Offset from beginning of this subtable to the start of the kerning array.
-	kerningData []byte    `subsliceStart:"AtStart" arrayCount:"ToEnd"` // indexed by Left + Right
+	rowWidth     uint32    // The number of bytes in each row of the kerning value array
+	Left         AATLookup `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset from beginning of this subtable to the left-hand offset table.
+	Right        AATLookup `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset from beginning of this subtable to right-hand offset table.
+	KerningStart Offset32  // Offset from beginning of this subtable to the start of the kerning array.
+	KerningData  []byte    `subsliceStart:"AtStart" arrayCount:"ToEnd"` // indexed by Left + Right
 }
 
 // binarygen: argument=valuesCount int
@@ -234,11 +234,11 @@ type KerxData6 struct {
 	columnIndexTableOffset uint32         // Offset from beginning of this subtable to column index offset table.
 	kerningArrayOffset     uint32         // Offset from beginning of this subtable to the start of the kerning array.
 	kerningVectorOffset    uint32         // Offset from beginning of this subtable to the start of the kerning vectors. This value is only present if the tupleCount for this subtable is 1 or more.
-	row                    aatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"` // Values are pre-multiplied by `columnCount`
-	column                 aatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"`
+	Row                    AatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"` // Values are pre-multiplied by `columnCount`
+	Column                 AatLookupMixed `isOpaque:"" offsetRelativeTo:"Parent"`
 	// with rowCount * columnCount
 	// for tuples the values are estParseKerx (Not yet run).the first element of the tuple
-	kernings []int16 `isOpaque:""  offsetRelativeTo:"Parent"`
+	Kernings []int16 `isOpaque:""  offsetRelativeTo:"Parent"`
 }
 
 func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) error {
@@ -248,9 +248,9 @@ func (kd *KerxData6) parseRow(_, parentSrc []byte, _, valuesCount int) error {
 	}
 	var err error
 	if isExtended {
-		kd.row, _, err = ParseAATLookupExt(parentSrc[kd.rowIndexTableOffset:], valuesCount)
+		kd.Row, _, err = ParseAATLookupExt(parentSrc[kd.rowIndexTableOffset:], valuesCount)
 	} else {
-		kd.row, _, err = ParseAATLookup(parentSrc[kd.rowIndexTableOffset:], valuesCount)
+		kd.Row, _, err = ParseAATLookup(parentSrc[kd.rowIndexTableOffset:], valuesCount)
 	}
 	return err
 }
@@ -262,9 +262,9 @@ func (kd *KerxData6) parseColumn(_, parentSrc []byte, _, valuesCount int) error 
 	}
 	var err error
 	if isExtended {
-		kd.column, _, err = ParseAATLookupExt(parentSrc[kd.columnIndexTableOffset:], valuesCount)
+		kd.Column, _, err = ParseAATLookupExt(parentSrc[kd.columnIndexTableOffset:], valuesCount)
 	} else {
-		kd.column, _, err = ParseAATLookup(parentSrc[kd.columnIndexTableOffset:], valuesCount)
+		kd.Column, _, err = ParseAATLookup(parentSrc[kd.columnIndexTableOffset:], valuesCount)
 	}
 	return err
 }
@@ -292,7 +292,7 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) error
 		}
 	}
 
-	kd.kernings = make([]int16, len(tmp))
+	kd.Kernings = make([]int16, len(tmp))
 	if tupleCount != 0 { // interpret kern values as offset
 		// If the tupleCount is 1 or more, then the kerning array contains offsets from the beginning
 		// of the kerningVectors table to a tupleCount-dimensional vector of FUnits controlling the kerning.
@@ -301,12 +301,12 @@ func (kd *KerxData6) parseKernings(_, parentSrc []byte, tupleCount, _ int) error
 			if L := len(parentSrc); L < kerningOffset+2 {
 				return fmt.Errorf("EOF: expected length: %d, got %d", kerningOffset+2, L)
 			}
-			kd.kernings[i] = int16(binary.BigEndian.Uint16(parentSrc[kerningOffset:]))
+			kd.Kernings[i] = int16(binary.BigEndian.Uint16(parentSrc[kerningOffset:]))
 		}
 	} else {
 		// a kerning value greater than an int16 should not happen
 		for i, v := range tmp {
-			kd.kernings[i] = int16(v)
+			kd.Kernings[i] = int16(v)
 		}
 	}
 	return nil

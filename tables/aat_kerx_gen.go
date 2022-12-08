@@ -232,7 +232,7 @@ func ParseAATStateTableExt(src []byte, valuesCount int, entryDataSize int) (AATS
 		return item, 0, fmt.Errorf("reading AATStateTableExt: "+"EOF: expected length: 16, got %d", L)
 	}
 	_ = src[15] // early bound checking
-	item.stateSize = binary.BigEndian.Uint32(src[0:])
+	item.StateSize = binary.BigEndian.Uint32(src[0:])
 	offsetClass := int(binary.BigEndian.Uint32(src[4:]))
 	item.stateArray = Offset32(binary.BigEndian.Uint32(src[8:]))
 	item.entryTable = Offset32(binary.BigEndian.Uint32(src[12:]))
@@ -432,7 +432,7 @@ func ParseKerxData2(src []byte, parentSrc []byte, valuesCount int) (KerxData2, i
 	item.rowWidth = binary.BigEndian.Uint32(src[0:])
 	offsetLeft := int(binary.BigEndian.Uint32(src[4:]))
 	offsetRight := int(binary.BigEndian.Uint32(src[8:]))
-	item.array = Offset32(binary.BigEndian.Uint32(src[12:]))
+	item.KerningStart = Offset32(binary.BigEndian.Uint32(src[12:]))
 	n += 16
 
 	{
@@ -473,7 +473,7 @@ func ParseKerxData2(src []byte, parentSrc []byte, valuesCount int) (KerxData2, i
 	}
 	{
 
-		item.kerningData = src[0:]
+		item.KerningData = src[0:]
 	}
 	return item, n, nil
 }

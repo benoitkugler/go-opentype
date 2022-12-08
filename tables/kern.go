@@ -94,34 +94,6 @@ func ParseKern(src []byte) (Kern, int, error) {
 	}, 0, nil
 }
 
-// kernx coverage flags
-const (
-	kerxBackwards   = 1 << (12 - 8)
-	kerxVariation   = 1 << (13 - 8)
-	kerxCrossStream = 1 << (14 - 8)
-	kerxVertical    = 1 << (15 - 8)
-)
-
-// IsHorizontal returns true if the subtable has horizontal kerning values.
-func (k AATKernSubtableHeader) IsHorizontal() bool {
-	return k.coverage&kerxVertical == 0
-}
-
-// IsBackwards returns true if state-table based should process the glyphs backwards.
-func (k AATKernSubtableHeader) IsBackwards() bool {
-	return k.coverage&kerxBackwards != 0
-}
-
-// IsCrossStream returns true if the subtable has cross-stream kerning values.
-func (k AATKernSubtableHeader) IsCrossStream() bool {
-	return k.coverage&kerxCrossStream != 0
-}
-
-// IsVariation returns true if the subtable has variation kerning values.
-func (k AATKernSubtableHeader) IsVariation() bool {
-	return k.coverage&kerxVariation != 0
-}
-
 func (k AATKernSubtableHeader) Data() KernData { return k.data }
 
 // OT kern flags
@@ -129,21 +101,5 @@ const (
 	kernHorizontal  = 0x01
 	kernCrossStream = 0x04
 )
-
-// IsHorizontal returns true if the subtable has horizontal kerning values.
-func (k OTKernSubtableHeader) IsHorizontal() bool {
-	return k.coverage&kernHorizontal == 1
-}
-
-// IsBackwards returns true if state-table based should process the glyphs backwards.
-func (k OTKernSubtableHeader) IsBackwards() bool { return false }
-
-// IsCrossStream returns true if the subtable has cross-stream kerning values.
-func (k OTKernSubtableHeader) IsCrossStream() bool {
-	return k.coverage&kernCrossStream != 0
-}
-
-// IsVariation returns true if the subtable has variation kerning values.
-func (k OTKernSubtableHeader) IsVariation() bool { return false }
 
 func (k OTKernSubtableHeader) Data() KernData { return k.data }

@@ -15,9 +15,9 @@ func ParseAATKernSubtableHeader(src []byte) (AATKernSubtableHeader, int, error) 
 	}
 	_ = src[7] // early bound checking
 	item.length = binary.BigEndian.Uint32(src[0:])
-	item.coverage = src[4]
+	item.Coverage = src[4]
 	item.version = kernSTVersion(src[5])
-	item.tupleCount = binary.BigEndian.Uint16(src[6:])
+	item.TupleCount = binary.BigEndian.Uint16(src[6:])
 	n += 8
 
 	{
@@ -58,7 +58,7 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 		return item, 0, fmt.Errorf("reading AATStateTable: "+"EOF: expected length: 8, got %d", L)
 	}
 	_ = src[7] // early bound checking
-	item.stateSize = binary.BigEndian.Uint16(src[0:])
+	item.StateSize = binary.BigEndian.Uint16(src[0:])
 	offsetClassTable := int(binary.BigEndian.Uint16(src[2:]))
 	item.stateArray = Offset16(binary.BigEndian.Uint16(src[4:]))
 	item.entryTable = Offset16(binary.BigEndian.Uint16(src[6:]))
@@ -72,7 +72,7 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 			}
 
 			var err error
-			item.classTable, _, err = parseClassTable(src[offsetClassTable:])
+			item.ClassTable, _, err = parseClassTable(src[offsetClassTable:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AATStateTable: %s", err)
 			}
@@ -166,7 +166,7 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 	item.rowWidth = binary.BigEndian.Uint16(src[0:])
 	offsetLeft := int(binary.BigEndian.Uint16(src[2:]))
 	offsetRight := int(binary.BigEndian.Uint16(src[4:]))
-	item.array = Offset16(binary.BigEndian.Uint16(src[6:]))
+	item.KerningStart = Offset16(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
 	{
@@ -177,7 +177,7 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 			}
 
 			var err error
-			item.left, _, err = ParseAATLoopkup8Data(parentSrc[offsetLeft:])
+			item.Left, _, err = ParseAATLoopkup8Data(parentSrc[offsetLeft:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading KernData2: %s", err)
 			}
@@ -192,7 +192,7 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 			}
 
 			var err error
-			item.right, _, err = ParseAATLoopkup8Data(parentSrc[offsetRight:])
+			item.Right, _, err = ParseAATLoopkup8Data(parentSrc[offsetRight:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading KernData2: %s", err)
 			}
@@ -219,7 +219,7 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 	item.glyphCount = binary.BigEndian.Uint16(src[0:])
 	item.kernValueCount = src[2]
 	item.leftClassCount = src[3]
-	item.rightClassCount = src[4]
+	item.RightClassCount = src[4]
 	item.flags = src[5]
 	n += 6
 
@@ -230,9 +230,9 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 			return item, 0, fmt.Errorf("reading KernData3: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
-		item.kernings = make([]int16, arrayLength) // allocation guarded by the previous check
-		for i := range item.kernings {
-			item.kernings[i] = int16(binary.BigEndian.Uint16(src[6+i*2:]))
+		item.Kernings = make([]int16, arrayLength) // allocation guarded by the previous check
+		for i := range item.Kernings {
+			item.Kernings[i] = int16(binary.BigEndian.Uint16(src[6+i*2:]))
 		}
 		n += arrayLength * 2
 	}
@@ -243,7 +243,7 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 		if len(src) < L {
 			return item, 0, fmt.Errorf("reading KernData3: "+"EOF: expected length: %d, got %d", L, len(src))
 		}
-		item.leftClass = src[n:L]
+		item.LeftClass = src[n:L]
 		n = L
 	}
 	{
@@ -253,7 +253,7 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 		if len(src) < L {
 			return item, 0, fmt.Errorf("reading KernData3: "+"EOF: expected length: %d, got %d", L, len(src))
 		}
-		item.rightClass = src[n:L]
+		item.RightClass = src[n:L]
 		n = L
 	}
 	{
@@ -263,7 +263,7 @@ func ParseKernData3(src []byte) (KernData3, int, error) {
 		if len(src) < L {
 			return item, 0, fmt.Errorf("reading KernData3: "+"EOF: expected length: %d, got %d", L, len(src))
 		}
-		item.kernIndex = src[n:L]
+		item.KernIndex = src[n:L]
 		n = L
 	}
 	var err error
@@ -285,7 +285,7 @@ func ParseOTKernSubtableHeader(src []byte) (OTKernSubtableHeader, int, error) {
 	item.version = binary.BigEndian.Uint16(src[0:])
 	item.length = binary.BigEndian.Uint16(src[2:])
 	item.format = kernSTVersion(src[4])
-	item.coverage = src[5]
+	item.Coverage = src[5]
 	n += 6
 
 	{
@@ -319,14 +319,14 @@ func ParseOTKernSubtableHeader(src []byte) (OTKernSubtableHeader, int, error) {
 	return item, n, nil
 }
 
-func parseClassTable(src []byte) (classTable, int, error) {
-	var item classTable
+func parseClassTable(src []byte) (ClassTable, int, error) {
+	var item ClassTable
 	n := 0
 	if L := len(src); L < 4 {
 		return item, 0, fmt.Errorf("reading classTable: "+"EOF: expected length: 4, got %d", L)
 	}
 	_ = src[3] // early bound checking
-	item.startGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.StartGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
 	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
@@ -336,7 +336,7 @@ func parseClassTable(src []byte) (classTable, int, error) {
 		if len(src) < L {
 			return item, 0, fmt.Errorf("reading classTable: "+"EOF: expected length: %d, got %d", L, len(src))
 		}
-		item.values = src[4:L]
+		item.Values = src[4:L]
 		n = L
 	}
 	return item, n, nil

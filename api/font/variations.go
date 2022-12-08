@@ -31,34 +31,10 @@ func (mv mvar) getVar(tag Tag, coords []float32) float32 {
 		} else if entry.ValueTag < tag {
 			i = h + 1
 		} else {
-			return getDelta(mv.store, entry.Index, coords)
+			return mv.store.GetDelta(entry.Index, coords)
 		}
 	}
 	return 0
-}
-
-// getDelta uses the variation [store] and the selected instance coordinates [coords]
-// to compute the value at [index].
-func getDelta(store tables.ItemVarStore, index tables.VariationStoreIndex, coords []float32) float32 {
-	if int(index.DeltaSetOuter) >= len(store.ItemVariationDatas) {
-		return 0
-	}
-	varData := store.ItemVariationDatas[index.DeltaSetOuter]
-	if int(index.DeltaSetInner) >= len(varData.DeltaSets) {
-		return 0
-	}
-	deltaSet := varData.DeltaSets[index.DeltaSetInner]
-	var delta float32
-	for i, regionIndex := range varData.RegionIndexes {
-		region := store.VariationRegionList.VariationRegions[regionIndex].RegionAxes
-		v := float32(1)
-		for axis, coord := range coords {
-			factor := region[axis].Evaluate(coord)
-			v *= factor
-		}
-		delta += float32(deltaSet[i]) * v
-	}
-	return delta
 }
 
 // ---------------------------------- gvar ----------------------------------
@@ -456,7 +432,7 @@ func inferDelta(targetVal, prevVal, nextVal, prevDelta, nextDelta float32) float
 
 func getAdvanceVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) float32 {
 	index := t.AdvanceWidthMapping.Index(glyph)
-	return getDelta(t.ItemVariationStore, index, coords)
+	return t.ItemVariationStore.GetDelta(index, coords)
 }
 
 func getSideBearingVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) float32 {
@@ -464,7 +440,7 @@ func getSideBearingVar(t *tables.HVAR, glyph tables.GlyphID, coords []float32) f
 		return 0
 	}
 	index := t.LsbMapping.Index(glyph)
-	return getDelta(t.ItemVariationStore, index, coords)
+	return t.ItemVariationStore.GetDelta(index, coords)
 }
 
 func sanitizeGDEF(table tables.GDEF, axisCount int) error {
@@ -511,7 +487,7 @@ func (face *Face) SetVariations(variations []Variation) {
 
 	designCoords := fv.getDesignCoordsDefault(variations)
 
-	face.Coords = face.Font.normalizeVariations(designCoords)
+	face.Coords = face.Font.NormalizeVariations(designCoords)
 }
 
 // getDesignCoordsDefault returns the design coordinates corresponding to the given pairs of axis/value.
@@ -565,12 +541,13 @@ func (fv fvar) normalizeCoordinates(coords []float32) []float32 {
 	return normalized
 }
 
-// normalizeVariations the given design-space coordinates. The minimum and maximum
+// NormalizeVariations normalize the given design-space coordinates. The minimum and maximum
 // values for the axis are mapped to the interval [-1,1], with the default
 // axis value mapped to 0.
 // Any additional scaling defined in the face's `avar` table is also
 // applied, as described at https://docs.microsoft.com/en-us/typography/opentype/spec/avar
-func (f *Font) normalizeVariations(coords []float32) []float32 {
+// This method panics if `coords` has not the correct length, that is the number of axis inf 'fvar'.
+func (f *Font) NormalizeVariations(coords []float32) []float32 {
 	// ported from freetype2
 
 	// Axis normalization is a two-stage process.  First we normalize

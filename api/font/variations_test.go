@@ -17,12 +17,12 @@ func TestVar(t *testing.T) {
 
 	/* Design coords as input */
 	designCoords := []float32{206.}
-	coords := font.normalizeVariations(designCoords)
+	coords := font.NormalizeVariations(designCoords)
 	tu.Assert(t, coords[0]*(1<<14) == float32(-16116.88))
 
 	// test for crash
 	for weight := float32(200); weight < 901; weight++ {
-		font.normalizeVariations([]float32{weight})
+		font.NormalizeVariations([]float32{weight})
 	}
 
 	face := Face{Font: font}
@@ -37,7 +37,7 @@ func TestVar(t *testing.T) {
 func TestGlyphExtentsVar(t *testing.T) {
 	font := loadFont(t, "common/SourceSans-VF-HVAR.ttf")
 
-	coords := font.normalizeVariations([]float32{500})
+	coords := font.NormalizeVariations([]float32{500})
 	face := Face{Font: font, Coords: coords}
 
 	ext2, _ := face.GlyphExtents(2)

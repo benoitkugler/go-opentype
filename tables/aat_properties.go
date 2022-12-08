@@ -1,7 +1,6 @@
 package tables
 
 import (
-	"encoding/binary"
 	"sort"
 )
 
@@ -178,122 +177,67 @@ func (lk AATLoopkupExt10) Class(g GlyphID) (uint32, bool) {
 	return lk.Values[g-lk.FirstGlyph], true
 }
 
-type aatLookupMixed interface {
+type AatLookupMixed interface {
 	// Returns 0 if not supported
-	classUint32(GlyphID) uint32
+	ClassUint32(GlyphID) uint32
 }
 
-func (lk AATLoopkup0) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup0) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkup2) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup2) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkup4) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup4) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkup6) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup6) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkup8) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup8) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkup10) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkup10) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return uint32(v)
 }
 
-func (lk AATLoopkupExt0) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt0) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
 
-func (lk AATLoopkupExt2) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt2) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
 
-func (lk AATLoopkupExt4) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt4) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
 
-func (lk AATLoopkupExt6) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt6) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
 
-func (lk AATLoopkupExt8) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt8) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
 }
 
-func (lk AATLoopkupExt10) classUint32(g GlyphID) uint32 {
+func (lk AATLoopkupExt10) ClassUint32(g GlyphID) uint32 {
 	v, _ := lk.Class(g)
 	return v
-}
-
-// kerning access
-
-func kernPair(records []Kernx0Record, left, right GlyphID) int16 {
-	key := uint32(left)<<16 | uint32(right)
-	low, high := 0, len(records)
-	for low < high {
-		mid := low + (high-low)/2 // avoid overflow when computing mid
-		p := records[mid].key()
-		if key < p {
-			high = mid
-		} else if key > p {
-			low = mid + 1
-		} else {
-			return records[mid].Value
-		}
-	}
-	return 0
-}
-
-func (kp Kernx0Record) key() uint32 { return uint32(kp.Left)<<16 | uint32(kp.Right) }
-
-func (kd KerxData0) KernPair(left, right GlyphID) int16 { return kernPair(kd.Pairs, left, right) }
-func (kd KernData0) KernPair(left, right GlyphID) int16 { return kernPair(kd.Pairs, left, right) }
-
-func (kd KernData2) KernPair(left, right GlyphID) int16 {
-	l, _ := kd.left.Class(left)
-	r, _ := kd.right.Class(right)
-	index := int(l) + int(r)
-	if len(kd.kerningData) < index+2 || index < int(kd.array) {
-		return 0
-	}
-	kernVal := binary.BigEndian.Uint16(kd.kerningData[index:])
-	return int16(kernVal)
-}
-
-func (kd KernData3) KernPair(left, right GlyphID) int16 {
-	if int(left) >= len(kd.leftClass) || int(right) >= len(kd.rightClass) { // should not happend
-		return 0
-	}
-
-	lc, rc := int(kd.leftClass[left]), int(kd.rightClass[right])
-	index := kd.kernIndex[lc*int(kd.rightClassCount)+rc] // sanitized during parsing
-	return kd.kernings[index]                            // sanitized during parsing
-}
-
-func (kd *KerxData6) KernPair(left, right GlyphID) int16 {
-	l := kd.row.classUint32(left)
-	r := kd.column.classUint32(right)
-	index := int(l) + int(r)
-	if len(kd.kernings) <= index {
-		return 0
-	}
-	return kd.kernings[index]
 }

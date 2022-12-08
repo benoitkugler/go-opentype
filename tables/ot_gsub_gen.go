@@ -39,26 +39,26 @@ func ParseAlternateSubs(src []byte) (AlternateSubs, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.substFormat = binary.BigEndian.Uint16(src[0:])
-	offsetCoverageOffset := int(binary.BigEndian.Uint16(src[2:]))
+	offsetCoverage := int(binary.BigEndian.Uint16(src[2:]))
 	arrayLengthAlternateSets := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
 	{
 
-		if offsetCoverageOffset != 0 { // ignore null offset
-			if L := len(src); L < offsetCoverageOffset {
-				return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", offsetCoverageOffset, L)
+		if offsetCoverage != 0 { // ignore null offset
+			if L := len(src); L < offsetCoverage {
+				return item, 0, fmt.Errorf("reading AlternateSubs: "+"EOF: expected length: %d, got %d", offsetCoverage, L)
 			}
 
 			var (
 				err  error
 				read int
 			)
-			item.CoverageOffset, read, err = ParseCoverage(src[offsetCoverageOffset:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AlternateSubs: %s", err)
 			}
-			offsetCoverageOffset += read
+			offsetCoverage += read
 		}
 	}
 	{
@@ -130,7 +130,7 @@ func ParseChainedContextualSubs1(src []byte) (ChainedContextualSubs1, int, error
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs1: %s", err)
 			}
@@ -192,7 +192,7 @@ func ParseChainedContextualSubs2(src []byte) (ChainedContextualSubs2, int, error
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualSubs2: %s", err)
 			}
@@ -472,7 +472,7 @@ func ParseContextualSubs1(src []byte) (ContextualSubs1, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs1: %s", err)
 			}
@@ -532,7 +532,7 @@ func ParseContextualSubs2(src []byte) (ContextualSubs2, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs2: %s", err)
 			}
@@ -605,8 +605,8 @@ func ParseContextualSubs3(src []byte) (ContextualSubs3, int, error) {
 			return item, 0, fmt.Errorf("reading ContextualSubs3: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
-		item.CoverageOffsets = make([]Coverage, arrayLength) // allocation guarded by the previous check
-		for i := range item.CoverageOffsets {
+		item.Coverages = make([]Coverage, arrayLength) // allocation guarded by the previous check
+		for i := range item.Coverages {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
 			if offset == 0 {
@@ -618,7 +618,7 @@ func ParseContextualSubs3(src []byte) (ContextualSubs3, int, error) {
 			}
 
 			var err error
-			item.CoverageOffsets[i], _, err = ParseCoverage(src[offset:])
+			item.Coverages[i], _, err = ParseCoverage(src[offset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualSubs3: %s", err)
 			}
@@ -777,7 +777,7 @@ func ParseLigatureSubs(src []byte) (LigatureSubs, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading LigatureSubs: %s", err)
 			}
@@ -836,7 +836,7 @@ func ParseMultipleSubs(src []byte) (MultipleSubs, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MultipleSubs: %s", err)
 			}
@@ -895,7 +895,7 @@ func ParseReverseChainSingleSubs(src []byte) (ReverseChainSingleSubs, int, error
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ReverseChainSingleSubs: %s", err)
 			}
@@ -1071,7 +1071,7 @@ func ParseSingleSubstData1(src []byte) (SingleSubstData1, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading SingleSubstData1: %s", err)
 			}
@@ -1104,7 +1104,7 @@ func ParseSingleSubstData2(src []byte) (SingleSubstData2, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading SingleSubstData2: %s", err)
 			}

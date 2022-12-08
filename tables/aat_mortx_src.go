@@ -42,7 +42,7 @@ type MorxChainSubtable struct {
 
 	SubFeatureFlags uint32 // The 32-bit mask identifying which subtable this is (the subtable being executed if the AND of this value and the processed defaultFlags is nonzero)
 
-	Content MorxSubtable `unionField:"version"`
+	Data MorxSubtable `unionField:"version"`
 }
 
 // check and return the subtable length
@@ -120,7 +120,21 @@ type MorxSubtableLigature struct {
 	Ligatures        []GlyphID `isOpaque:""`
 }
 
+// MorxLigatureSubtable flags
 const (
+	// Push this glyph onto the component stack for
+	// eventual processing.
+	MLSetComponent = 0x8000
+	// Leave the glyph pointer at this glyph for the
+	// next iteration.
+	MLDontAdvance = 0x4000
+	// Use the ligActionIndex to process a ligature group.
+	MLPerformAction = 0x2000
+	// Byte offset from beginning of subtable to the
+	// ligature action list. This value must be a
+	// multiple of 4.
+	MLOffset = 0x3FFF
+
 	// This is the last action in the list. This also
 	// implies storage.
 	MLActionLast = 1 << 31

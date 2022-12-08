@@ -305,7 +305,7 @@ func ParseChainedContextualPos1(src []byte) (ChainedContextualPos1, int, error) 
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualPos1: %s", err)
 			}
@@ -367,7 +367,7 @@ func ParseChainedContextualPos2(src []byte) (ChainedContextualPos2, int, error) 
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ChainedContextualPos2: %s", err)
 			}
@@ -842,7 +842,7 @@ func ParseContextualPos1(src []byte) (ContextualPos1, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualPos1: %s", err)
 			}
@@ -902,7 +902,7 @@ func ParseContextualPos2(src []byte) (ContextualPos2, int, error) {
 				err  error
 				read int
 			)
-			item.Coverage, read, err = ParseCoverage(src[offsetCoverage:])
+			item.coverage, read, err = ParseCoverage(src[offsetCoverage:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualPos2: %s", err)
 			}
@@ -975,8 +975,8 @@ func ParseContextualPos3(src []byte) (ContextualPos3, int, error) {
 			return item, 0, fmt.Errorf("reading ContextualPos3: "+"EOF: expected length: %d, got %d", 6+arrayLength*2, L)
 		}
 
-		item.CoverageOffsets = make([]Coverage, arrayLength) // allocation guarded by the previous check
-		for i := range item.CoverageOffsets {
+		item.Coverages = make([]Coverage, arrayLength) // allocation guarded by the previous check
+		for i := range item.Coverages {
 			offset := int(binary.BigEndian.Uint16(src[6+i*2:]))
 			// ignore null offsets
 			if offset == 0 {
@@ -988,7 +988,7 @@ func ParseContextualPos3(src []byte) (ContextualPos3, int, error) {
 			}
 
 			var err error
-			item.CoverageOffsets[i], _, err = ParseCoverage(src[offset:])
+			item.Coverages[i], _, err = ParseCoverage(src[offset:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ContextualPos3: %s", err)
 			}

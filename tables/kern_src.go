@@ -7,15 +7,6 @@ import (
 )
 
 type KernSubtable interface {
-	// IsHorizontal returns true if the subtable has horizontal kerning values.
-	IsHorizontal() bool
-	// IsBackwards returns true if state-table based should process the glyphs backwards.
-	IsBackwards() bool
-	// IsCrossStream returns true if the subtable has cross-stream kerning values.
-	IsCrossStream() bool
-	// IsVariation returns true if the subtable has variation kerning values.
-	IsVariation() bool
-
 	// Data returns the actual kerning data
 	Data() KernData
 }
@@ -24,7 +15,7 @@ type OTKernSubtableHeader struct {
 	version  uint16        // Kern subtable version number
 	length   uint16        // Length of the subtable, in bytes (including this header).
 	format   kernSTVersion // What type of information is contained in this table.
-	coverage byte          // What type of information is contained in this table.
+	Coverage byte          // What type of information is contained in this table.
 	data     KernData      `unionField:"format"`
 }
 
@@ -38,9 +29,9 @@ func (st *OTKernSubtableHeader) parseEnd(src []byte) (int, error) {
 
 type AATKernSubtableHeader struct {
 	length     uint32 // The length of this subtable in bytes, including this header.
-	coverage   byte   // Circumstances under which this table is used.
+	Coverage   byte   // Circumstances under which this table is used.
 	version    kernSTVersion
-	tupleCount uint16   // The tuple count. This value is only used with variation fonts and should be 0 for all other fonts. The subtable's tupleCount will be ignored if the 'kerx' table version is less than 4.
+	TupleCount uint16   // The tuple count. This value is only used with variation fonts and should be 0 for all other fonts. The subtable's tupleCount will be ignored if the 'kerx' table version is less than 4.
 	data       KernData `unionField:"version"`
 }
 
@@ -103,15 +94,15 @@ func (kd *KernData1) parseValues(src []byte) error {
 }
 
 type KernData2 struct {
-	rowWidth    uint16          // The width, in bytes, of a row in the subtable.
-	left        AATLoopkup8Data `offsetSize:"Offset16" offsetRelativeTo:"Parent"`
-	right       AATLoopkup8Data `offsetSize:"Offset16" offsetRelativeTo:"Parent"`
-	array       Offset16        // Offset from beginning of this subtable to the start of the kerning array.
-	kerningData []byte          `isOpaque:"" offsetRelativeTo:"Parent"` // indexed by Left + Right
+	rowWidth     uint16          // The width, in bytes, of a row in the subtable.
+	Left         AATLoopkup8Data `offsetSize:"Offset16" offsetRelativeTo:"Parent"`
+	Right        AATLoopkup8Data `offsetSize:"Offset16" offsetRelativeTo:"Parent"`
+	KerningStart Offset16        // Offset from beginning of this subtable to the start of the kerning array.
+	KerningData  []byte          `isOpaque:"" offsetRelativeTo:"Parent"` // indexed by Left + Right
 }
 
 func (kd *KernData2) parseKerningData(_ []byte, parentSrc []byte) error {
-	kd.kerningData = parentSrc
+	kd.KerningData = parentSrc
 	return nil
 }
 
@@ -119,29 +110,29 @@ type KernData3 struct {
 	glyphCount      uint16  // The number of glyphs in this font.
 	kernValueCount  uint8   // The number of kerning values.
 	leftClassCount  uint8   // The number of left-hand classes.
-	rightClassCount uint8   // The number of right-hand classes.
+	RightClassCount uint8   // The number of right-hand classes.
 	flags           uint8   // Set to zero (reserved for future use).
-	kernings        []int16 `arrayCount:"ComputedField-kernValueCount"`
-	leftClass       []uint8 `arrayCount:"ComputedField-glyphCount"`
-	rightClass      []uint8 `arrayCount:"ComputedField-glyphCount"`
-	kernIndex       []uint8 `arrayCount:"ComputedField-nKernIndex()"`
+	Kernings        []int16 `arrayCount:"ComputedField-kernValueCount"`
+	LeftClass       []uint8 `arrayCount:"ComputedField-glyphCount"`
+	RightClass      []uint8 `arrayCount:"ComputedField-glyphCount"`
+	KernIndex       []uint8 `arrayCount:"ComputedField-nKernIndex()"`
 }
 
-func (kd *KernData3) nKernIndex() int { return int(kd.leftClassCount) * int(kd.rightClassCount) }
+func (kd *KernData3) nKernIndex() int { return int(kd.leftClassCount) * int(kd.RightClassCount) }
 
 // sanitize index and class values
 func (kd *KernData3) parseEnd(_ []byte) (int, error) {
-	for _, index := range kd.kernIndex {
+	for _, index := range kd.KernIndex {
 		if index >= kd.kernValueCount {
 			return 0, errors.New("invalid kern subtable format 3 index value")
 		}
 	}
 
-	for i := range kd.leftClass {
-		if kd.leftClass[i] >= kd.leftClassCount {
+	for i := range kd.LeftClass {
+		if kd.LeftClass[i] >= kd.leftClassCount {
 			return 0, errors.New("invalid kern subtable format 3 left class value")
 		}
-		if kd.rightClass[i] >= kd.rightClassCount {
+		if kd.RightClass[i] >= kd.RightClassCount {
 			return 0, errors.New("invalid kern subtable format 3 right class value")
 		}
 	}

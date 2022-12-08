@@ -114,7 +114,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				Coverage:     Coverage1{1, []GlyphID{6, 7}},
+				coverage:     Coverage1{1, []GlyphID{6, 7}},
 				DeltaGlyphID: 3,
 			},
 		},
@@ -124,7 +124,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				Coverage:     Coverage1{1, []GlyphID{6, 7}},
+				coverage:     Coverage1{1, []GlyphID{6, 7}},
 				DeltaGlyphID: 3,
 			},
 		},
@@ -134,7 +134,7 @@ func TestGSUBIndic(t *testing.T) {
 		ChainedContextualSubs{
 			Data: ChainedContextualSubs2{
 				format:   2,
-				Coverage: Coverage1{1, []GlyphID{5}},
+				coverage: Coverage1{1, []GlyphID{5}},
 				BacktrackClassDef: ClassDef1{
 					format:          1,
 					StartGlyphID:    2,
@@ -173,7 +173,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				Coverage:     Coverage1{1, []GlyphID{5}},
+				coverage:     Coverage1{1, []GlyphID{5}},
 				DeltaGlyphID: 6,
 			},
 		},
@@ -208,7 +208,7 @@ func TestGSUBLigature(t *testing.T) {
 
 	expected := LigatureSubs{
 		substFormat: 1,
-		Coverage:    Coverage1{1, []GlyphID{3, 4, 7, 8, 9}},
+		coverage:    Coverage1{1, []GlyphID{3, 4, 7, 8, 9}},
 		LigatureSets: []LigatureSet{
 			{ // glyph="3"
 				[]Ligature{

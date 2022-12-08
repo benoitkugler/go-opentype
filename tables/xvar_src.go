@@ -99,9 +99,9 @@ type RegionAxisCoordinates struct {
 	EndCoord   Float214 // The region end coordinate value for the current axis.
 }
 
-// Evaluate returns the factor corresponding to the given [coord],
+// evaluate returns the factor corresponding to the given [coord],
 // interpolating between start and end.
-func (reg RegionAxisCoordinates) Evaluate(coord float32) float32 {
+func (reg RegionAxisCoordinates) evaluate(coord float32) float32 {
 	start, peak, end := reg.StartCoord, reg.PeakCoord, reg.EndCoord
 	if peak == 0 || coord == peak {
 		return 1.

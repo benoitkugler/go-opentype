@@ -89,7 +89,7 @@ type SequenceLookupRecord struct {
 
 type SequenceContextFormat1 struct {
 	format     uint16            `unionTag:"1"`
-	Coverage   Coverage          `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of SequenceContextFormat1 table
+	coverage   Coverage          `offsetSize:"Offset16"`                             // Offset to Coverage table, from beginning of SequenceContextFormat1 table
 	SeqRuleSet []SequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[seqRuleSetCount]	Array of offsets to SequenceRuleSet tables, from beginning of SequenceContextFormat1 table (offsets may be NULL)
 }
 
@@ -129,7 +129,7 @@ func (sr *SequenceRule) sanitize(lookupCount uint16) error {
 
 type SequenceContextFormat2 struct {
 	format          uint16                 `unionTag:"2"`
-	Coverage        Coverage               `offsetSize:"Offset16"`                            //	Offset to Coverage table, from beginning of SequenceContextFormat2 table
+	coverage        Coverage               `offsetSize:"Offset16"`                            //	Offset to Coverage table, from beginning of SequenceContextFormat2 table
 	ClassDef        ClassDef               `offsetSize:"Offset16"`                            //	Offset to ClassDef table, from beginning of SequenceContextFormat2 table
 	ClassSeqRuleSet []ClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[classSeqRuleSetCount]	Array of offsets to ClassSequenceRuleSet tables, from beginning of SequenceContextFormat2 table (may be NULL)
 }
@@ -149,13 +149,13 @@ type SequenceContextFormat3 struct {
 	format           uint16                 `unionTag:"3"`
 	glyphCount       uint16                 // Number of glyphs in the input sequence
 	seqLookupCount   uint16                 // Number of SequenceLookupRecords
-	CoverageOffsets  []Coverage             `arrayCount:"ComputedField-glyphCount" offsetsArray:"Offset16"` //[glyphCount]	Array of offsets to Coverage tables, from beginning of SequenceContextFormat3 subtable
+	Coverages        []Coverage             `arrayCount:"ComputedField-glyphCount" offsetsArray:"Offset16"` //[glyphCount]	Array of offsets to Coverage tables, from beginning of SequenceContextFormat3 subtable
 	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"`                     //[seqLookupCount]	Array of SequenceLookupRecords
 }
 
 type ChainedSequenceContextFormat1 struct {
 	format            uint16                   `unionTag:"1"`
-	Coverage          Coverage                 `offsetSize:"Offset16"`                             //	Offset to Coverage table, from beginning of ChainSequenceContextFormat1 table
+	coverage          Coverage                 `offsetSize:"Offset16"`                             //	Offset to Coverage table, from beginning of ChainSequenceContextFormat1 table
 	ChainedSeqRuleSet []ChainedSequenceRuleSet `arrayCount:"FirstUint16"  offsetsArray:"Offset16"` //[chainedSeqRuleSetCount]	Array of offsets to ChainedSeqRuleSet tables, from beginning of ChainedSequenceContextFormat1 table (may be NULL)
 }
 
@@ -173,7 +173,7 @@ type ChainedSequenceRule struct {
 
 type ChainedSequenceContextFormat2 struct {
 	format                 uint16                        `unionTag:"2"`
-	Coverage               Coverage                      `offsetSize:"Offset16"`                            // Offset to Coverage table, from beginning of ChainedSequenceContextFormat2 table
+	coverage               Coverage                      `offsetSize:"Offset16"`                            // Offset to Coverage table, from beginning of ChainedSequenceContextFormat2 table
 	BacktrackClassDef      ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing backtrack sequence context, from beginning of ChainedSequenceContextFormat2 table
 	InputClassDef          ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing input sequence context, from beginning of ChainedSequenceContextFormat2 table
 	LookaheadClassDef      ClassDef                      `offsetSize:"Offset16"`                            // Offset to ClassDef table containing lookahead sequence context, from beginning of ChainedSequenceContextFormat2 table
@@ -216,6 +216,10 @@ type GSUB Layout
 
 type GSUBLookup interface {
 	isGSUBLookup()
+
+	//  Coverage returns the coverage of the lookup subtable.
+	// For ContextualSubs3 and ChainedContextualSubs3, its the coverage of the first input.
+	Coverage() Coverage
 }
 
 func (SingleSubs) isGSUBLookup()             {}
@@ -228,14 +232,14 @@ func (ExtensionSubs) isGSUBLookup()          {}
 func (ReverseChainSingleSubs) isGSUBLookup() {}
 
 func (ms MultipleSubs) Sanitize() error {
-	if exp, got := ms.Coverage.Len(), len(ms.Sequences); exp != got {
+	if exp, got := ms.coverage.Len(), len(ms.Sequences); exp != got {
 		return fmt.Errorf("GSUB: invalid MultipleSubs sequences count (%d != %d)", exp, got)
 	}
 	return nil
 }
 
 func (ls LigatureSubs) Sanitize() error {
-	if exp, got := ls.Coverage.Len(), len(ls.LigatureSets); exp != got {
+	if exp, got := ls.coverage.Len(), len(ls.LigatureSets); exp != got {
 		return fmt.Errorf("GSUB: invalid LigatureSubs sets count (%d != %d)", exp, got)
 	}
 	return nil
@@ -249,7 +253,7 @@ func (cs ContextualSubs) Sanitize(lookupCount uint16) error {
 }
 
 func (rs ReverseChainSingleSubs) Sanitize() error {
-	if exp, got := rs.Coverage.Len(), len(rs.SubstituteGlyphIDs); exp != got {
+	if exp, got := rs.coverage.Len(), len(rs.SubstituteGlyphIDs); exp != got {
 		return fmt.Errorf("GSUB: invalid ReverseChainSingleSubs glyphs count (%d != %d)", exp, got)
 	}
 	return nil

@@ -217,10 +217,10 @@ func TestMorxLigature(t *testing.T) {
 	const vertical uint8 = 0x80
 	tu.Assert(t, subtable.Coverage == vertical)
 	tu.Assert(t, subtable.SubFeatureFlags == 1)
-	lig, ok := subtable.Content.(MorxSubtableLigature)
+	lig, ok := subtable.Data.(MorxSubtableLigature)
 	tu.Assert(t, ok)
 	machine := lig.AATStateTableExt
-	tu.Assert(t, machine.stateSize == 7)
+	tu.Assert(t, machine.StateSize == 7)
 
 	class, ok := machine.Class.(AATLoopkup2)
 	tu.Assert(t, ok)
@@ -328,10 +328,10 @@ func TestMorxInsertion(t *testing.T) {
 	const vertical uint8 = 0
 	tu.Assert(t, subtable.Coverage == vertical)
 	tu.Assert(t, subtable.SubFeatureFlags == 1)
-	insert, ok := subtable.Content.(MorxSubtableInsertion)
+	insert, ok := subtable.Data.(MorxSubtableInsertion)
 	tu.Assert(t, ok)
 	machine := insert.AATStateTableExt
-	tu.Assert(t, machine.stateSize == 6)
+	tu.Assert(t, machine.StateSize == 6)
 
 	class, ok := machine.Class.(AATLoopkup2)
 	tu.Assert(t, ok)
@@ -388,52 +388,10 @@ func TestParseKerx(t *testing.T) {
 			case KerxData2:
 				tu.Assert(t, data.Left != nil)
 				tu.Assert(t, data.Right != nil)
-				tu.Assert(t, int(data.array) <= len(data.kerningData))
+				tu.Assert(t, int(data.KerningStart) <= len(data.KerningData))
 			case KerxData4:
 				tu.Assert(t, data.Anchors != nil)
 			}
 		}
-	}
-}
-
-func TestKerx6(t *testing.T) {
-	table, err := td.Files.ReadFile("toys/tables/kerx6Exp-VF.bin")
-	tu.AssertNoErr(t, err)
-
-	kerx, _, err := ParseKerx(table, 0xFF)
-	tu.AssertNoErr(t, err)
-	tu.Assert(t, len(kerx.Tables) == 1)
-
-	k, ok := kerx.Tables[0].Data.(KerxData6)
-	tu.Assert(t, ok)
-
-	expecteds := []struct { // value extracted from harfbuzz run
-		left, right GlyphID
-		kerning     int16
-	}{
-		{283, 659, -270},
-		{659, 3, 0},
-		{3, 4, 0},
-		{4, 333, -130},
-		{333, 3, 0},
-		{3, 283, 0},
-		{283, 815, -230},
-		{815, 3, 0},
-		{3, 333, 0},
-		{333, 573, -150},
-		{573, 3, 0},
-		{3, 815, 0},
-		{815, 283, -170},
-		{283, 3, 0},
-		{3, 659, 0},
-		{659, 283, -270},
-		{283, 3, 0},
-		{3, 283, 0},
-		{283, 650, -270},
-	}
-
-	for _, exp := range expecteds {
-		got := k.KernPair(exp.left, exp.right)
-		tu.Assert(t, got == exp.kerning)
 	}
 }

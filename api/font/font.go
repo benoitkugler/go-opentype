@@ -55,8 +55,8 @@ type Font struct {
 	Ankr tables.Ankr
 	Feat tables.Feat
 	Morx tables.Morx
-	Kern tables.Kern
-	Kerx tables.Kerx
+	Kern Kernx
+	Kerx Kernx
 	GSUB GSUB // An absent table has a nil slice of lookups
 	GPOS GPOS // An absent table has a nil slice of lookups
 
@@ -336,18 +336,20 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 	}
 	raw, err = ld.RawTable(loader.MustNewTag("kerx"))
 	if err == nil { // error only if the table is present and invalid
-		out.Kerx, _, err = tables.ParseKerx(raw, int(maxp.NumGlyphs))
+		kerx, _, err := tables.ParseKerx(raw, int(maxp.NumGlyphs))
 		if err != nil {
 			return nil, err
 		}
+		out.Kerx = newKernxFromKerx(kerx)
 	}
 
 	raw, err = ld.RawTable(loader.MustNewTag("kern"))
 	if err == nil { // error only if the table is present and invalid
-		out.Kern, _, err = tables.ParseKern(raw)
+		kern, _, err := tables.ParseKern(raw)
 		if err != nil {
 			return nil, err
 		}
+		out.Kern = newKernxFromKern(kern)
 	}
 
 	raw, err = ld.RawTable(loader.MustNewTag("ankr"))

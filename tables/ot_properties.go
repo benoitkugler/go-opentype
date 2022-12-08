@@ -203,6 +203,56 @@ func (la *Layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
 	return 0, false
 }
 
+// --------------------------------------- gsub ---------------------------------------
+
+func (d SingleSubstData1) Coverage() Coverage { return d.coverage }
+func (d SingleSubstData2) Coverage() Coverage { return d.coverage }
+
+func (cs ContextualSubs1) Coverage() Coverage { return cs.coverage }
+func (cs ContextualSubs2) Coverage() Coverage { return cs.coverage }
+func (cs ContextualSubs3) Coverage() Coverage {
+	if len(cs.Coverages) == 0 { // return an empty, valid Coverage
+		return Coverage1{}
+	}
+	return cs.Coverages[0]
+}
+
+func (cc ChainedContextualSubs1) Coverage() Coverage { return cc.coverage }
+func (cc ChainedContextualSubs2) Coverage() Coverage { return cc.coverage }
+func (cc ChainedContextualSubs3) Coverage() Coverage {
+	if len(cc.InputCoverages) == 0 { // return an empty, valid Coverage
+		return Coverage1{}
+	}
+	return cc.InputCoverages[0]
+}
+
+func (lk SingleSubs) Coverage() Coverage             { return lk.Data.Coverage() }
+func (lk MultipleSubs) Coverage() Coverage           { return lk.coverage }
+func (lk AlternateSubs) Coverage() Coverage          { return lk.coverage }
+func (lk LigatureSubs) Coverage() Coverage           { return lk.coverage }
+func (lk ContextualSubs) Coverage() Coverage         { return lk.Data.Coverage() }
+func (lk ChainedContextualSubs) Coverage() Coverage  { return lk.Data.Coverage() }
+func (lk ExtensionSubs) Coverage() Coverage          { return nil } // not used anyway
+func (lk ReverseChainSingleSubs) Coverage() Coverage { return lk.coverage }
+
+// --------------------------------------- gpos ---------------------------------------
+
+// GetDelta returns the hint for the given `ppem`, scaled by `scale`.
+// It returns 0 for out of range `ppem` values.
+func (dev DeviceHinting) GetDelta(ppem uint16, scale int32) int32 {
+	if ppem == 0 {
+		return 0
+	}
+
+	if ppem < dev.StartSize || ppem > dev.EndSize {
+		return 0
+	}
+
+	pixels := dev.Values[ppem-dev.StartSize]
+
+	return int32(pixels) * (scale / int32(ppem))
+}
+
 // -------------------------------------- gdef --------------------------------------
 
 // GlyphProps is a 16-bit integer where the lower 8-bit have bits representing
@@ -232,4 +282,30 @@ func (gd *GDEF) GlyphProps(glyph GlyphID) GlyphProps {
 	default:
 		return 0
 	}
+}
+
+// -------------------------------------- var --------------------------------------
+
+// GetDelta uses the variation [store] and the selected instance coordinates [coords]
+// to compute the value at [index].
+func (store ItemVarStore) GetDelta(index VariationStoreIndex, coords []float32) float32 {
+	if int(index.DeltaSetOuter) >= len(store.ItemVariationDatas) {
+		return 0
+	}
+	varData := store.ItemVariationDatas[index.DeltaSetOuter]
+	if int(index.DeltaSetInner) >= len(varData.DeltaSets) {
+		return 0
+	}
+	deltaSet := varData.DeltaSets[index.DeltaSetInner]
+	var delta float32
+	for i, regionIndex := range varData.RegionIndexes {
+		region := store.VariationRegionList.VariationRegions[regionIndex].RegionAxes
+		v := float32(1)
+		for axis, coord := range coords {
+			factor := region[axis].evaluate(coord)
+			v *= factor
+		}
+		delta += float32(deltaSet[i]) * v
+	}
+	return delta
 }

@@ -10,8 +10,8 @@ import (
 // State table header, without the actual data
 // See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6Tables.html
 type AATStateTable struct {
-	stateSize  uint16          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
-	classTable classTable      `offsetSize:"Offset16"` // Byte offset from the beginning of the state table to the class subtable.
+	StateSize  uint16          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
+	ClassTable ClassTable      `offsetSize:"Offset16"` // Byte offset from the beginning of the state table to the class subtable.
 	stateArray Offset16        // Byte offset from the beginning of the state table to the state array.
 	entryTable Offset16        // Byte offset from the beginning of the state table to the entry subtable.
 	States     [][]uint8       `isOpaque:""`
@@ -27,7 +27,7 @@ func (state *AATStateTable) parseStates(src []byte) error {
 	}
 	states := src[state.stateArray:state.entryTable]
 
-	nC := int(state.stateSize)
+	nC := int(state.StateSize)
 	// Ensure pre-defined classes fit.
 	if nC < 4 {
 		return fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
@@ -61,7 +61,7 @@ func (state *AATStateTable) parseEntries(src []byte) (int, error) {
 
 	// newState is an offset: convert back to index
 	for i, entry := range state.Entries {
-		state.Entries[i].NewState = uint16((int(entry.NewState) - int(state.entryTable)) / int(state.stateSize))
+		state.Entries[i].NewState = uint16((int(entry.NewState) - int(state.entryTable)) / int(state.StateSize))
 	}
 
 	// the own header data stop at the entryTable offset
@@ -84,22 +84,22 @@ func parseAATStateEntries(src []byte, count, entryDataSize int) ([]AATStateEntry
 	return out, nil
 }
 
-// classTable is the same as AATLookup8, but with no format and with bytes instead of uint16s
-type classTable struct {
-	startGlyph GlyphID
-	values     []byte `arrayCount:"FirstUint16"`
+// ClassTable is the same as AATLookup8, but with no format and with bytes instead of uint16s
+type ClassTable struct {
+	StartGlyph GlyphID
+	Values     []byte `arrayCount:"FirstUint16"`
 }
 
 // Extended state table, including the data
 // See https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6Tables.html - State tables
 // binarygen: argument=entryDataSize int
 type AATStateTableExt struct {
-	stateSize  uint32          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
+	StateSize  uint32          // Size of a state, in bytes. The size is limited to 8 bits, although the field is 16 bits for alignment.
 	Class      AATLookup       `offsetSize:"Offset32"` // Byte offset from the beginning of the state table to the class subtable.
 	stateArray Offset32        // Byte offset from the beginning of the state table to the state array.
 	entryTable Offset32        // Byte offset from the beginning of the state table to the entry subtable.
-	States     [][]uint16      `isOpaque:""`
-	Entries    []AATStateEntry `isOpaque:""`
+	States     [][]uint16      `isOpaque:""` // each sub array has length stateSize
+	Entries    []AATStateEntry `isOpaque:""` // length is the maximum state + 1
 }
 
 func (state *AATStateTableExt) parseStates(src []byte, _, _ int) error {
@@ -116,7 +116,7 @@ func (state *AATStateTableExt) parseStates(src []byte, _, _ int) error {
 		return err
 	}
 
-	nC := int(state.stateSize)
+	nC := int(state.StateSize)
 	// Ensure pre-defined classes fit.
 	if nC < 4 {
 		return fmt.Errorf("invalid number of classes in AAT state table: %d", nC)
@@ -197,7 +197,7 @@ type binSearchHeader struct {
 // AATLookup is conceptually a map[GlyphID]uint16, but it may
 // be implemented more efficiently.
 type AATLookup interface {
-	aatLookupMixed
+	AatLookupMixed
 
 	isAATLookup()
 
@@ -278,7 +278,7 @@ type AATLoopkup10 struct {
 
 // AATLookupExt is the same as AATLookup, but class values are uint32
 type AATLookupExt interface {
-	aatLookupMixed
+	AatLookupMixed
 
 	isAATLookupExt()
 
