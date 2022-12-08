@@ -1,103 +1,33 @@
 package cff
 
-// TODO:
-// func TestParseCFF(t *testing.T) {
-// 	files := []string{
-// 		"AAAPKB+SourceSansPro-Bold.cff",
-// 		"AdobeMingStd-Light-Identity-H.cff",
-// 		"YPTQCA+CMR17.cff",
-// 	}
-// 	ttfs, err := testdata.Files.ReadDir("ttf")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	for _, f := range ttfs {
-// 		files = append(files, filepath.Join("ttf", f.Name()))
-// 	}
+import (
+	"testing"
 
-// 	for _, file := range files {
-// 		b, err := testdata.Files.ReadFile(file)
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		font, err := Parse(bytes.NewReader(b))
-// 		if err != nil {
-// 			t.Fatal(err, "in", file)
-// 		}
-// 		fmt.Println(file, "num glyphs:", len(font.charstrings))
+	td "github.com/benoitkugler/go-opentype-testdata/data"
+	"github.com/benoitkugler/go-opentype/tables"
+	tu "github.com/benoitkugler/go-opentype/testutils"
+)
 
-// 		if font.fdSelect != nil {
-// 			for i := 0; i < len(font.charstrings); i++ {
-// 				_, err = font.fdSelect.fontDictIndex(fonts.GID(i))
-// 				if err != nil {
-// 					t.Fatal(err)
-// 				}
-// 			}
-// 		}
+func TestParseCFF(t *testing.T) {
+	for _, filepath := range tu.Filenames(t, "cff") {
+		content, err := td.Files.ReadFile(filepath)
+		tu.AssertNoErr(t, err)
 
-// 		for glyphIndex := range font.charstrings {
-// 			_, _, err := font.LoadGlyph(fonts.GID(glyphIndex))
-// 			if err != nil {
-// 				t.Fatalf("can't get extents for %s GID %d: %s", file, glyphIndex, err)
-// 			}
-// 		}
-// 	}
-// }
+		font, err := Parse(content)
+		tu.AssertNoErr(t, err)
 
-// func TestBulk(t *testing.T) {
-// 	for _, file := range []string{
-// 		"AAAPKB+SourceSansPro-Bold.cff",
-// 		"AdobeMingStd-Light-Identity-H.cff",
-// 		"YPTQCA+CMR17.cff",
-// 	} {
-// 		b, err := testdata.Files.ReadFile(file)
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		for range [100]int{} {
-// 			for range [500]int{} { // random mutation
-// 				i := rand.Intn(len(b))
-// 				b[i] = byte(rand.Intn(256))
-// 			}
-// 			Parse(bytes.NewReader(b)) // we just check for crashes
-// 		}
-// 	}
-// }
+		tu.Assert(t, len(font.Charstrings) >= 12)
 
-// func TestLoader(t *testing.T) {
-// 	for _, file := range []string{
-// 		"AAAPKB+SourceSansPro-Bold.cff",
-// 		"AdobeMingStd-Light-Identity-H.cff",
-// 		"YPTQCA+CMR17.cff",
-// 	} {
-// 		f, err := testdata.Files.ReadFile(file)
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		fonts, err := Load(bytes.NewReader(f))
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		for _, font := range fonts {
-// 			font.PoscriptName()
-// 			_, has := font.PostscriptInfo()
-// 			if !has {
-// 				t.Error("expected PS info")
-// 			}
-// 			font.LoadSummary()
-// 		}
-// 	}
-// }
+		if font.fdSelect != nil {
+			for i := 0; i < len(font.Charstrings); i++ {
+				_, err = font.fdSelect.fontDictIndex(tables.GlyphID(i))
+				tu.AssertNoErr(t, err)
+			}
+		}
 
-// func TestCIDFont(t *testing.T) {
-// 	file := "AdobeMingStd-Light-Identity-H.cff"
-// 	b, err := testdata.Files.ReadFile(file)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	font, err := Parse(bytes.NewReader(b))
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	fmt.Println(len(font.localSubrs))
-// }
+		for glyphIndex := range font.Charstrings {
+			_, _, err := font.LoadGlyph(tables.GlyphID(glyphIndex))
+			tu.AssertNoErr(t, err)
+		}
+	}
+}

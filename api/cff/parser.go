@@ -17,15 +17,20 @@ var (
 	errUnsupportedCFFFDSelectTable = errors.New("unsupported FD Select version")
 )
 
-// Font represents a parsed Font font.
+// Font represents a parsed CFF font.
 type Font struct {
 	userStrings userStrings
 	fdSelect    fdSelect // only valid for CIDFonts
 	charset     []uint16 // indexed by glyph ID
 
 	cidFontName string
-	Charstrings [][]byte // indexed by glyph ID
-	fontName    []byte   // name from the Name INDEX
+
+	// Charstrings contains the actual glyph definition.
+	// It has a length of numGlyphs and is indexed by glyph ID.
+	// See `LoadGlyph` for a way to intepret the glyph data.
+	Charstrings [][]byte
+
+	fontName    []byte // name from the Name INDEX
 	globalSubrs [][]byte
 
 	// array of length 1 for non CIDFonts
@@ -33,12 +38,12 @@ type Font struct {
 	localSubrs [][][]byte
 }
 
-// ParseFont parses a .cff font file.
+// Parse parses a .cff font file.
 // Although CFF enables multiple font or CIDFont programs to be bundled together in a
 // single file, embedded CFF font file in PDF or in TrueType/OpenType fonts
 // shall consist of exactly one font or CIDFont. Thus, this function
 // returns an error if the file contains more than one font.
-func ParseFont(file []byte) (*Font, error) {
+func Parse(file []byte) (*Font, error) {
 	// read 4 bytes to check if its a supported CFF file
 	if L := len(file); L < 4 {
 		return nil, fmt.Errorf("EOF: expected length: %d, got %d", 4, L)
@@ -113,7 +118,7 @@ func (u userStrings) getString(sid uint16) (string, error) {
 // Appendix A, in 5176.CFF.pdf referenced below. For example, 379 means
 // "001.000". String ID 392 is not predefined, and is mapped by a separate
 // structure, the "String INDEX", inside the CFF data. (String ID 391 is also
-// not predefined. Specifically for ../testdata/CFFTest.otf, 391 means
+// not predefined. Specifically for go-opentype-testdata/data/toys/CFFTest.otf, 391 means
 // "uni4E2D", as this font contains a glyph for U+4E2D).
 //
 // The actual glyph vectors are similarly encoded (in PostScript), in a format
@@ -164,7 +169,7 @@ func (p *cffParser) parse() ([]Font, error) {
 		out[i].fontName = fontNames[i]
 		out[i].userStrings = strs
 
-		// skip PSInfo
+		// skip PSInfo, and cidFontName
 
 		out[i].cidFontName, err = strs.getString(topDict.cidFontName)
 		if err != nil {
