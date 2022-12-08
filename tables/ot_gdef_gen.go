@@ -377,15 +377,11 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetAttachList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.AttachList, read, err = ParseAttachList(src[offsetAttachList:])
+			var err error
+			item.AttachList, _, err = ParseAttachList(src[offsetAttachList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading GDEF: %s", err)
 			}
-			offsetAttachList += read
 
 		}
 	}
@@ -396,15 +392,11 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 				return item, 0, fmt.Errorf("reading GDEF: "+"EOF: expected length: %d, got %d", offsetLigCaretList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.LigCaretList, read, err = ParseLigCaretList(src[offsetLigCaretList:])
+			var err error
+			item.LigCaretList, _, err = ParseLigCaretList(src[offsetLigCaretList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading GDEF: %s", err)
 			}
-			offsetLigCaretList += read
 
 		}
 	}
@@ -428,11 +420,10 @@ func ParseGDEF(src []byte) (GDEF, int, error) {
 	}
 	{
 
-		read, err := item.parseMarkGlyphSetsDef(src[:])
+		err := item.parseMarkGlyphSetsDef(src[:])
 		if err != nil {
 			return item, 0, fmt.Errorf("reading GDEF: %s", err)
 		}
-		n = read
 	}
 	{
 

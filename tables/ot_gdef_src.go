@@ -17,23 +17,23 @@ type GDEF struct {
 	ItemVarStore     ItemVarStore  `isOpaque:""` // Offset to the Item Variation Store table, from beginning of GDEF header (may be NULL)
 }
 
-func (gdef *GDEF) parseMarkGlyphSetsDef(src []byte) (int, error) {
+func (gdef *GDEF) parseMarkGlyphSetsDef(src []byte) error {
 	const headerSize = 12
 	if gdef.minorVersion < 2 {
-		return 0, nil
+		return nil
 	}
 	if L := len(src); L < headerSize+2 {
-		return 0, fmt.Errorf("EOF: expected length: %d, got %d", headerSize+2, L)
+		return fmt.Errorf("EOF: expected length: %d, got %d", headerSize+2, L)
 	}
 	offset := binary.BigEndian.Uint16(src[headerSize:])
 	if offset != 0 {
 		var err error
 		gdef.MarkGlyphSetsDef, _, err = ParseMarkGlyphSets(src[offset:])
 		if err != nil {
-			return 0, err
+			return err
 		}
 	}
-	return headerSize + 2, nil
+	return nil
 }
 
 func (gdef *GDEF) parseItemVarStore(src []byte) (int, error) {

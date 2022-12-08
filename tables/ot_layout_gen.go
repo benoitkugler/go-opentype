@@ -141,15 +141,11 @@ func ParseFeatureVariationRecord(src []byte, parentSrc []byte) (FeatureVariation
 				return item, 0, fmt.Errorf("reading FeatureVariationRecord: "+"EOF: expected length: %d, got %d", offsetConditionSet, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.conditionSet, read, err = ParseConditionSet(parentSrc[offsetConditionSet:])
+			var err error
+			item.conditionSet, _, err = ParseConditionSet(parentSrc[offsetConditionSet:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading FeatureVariationRecord: %s", err)
 			}
-			offsetConditionSet += read
 
 		}
 	}
@@ -204,15 +200,11 @@ func ParseLayout(src []byte) (Layout, int, error) {
 				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offsetScriptList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.scriptList, read, err = parseScriptList(src[offsetScriptList:])
+			var err error
+			item.scriptList, _, err = parseScriptList(src[offsetScriptList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
-			offsetScriptList += read
 
 		}
 	}
@@ -223,15 +215,11 @@ func ParseLayout(src []byte) (Layout, int, error) {
 				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offsetFeatureList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.featureList, read, err = parseFeatureList(src[offsetFeatureList:])
+			var err error
+			item.featureList, _, err = parseFeatureList(src[offsetFeatureList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
-			offsetFeatureList += read
 
 		}
 	}
@@ -242,15 +230,11 @@ func ParseLayout(src []byte) (Layout, int, error) {
 				return item, 0, fmt.Errorf("reading Layout: "+"EOF: expected length: %d, got %d", offsetLookupList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.LookupList, read, err = parseLookupList(src[offsetLookupList:])
+			var err error
+			item.LookupList, _, err = parseLookupList(src[offsetLookupList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Layout: %s", err)
 			}
-			offsetLookupList += read
 
 		}
 	}
@@ -322,15 +306,11 @@ func ParseScript(src []byte) (Script, int, error) {
 			}
 
 			var tmpDefaultLangSys LangSys
-			var (
-				err  error
-				read int
-			)
-			tmpDefaultLangSys, read, err = ParseLangSys(src[offsetDefaultLangSys:])
+			var err error
+			tmpDefaultLangSys, _, err = ParseLangSys(src[offsetDefaultLangSys:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Script: %s", err)
 			}
-			offsetDefaultLangSys += read
 
 			item.DefaultLangSys = &tmpDefaultLangSys
 		}

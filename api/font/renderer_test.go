@@ -562,7 +562,7 @@ func TestAppleBitmapGlyph(t *testing.T) {
 
 	face := Face{Font: ft, XPpem: 94, YPpem: 94}
 
-	runes := []rune("The quick brown fox jumps over the lazy dog")
+	runes := "The quick brown fox jumps over the lazy dog"
 	for _, r := range runes {
 		gid, ok := face.NominalGlyph(r)
 		assert(t, ok)

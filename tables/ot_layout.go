@@ -664,7 +664,7 @@ type AnchorFormat3 struct {
 	YDevice       DeviceTable `isOpaque:""` // Offset to Device table (non-variable font) / VariationIndex table (variable font) for Y coordinate, from beginning of Anchor table (may be NULL)
 }
 
-func (af AnchorFormat3) parseXDevice(src []byte) error {
+func (af *AnchorFormat3) parseXDevice(src []byte) error {
 	if af.xDeviceOffset == 0 {
 		return nil
 	}
@@ -673,7 +673,7 @@ func (af AnchorFormat3) parseXDevice(src []byte) error {
 	return err
 }
 
-func (af AnchorFormat3) parseYDevice(src []byte) error {
+func (af *AnchorFormat3) parseYDevice(src []byte) error {
 	if af.yDeviceOffset == 0 {
 		return nil
 	}

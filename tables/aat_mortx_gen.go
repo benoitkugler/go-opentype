@@ -162,15 +162,11 @@ func ParseMorxSubtableContextual(src []byte, valuesCount int) (MorxSubtableConte
 				return item, 0, fmt.Errorf("reading MorxSubtableContextual: "+"EOF: expected length: %d, got %d", offsetSubstitutions, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.Substitutions, read, err = ParseSubstitutionsTable(src[offsetSubstitutions:], int(item.nSubs()), int(valuesCount))
+			var err error
+			item.Substitutions, _, err = ParseSubstitutionsTable(src[offsetSubstitutions:], int(item.nSubs()), int(valuesCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MorxSubtableContextual: %s", err)
 			}
-			offsetSubstitutions += read
 
 		}
 	}

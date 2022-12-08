@@ -25,7 +25,7 @@ type Strike struct {
 
 func (st *Strike) parseGlyphDatas(src []byte, numGlyphs int) error {
 	const headerSize = 4
-	offsets, err := ParseLoca(src[4:], numGlyphs, true)
+	offsets, err := ParseLoca(src[headerSize:], numGlyphs, true)
 	if err != nil {
 		return err
 	}

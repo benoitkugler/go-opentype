@@ -1341,15 +1341,11 @@ func ParseMarkBasePos(src []byte) (MarkBasePos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkBasePos: "+"EOF: expected length: %d, got %d", offsetMarkArray, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.markArray, read, err = ParseMarkArray(src[offsetMarkArray:])
+			var err error
+			item.markArray, _, err = ParseMarkArray(src[offsetMarkArray:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkBasePos: %s", err)
 			}
-			offsetMarkArray += read
 
 		}
 	}
@@ -1360,15 +1356,11 @@ func ParseMarkBasePos(src []byte) (MarkBasePos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkBasePos: "+"EOF: expected length: %d, got %d", offsetBaseArray, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.baseArray, read, err = ParseBaseArray(src[offsetBaseArray:], int(item.markClassCount))
+			var err error
+			item.baseArray, _, err = ParseBaseArray(src[offsetBaseArray:], int(item.markClassCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkBasePos: %s", err)
 			}
-			offsetBaseArray += read
 
 		}
 	}
@@ -1433,15 +1425,11 @@ func ParseMarkLigPos(src []byte) (MarkLigPos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offsetMarkArray, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.MarkArray, read, err = ParseMarkArray(src[offsetMarkArray:])
+			var err error
+			item.MarkArray, _, err = ParseMarkArray(src[offsetMarkArray:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
 			}
-			offsetMarkArray += read
 
 		}
 	}
@@ -1452,15 +1440,11 @@ func ParseMarkLigPos(src []byte) (MarkLigPos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkLigPos: "+"EOF: expected length: %d, got %d", offsetLigatureArray, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.LigatureArray, read, err = ParseLigatureArray(src[offsetLigatureArray:], int(item.MarkClassCount))
+			var err error
+			item.LigatureArray, _, err = ParseLigatureArray(src[offsetLigatureArray:], int(item.MarkClassCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkLigPos: %s", err)
 			}
-			offsetLigatureArray += read
 
 		}
 	}
@@ -1525,15 +1509,11 @@ func ParseMarkMarkPos(src []byte) (MarkMarkPos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offsetMark1Array, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.Mark1Array, read, err = ParseMarkArray(src[offsetMark1Array:])
+			var err error
+			item.Mark1Array, _, err = ParseMarkArray(src[offsetMark1Array:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
 			}
-			offsetMark1Array += read
 
 		}
 	}
@@ -1544,15 +1524,11 @@ func ParseMarkMarkPos(src []byte) (MarkMarkPos, int, error) {
 				return item, 0, fmt.Errorf("reading MarkMarkPos: "+"EOF: expected length: %d, got %d", offsetMark2Array, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.Mark2Array, read, err = ParseMark2Array(src[offsetMark2Array:], int(item.MarkClassCount))
+			var err error
+			item.Mark2Array, _, err = ParseMark2Array(src[offsetMark2Array:], int(item.MarkClassCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MarkMarkPos: %s", err)
 			}
-			offsetMark2Array += read
 
 		}
 	}

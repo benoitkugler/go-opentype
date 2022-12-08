@@ -14,7 +14,6 @@ func TestParseOTLayout(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 		assertNoErr(t, err)
-		assert(t, len(gsub.LookupList.Lookups) == len(gsub.LookupList.Lookups))
 		assert(t, len(gsub.LookupList.Lookups) > 0)
 
 		for _, lookup := range gsub.LookupList.Lookups {
@@ -25,7 +24,6 @@ func TestParseOTLayout(t *testing.T) {
 
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 		assertNoErr(t, err)
-		assert(t, len(gpos.LookupList.Lookups) == len(gpos.LookupList.Lookups))
 		assert(t, len(gpos.LookupList.Lookups) > 0)
 
 		for _, lookup := range gpos.LookupList.Lookups {
@@ -44,7 +42,6 @@ func TestGSUB(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
 		assertNoErr(t, err)
-		assert(t, len(gsub.LookupList.Lookups) == len(gsub.LookupList.Lookups))
 		assert(t, len(gsub.LookupList.Lookups) > 0)
 
 		for _, lookup := range gsub.LookupList.Lookups {
@@ -60,7 +57,6 @@ func TestGPOS(t *testing.T) {
 		fp := readFontFile(t, filename)
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
 		assertNoErr(t, err)
-		assert(t, len(gpos.LookupList.Lookups) == len(gpos.LookupList.Lookups))
 		assert(t, len(gpos.LookupList.Lookups) > 0)
 
 		for _, lookup := range gpos.LookupList.Lookups {

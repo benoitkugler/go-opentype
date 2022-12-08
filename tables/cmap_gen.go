@@ -693,15 +693,11 @@ func ParseVariationSelector(src []byte, parentSrc []byte) (VariationSelector, in
 				return item, 0, fmt.Errorf("reading VariationSelector: "+"EOF: expected length: %d, got %d", offsetDefaultUVS, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.DefaultUVS, read, err = ParseDefaultUVSTable(parentSrc[offsetDefaultUVS:])
+			var err error
+			item.DefaultUVS, _, err = ParseDefaultUVSTable(parentSrc[offsetDefaultUVS:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading VariationSelector: %s", err)
 			}
-			offsetDefaultUVS += read
 
 		}
 	}
@@ -712,15 +708,11 @@ func ParseVariationSelector(src []byte, parentSrc []byte) (VariationSelector, in
 				return item, 0, fmt.Errorf("reading VariationSelector: "+"EOF: expected length: %d, got %d", offsetNonDefaultUVS, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.NonDefaultUVS, read, err = ParseUVSMappingTable(parentSrc[offsetNonDefaultUVS:])
+			var err error
+			item.NonDefaultUVS, _, err = ParseUVSMappingTable(parentSrc[offsetNonDefaultUVS:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading VariationSelector: %s", err)
 			}
-			offsetNonDefaultUVS += read
 
 		}
 	}

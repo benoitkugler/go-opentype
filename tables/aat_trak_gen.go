@@ -110,15 +110,11 @@ func ParseTrak(src []byte) (Trak, int, error) {
 				return item, 0, fmt.Errorf("reading Trak: "+"EOF: expected length: %d, got %d", offsetHoriz, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.Horiz, read, err = ParseTrackData(src[offsetHoriz:], src)
+			var err error
+			item.Horiz, _, err = ParseTrackData(src[offsetHoriz:], src)
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Trak: %s", err)
 			}
-			offsetHoriz += read
 
 		}
 	}
@@ -129,15 +125,11 @@ func ParseTrak(src []byte) (Trak, int, error) {
 				return item, 0, fmt.Errorf("reading Trak: "+"EOF: expected length: %d, got %d", offsetVert, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.Vert, read, err = ParseTrackData(src[offsetVert:], src)
+			var err error
+			item.Vert, _, err = ParseTrackData(src[offsetVert:], src)
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Trak: %s", err)
 			}
-			offsetVert += read
 
 		}
 	}

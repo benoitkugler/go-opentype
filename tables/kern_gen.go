@@ -71,15 +71,11 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 				return item, 0, fmt.Errorf("reading AATStateTable: "+"EOF: expected length: %d, got %d", offsetClassTable, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.classTable, read, err = parseClassTable(src[offsetClassTable:])
+			var err error
+			item.classTable, _, err = parseClassTable(src[offsetClassTable:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AATStateTable: %s", err)
 			}
-			offsetClassTable += read
 
 		}
 	}
@@ -180,15 +176,11 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 				return item, 0, fmt.Errorf("reading KernData2: "+"EOF: expected length: %d, got %d", offsetLeft, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.left, read, err = ParseAATLoopkup8Data(parentSrc[offsetLeft:])
+			var err error
+			item.left, _, err = ParseAATLoopkup8Data(parentSrc[offsetLeft:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading KernData2: %s", err)
 			}
-			offsetLeft += read
 
 		}
 	}
@@ -199,15 +191,11 @@ func ParseKernData2(src []byte, parentSrc []byte) (KernData2, int, error) {
 				return item, 0, fmt.Errorf("reading KernData2: "+"EOF: expected length: %d, got %d", offsetRight, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.right, read, err = ParseAATLoopkup8Data(parentSrc[offsetRight:])
+			var err error
+			item.right, _, err = ParseAATLoopkup8Data(parentSrc[offsetRight:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading KernData2: %s", err)
 			}
-			offsetRight += read
 
 		}
 	}

@@ -134,7 +134,6 @@ func ParseGlyphVariationData(src []byte, axisCount int) (GlyphVariationData, int
 			}
 
 			item.SerializedData = src[offsetSerializedData:]
-			offsetSerializedData = len(src)
 		}
 	}
 	{
@@ -178,15 +177,11 @@ func ParseGvar(src []byte) (Gvar, int, error) {
 				return item, 0, fmt.Errorf("reading Gvar: "+"EOF: expected length: %d, got %d", offsetSharedTuples, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.SharedTuples, read, err = ParseSharedTuples(src[offsetSharedTuples:], int(item.sharedTupleCount), int(item.axisCount))
+			var err error
+			item.SharedTuples, _, err = ParseSharedTuples(src[offsetSharedTuples:], int(item.sharedTupleCount), int(item.axisCount))
 			if err != nil {
 				return item, 0, fmt.Errorf("reading Gvar: %s", err)
 			}
-			offsetSharedTuples += read
 
 		}
 	}
@@ -229,15 +224,11 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetItemVariationStore, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemVariationStore:])
+			var err error
+			item.ItemVariationStore, _, err = ParseItemVarStore(src[offsetItemVariationStore:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetItemVariationStore += read
 
 		}
 	}
@@ -248,15 +239,11 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 				return item, 0, fmt.Errorf("reading HVAR: "+"EOF: expected length: %d, got %d", offsetAdvanceWidthMapping, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.AdvanceWidthMapping, read, err = ParseDeltaSetMapping(src[offsetAdvanceWidthMapping:])
+			var err error
+			item.AdvanceWidthMapping, _, err = ParseDeltaSetMapping(src[offsetAdvanceWidthMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetAdvanceWidthMapping += read
 
 		}
 	}
@@ -268,15 +255,11 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 			}
 
 			var tmpLsbMapping DeltaSetMapping
-			var (
-				err  error
-				read int
-			)
-			tmpLsbMapping, read, err = ParseDeltaSetMapping(src[offsetLsbMapping:])
+			var err error
+			tmpLsbMapping, _, err = ParseDeltaSetMapping(src[offsetLsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetLsbMapping += read
 
 			item.LsbMapping = &tmpLsbMapping
 		}
@@ -289,15 +272,11 @@ func ParseHVAR(src []byte) (HVAR, int, error) {
 			}
 
 			var tmpRsbMapping DeltaSetMapping
-			var (
-				err  error
-				read int
-			)
-			tmpRsbMapping, read, err = ParseDeltaSetMapping(src[offsetRsbMapping:])
+			var err error
+			tmpRsbMapping, _, err = ParseDeltaSetMapping(src[offsetRsbMapping:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading HVAR: %s", err)
 			}
-			offsetRsbMapping += read
 
 			item.RsbMapping = &tmpRsbMapping
 		}
@@ -358,15 +337,11 @@ func ParseItemVarStore(src []byte) (ItemVarStore, int, error) {
 				return item, 0, fmt.Errorf("reading ItemVarStore: "+"EOF: expected length: %d, got %d", offsetVariationRegionList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.VariationRegionList, read, err = ParseVariationRegionList(src[offsetVariationRegionList:])
+			var err error
+			item.VariationRegionList, _, err = ParseVariationRegionList(src[offsetVariationRegionList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading ItemVarStore: %s", err)
 			}
-			offsetVariationRegionList += read
 
 		}
 	}
@@ -456,15 +431,11 @@ func ParseMVAR(src []byte) (MVAR, int, error) {
 				return item, 0, fmt.Errorf("reading MVAR: "+"EOF: expected length: %d, got %d", offsetItemVariationStore, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.ItemVariationStore, read, err = ParseItemVarStore(src[offsetItemVariationStore:])
+			var err error
+			item.ItemVariationStore, _, err = ParseItemVarStore(src[offsetItemVariationStore:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading MVAR: %s", err)
 			}
-			offsetItemVariationStore += read
 
 		}
 	}

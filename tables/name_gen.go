@@ -27,7 +27,6 @@ func ParseName(src []byte) (Name, int, error) {
 			}
 
 			item.stringData = src[offsetStringData:]
-			offsetStringData = len(src)
 		}
 	}
 	{

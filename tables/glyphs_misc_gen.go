@@ -26,15 +26,11 @@ func ParseSVG(src []byte) (SVG, int, error) {
 				return item, 0, fmt.Errorf("reading SVG: "+"EOF: expected length: %d, got %d", offsetSVGDocumentList, L)
 			}
 
-			var (
-				err  error
-				read int
-			)
-			item.SVGDocumentList, read, err = ParseSVGDocumentList(src[offsetSVGDocumentList:])
+			var err error
+			item.SVGDocumentList, _, err = ParseSVGDocumentList(src[offsetSVGDocumentList:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading SVG: %s", err)
 			}
-			offsetSVGDocumentList += read
 
 		}
 	}

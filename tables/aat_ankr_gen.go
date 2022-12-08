@@ -311,7 +311,6 @@ func ParseAnkr(src []byte, valuesCount int) (Ankr, int, error) {
 			}
 
 			item.GlyphDataTable = src[offsetGlyphDataTable:]
-			offsetGlyphDataTable = len(src)
 		}
 	}
 	return item, n, nil

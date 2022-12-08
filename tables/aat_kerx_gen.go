@@ -474,7 +474,6 @@ func ParseKerxData2(src []byte, parentSrc []byte, valuesCount int) (KerxData2, i
 	{
 
 		item.kerningData = src[0:]
-		n = len(src)
 	}
 	return item, n, nil
 }
