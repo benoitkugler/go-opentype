@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func deHexStr(s string) []byte {
@@ -27,9 +28,9 @@ func TestParseTuple(t *testing.T) {
 
 	data := deHexStr("DE AD C0 00 20 00 DE AD")
 	got, _, err := ParseTuple(data[2:], 2)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	expected := Tuple{Values: []float32{-1, 0.5}}
-	assertC(t, reflect.DeepEqual(got, expected), fmt.Sprintf("%v != %v", got, expected))
+	tu.AssertC(t, reflect.DeepEqual(got, expected), fmt.Sprintf("%v != %v", got, expected))
 
 	// Shared tuples in the 'gvar' table of the Skia font, as printed
 	// in Apple's TrueType specification.
@@ -49,8 +50,8 @@ func TestParseTuple(t *testing.T) {
 		{Values: []Float214{-1.0, 1.0}},
 	}}
 	sharedTuples, _, err := ParseSharedTuples(skiaGvarSharedTuplesData, 8, 2)
-	assertNoErr(t, err)
-	assert(t, reflect.DeepEqual(sharedTuples, skiaGvarSharedTuples))
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, reflect.DeepEqual(sharedTuples, skiaGvarSharedTuples))
 }
 
 func TestParseGvar(t *testing.T) {
@@ -101,7 +102,7 @@ func TestParseGvar(t *testing.T) {
 		"05 f8 07 fc 03 fe 01 " + // 107: deltaX.len=5, deltaX=[-8,7,-4,3,-2,1]
 		"05 a8 4d 2c 21 ea 0b " + // 114: deltaY.len=5, deltaY=[-88,77,44,33,-22,11]
 		"00") // 121: padding
-	assert(t, len(gvarData) == 122)
+	tu.Assert(t, len(gvarData) == 122)
 
 	gvarDataEmptyVariations := deHexStr("0001 0000 " + //  0: majorVersion=1 minorVersion=0
 		"0002 0000 " + //  4: axisCount=2 sharedTupleCount=0
@@ -109,7 +110,7 @@ func TestParseGvar(t *testing.T) {
 		"0003 0000 " + // 12: glyphCount=3 flags=0
 		"0000001c " + // 16: offsetToGlyphVariationData=28
 		"0000 0000 0000 0000") // 20: offsets=[0, 0, 0, 0]
-	assert(t, len(gvarDataEmptyVariations) == 28)
+	tu.Assert(t, len(gvarDataEmptyVariations) == 28)
 
 	sharedTuplesExpected := SharedTuples{}
 	variationsHeadersExpected := [][]TupleVariationHeader{
@@ -142,19 +143,19 @@ func TestParseGvar(t *testing.T) {
 	gvarEmptyVariationsExpected := make([][]TupleVariationHeader, 3)
 
 	out, _, err := ParseGvar(gvarData)
-	assertNoErr(t, err)
-	assert(t, reflect.DeepEqual(sharedTuplesExpected, out.SharedTuples))
-	assert(t, len(variationsHeadersExpected) == len(out.GlyphVariationDatas))
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, reflect.DeepEqual(sharedTuplesExpected, out.SharedTuples))
+	tu.Assert(t, len(variationsHeadersExpected) == len(out.GlyphVariationDatas))
 	for i, exp := range variationsHeadersExpected {
 		got := out.GlyphVariationDatas[i].TupleVariationHeaders
-		assertC(t, fmt.Sprintf("%v", exp) == fmt.Sprintf("%v", got), fmt.Sprintf("%v != %v", exp, got))
+		tu.AssertC(t, fmt.Sprintf("%v", exp) == fmt.Sprintf("%v", got), fmt.Sprintf("%v != %v", exp, got))
 	}
 
 	out, _, err = ParseGvar(gvarDataEmptyVariations)
-	assertNoErr(t, err)
-	assert(t, len(gvarEmptyVariationsExpected) == len(out.GlyphVariationDatas))
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(gvarEmptyVariationsExpected) == len(out.GlyphVariationDatas))
 	for i, exp := range gvarEmptyVariationsExpected {
-		assert(t, reflect.DeepEqual(exp, out.GlyphVariationDatas[i].TupleVariationHeaders))
+		tu.Assert(t, reflect.DeepEqual(exp, out.GlyphVariationDatas[i].TupleVariationHeaders))
 	}
 }
 
@@ -165,7 +166,7 @@ func TestParseGvar2(t *testing.T) {
 	} {
 		fp := readFontFile(t, filepath)
 		_, _, err := ParseGvar(readTable(t, fp, "gvar"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 	}
 }
 
@@ -176,7 +177,7 @@ func TestParseHvar(t *testing.T) {
 	} {
 		fp := readFontFile(t, filepath)
 		_, _, err := ParseHVAR(readTable(t, fp, "HVAR"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 	}
 }
 
@@ -184,7 +185,7 @@ func TestParseAvar(t *testing.T) {
 	for _, filepath := range td.WithAvar {
 		fp := readFontFile(t, filepath)
 		_, _, err := ParseAvar(readTable(t, fp, "avar"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 	}
 }
 
@@ -192,7 +193,7 @@ func TestParseMVAR(t *testing.T) {
 	for _, filepath := range td.WithMVAR {
 		fp := readFontFile(t, filepath)
 		_, _, err := ParseMVAR(readTable(t, fp, "MVAR"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 	}
 }
 
@@ -200,7 +201,7 @@ func TestParseFvar(t *testing.T) {
 	for _, item := range td.WithFvar {
 		fp := readFontFile(t, item.Path)
 		fvar, _, err := ParseFvar(readTable(t, fp, "fvar"))
-		assertNoErr(t, err)
-		assert(t, len(fvar.Axis) == item.AxisCount)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(fvar.Axis) == item.AxisCount)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 // ported from harfbuzz/test/api/test-var-coords.c Copyright © 2019 Ebrahim Byagowi
@@ -17,7 +18,7 @@ func TestVar(t *testing.T) {
 	/* Design coords as input */
 	designCoords := []float32{206.}
 	coords := font.normalizeVariations(designCoords)
-	assert(t, coords[0]*(1<<14) == float32(-16116.88))
+	tu.Assert(t, coords[0]*(1<<14) == float32(-16116.88))
 
 	// test for crash
 	for weight := float32(200); weight < 901; weight++ {
@@ -26,11 +27,11 @@ func TestVar(t *testing.T) {
 
 	face := Face{Font: font}
 	face.SetVariations([]Variation{{loader.MustNewTag("wght"), 206.}})
-	assert(t, len(face.Coords) == 1)
-	assert(t, face.Coords[0] == -0.9836963)
+	tu.Assert(t, len(face.Coords) == 1)
+	tu.Assert(t, face.Coords[0] == -0.9836963)
 
 	face.SetVariations(nil)
-	assert(t, len(face.Coords) == 0)
+	tu.Assert(t, len(face.Coords) == 0)
 }
 
 func TestGlyphExtentsVar(t *testing.T) {
@@ -41,7 +42,7 @@ func TestGlyphExtentsVar(t *testing.T) {
 
 	ext2, _ := face.GlyphExtents(2)
 
-	assert(t, ext2 == api.GlyphExtents{XBearing: 50.192135, YBearing: 667.1601, Width: 591.8152, Height: -679.1601})
+	tu.Assert(t, ext2 == api.GlyphExtents{XBearing: 50.192135, YBearing: 667.1601, Width: 591.8152, Height: -679.1601})
 }
 
 func TestGetDefaultCoords(t *testing.T) {
@@ -55,7 +56,7 @@ func TestGetDefaultCoords(t *testing.T) {
 		{Tag: loader.MustNewTag("wdth"), Value: 60},
 	}
 	coords := tf.getDesignCoordsDefault(vars)
-	assert(t, reflect.DeepEqual(coords, []float32{88, 60, 14}))
+	tu.Assert(t, reflect.DeepEqual(coords, []float32{88, 60, 14}))
 }
 
 func TestNormalizeVar(t *testing.T) {
@@ -67,19 +68,19 @@ func TestNormalizeVar(t *testing.T) {
 		{Tag: loader.MustNewTag("wdth"), Value: 60},
 	}
 	coords := tf.normalizeCoordinates(tf.getDesignCoordsDefault(vars))
-	assert(t, reflect.DeepEqual(coords, []float32{-1}))
+	tu.Assert(t, reflect.DeepEqual(coords, []float32{-1}))
 
 	vars = []Variation{
 		{Tag: loader.MustNewTag("wdth"), Value: 30},
 	}
 	coords = tf.normalizeCoordinates(tf.getDesignCoordsDefault(vars))
-	assert(t, reflect.DeepEqual(coords, []float32{-1}))
+	tu.Assert(t, reflect.DeepEqual(coords, []float32{-1}))
 
 	vars = []Variation{
 		{Tag: loader.MustNewTag("wdth"), Value: 700},
 	}
 	coords = tf.normalizeCoordinates(tf.getDesignCoordsDefault(vars))
-	assert(t, reflect.DeepEqual(coords, []float32{1}))
+	tu.Assert(t, reflect.DeepEqual(coords, []float32{1}))
 }
 
 func TestAdvanceHVar(t *testing.T) {
@@ -92,17 +93,17 @@ func TestAdvanceHVar(t *testing.T) {
 		0, 0, 0, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6,
 		1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 3.2, 3.2, 3.2, 0, 0,
 	}
-	assert(t, font.hvar != nil)
+	tu.Assert(t, font.hvar != nil)
 	for i, exp := range exps {
 		got := getAdvanceVar(font.hvar, tables.GlyphID(i), coords)
-		assert(t, exp == got)
+		tu.Assert(t, exp == got)
 	}
 }
 
 func TestAdvanceNoHVar(t *testing.T) {
 	font := loadFont(t, "toys/GVAR-no-HVAR.ttf")
 
-	assert(t, len(font.fvar) == 2)
+	tu.Assert(t, len(font.fvar) == 2)
 
 	vars := []Variation{
 		{Tag: loader.MustNewTag("wght"), Value: 600},
@@ -116,6 +117,6 @@ func TestAdvanceNoHVar(t *testing.T) {
 
 	for i, exp := range exps {
 		got := face.HorizontalAdvance(api.GID(i))
-		assert(t, exp == got)
+		tu.Assert(t, exp == got)
 	}
 }

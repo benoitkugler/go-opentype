@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func TestParseKern(t *testing.T) {
 	filepath := "common/FreeSerif.ttf"
 	fp := readFontFile(t, filepath)
 	_, _, err := ParseKern(readTable(t, fp, "kern"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	for _, filepath := range []string{
 		"toys/tables/kern0Exp.bin",
@@ -20,27 +21,27 @@ func TestParseKern(t *testing.T) {
 		"toys/tables/kern3.bin",
 	} {
 		table, err := td.Files.ReadFile(filepath)
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		kern, _, err := ParseKern(table)
-		assertNoErr(t, err)
-		assert(t, len(kern.Tables) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(kern.Tables) > 0)
 
 		for _, subtable := range kern.Tables {
-			assert(t, subtable.Data() != nil)
+			tu.Assert(t, subtable.Data() != nil)
 		}
 	}
 }
 
 func TestParseKern0(t *testing.T) {
 	table, err := td.Files.ReadFile("toys/tables/kern0Exp.bin")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	kern, _, err := ParseKern(table)
-	assertNoErr(t, err)
-	assert(t, len(kern.Tables) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(kern.Tables) == 1)
 	data, ok := kern.Tables[0].Data().(KernData0)
-	assert(t, ok)
+	tu.Assert(t, ok)
 
 	expecteds := []struct { // value extracted from harfbuzz run
 		left, right GlyphID
@@ -117,7 +118,7 @@ func TestParseKern0(t *testing.T) {
 
 	for _, exp := range expecteds {
 		got := data.KernPair(exp.left, exp.right)
-		assert(t, got == exp.kerning)
+		tu.Assert(t, got == exp.kerning)
 	}
 }
 
@@ -125,16 +126,16 @@ func TestKern2(t *testing.T) {
 	filepath := "toys/Kern2.ttf"
 	fp := readFontFile(t, filepath)
 	kern, _, err := ParseKern(readTable(t, fp, "kern"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
-	assert(t, len(kern.Tables) == 3)
+	tu.Assert(t, len(kern.Tables) == 3)
 
 	k0, k1, k2 := kern.Tables[0].Data(), kern.Tables[1].Data(), kern.Tables[2].Data()
 	_, is0 := k0.(KernData0)
-	assert(t, is0)
+	tu.Assert(t, is0)
 
 	type2, ok := k1.(KernData2)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	expectedSubtable := map[[2]GlyphID]int16{
 		{67, 68}: 0,
 		{68, 69}: 0,
@@ -155,28 +156,28 @@ func TestKern2(t *testing.T) {
 	}
 	for k, exp := range expectedSubtable {
 		got := type2.KernPair(k[0], k[1])
-		assertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
+		tu.AssertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
 	}
 
 	type2, ok = k2.(KernData2)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	expectedSubtable = map[[2]GlyphID]int16{
 		{36, 57}: -80,
 	}
 	for k, exp := range expectedSubtable {
 		got := type2.KernPair(k[0], k[1])
-		assert(t, exp == got)
-		assertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
+		tu.Assert(t, exp == got)
+		tu.AssertC(t, exp == got, fmt.Sprintf("invalid kern subtable : for (%d, %d) expected %d, got %d", k[0], k[1], exp, got))
 	}
 }
 
 func TestKern3(t *testing.T) {
 	table, err := td.Files.ReadFile("toys/tables/kern3.bin")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	kern, _, err := ParseKern(table)
-	assertNoErr(t, err)
-	assert(t, len(kern.Tables) == 5)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(kern.Tables) == 5)
 
 	expectedsLengths := [...][3]int{
 		{570, 5688, 92},
@@ -187,10 +188,10 @@ func TestKern3(t *testing.T) {
 	}
 	for i := range kern.Tables {
 		data, ok := kern.Tables[i].Data().(KernData3)
-		assert(t, ok)
+		tu.Assert(t, ok)
 		exp := expectedsLengths[i]
-		assert(t, len(data.leftClass) == exp[0])
-		assert(t, len(data.kernIndex) == exp[1])
-		assert(t, len(data.kernings) == exp[2])
+		tu.Assert(t, len(data.leftClass) == exp[0])
+		tu.Assert(t, len(data.kernIndex) == exp[1])
+		tu.Assert(t, len(data.kernings) == exp[2])
 	}
 }

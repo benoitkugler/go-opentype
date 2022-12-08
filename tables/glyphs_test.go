@@ -9,44 +9,45 @@ import (
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
 	"github.com/benoitkugler/go-opentype/loader"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func TestParseGlyf(t *testing.T) {
 	for _, file := range td.WithGlyphs {
 		fp := readFontFile(t, file.Path)
 		head, _, err := ParseHead(readTable(t, fp, "head"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		maxp, _, err := ParseMaxp(readTable(t, fp, "maxp"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		loca, err := ParseLoca(readTable(t, fp, "loca"), int(maxp.NumGlyphs), head.IndexToLocFormat == 1)
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		glyphs, err := ParseGlyf(readTable(t, fp, "glyf"), loca)
-		assertNoErr(t, err)
-		assert(t, len(glyphs) == len(loca)-1)
-		assert(t, len(glyphs) == file.GlyphNumber)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(glyphs) == len(loca)-1)
+		tu.Assert(t, len(glyphs) == file.GlyphNumber)
 	}
 }
 
 func assertGlyphSizeEqual(t *testing.T, g1, g2 Glyph) {
-	assert(t, g1.XMin == g2.XMin)
-	assert(t, g1.YMin == g2.YMin)
-	assert(t, g1.XMax == g2.XMax)
-	assert(t, g1.YMax == g2.YMax)
+	tu.Assert(t, g1.XMin == g2.XMin)
+	tu.Assert(t, g1.YMin == g2.YMin)
+	tu.Assert(t, g1.XMax == g2.XMax)
+	tu.Assert(t, g1.YMax == g2.YMax)
 }
 
 // do not compare flags
 func assertPointEqual(t *testing.T, exp, got GlyphContourPoint) {
-	assertC(t, exp.X == got.X && exp.Y == got.Y,
+	tu.AssertC(t, exp.X == got.X && exp.Y == got.Y,
 		fmt.Sprintf("expected contour point (%d,%d), got (%d,%d)", exp.X, exp.Y, got.X, got.Y))
 }
 
 // do not compare flags
 func assertCompositeEqual(t *testing.T, exp, got CompositeGlyphPart) {
 	exp.Flags, got.Flags = 0, 0
-	assertC(t, exp == got, fmt.Sprintf("expected composite part %v, got %v", exp, got))
+	tu.AssertC(t, exp == got, fmt.Sprintf("expected composite part %v, got %v", exp, got))
 }
 
 func TestGlyphCoordinates(t *testing.T) {
@@ -57,29 +58,29 @@ func TestGlyphCoordinates(t *testing.T) {
 	maxpBin := []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x0, 0xb, 0x0, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xa, 0x0, 0x0, 0x2, 0x0, 0x1, 0x61, 0x0, 0x0, 0x0, 0x0}
 
 	num, _, err := ParseMaxp(maxpBin)
-	assertNoErr(t, err)
-	assert(t, num.NumGlyphs == 4)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, num.NumGlyphs == 4)
 
 	head, _, err := ParseHead(headBin)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	loca, err := ParseLoca(locaBin, int(num.NumGlyphs), head.IndexToLocFormat == 1)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	glyphs, err := ParseGlyf(glyfBin, loca)
-	assertNoErr(t, err)
-	assert(t, len(glyphs) == 4)
-	assert(t, glyphs[0].Data == nil)
-	assert(t, glyphs[1].Data == nil)
-	assert(t, glyphs[2].Data == nil)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(glyphs) == 4)
+	tu.Assert(t, glyphs[0].Data == nil)
+	tu.Assert(t, glyphs[1].Data == nil)
+	tu.Assert(t, glyphs[2].Data == nil)
 
 	glyph := glyphs[3]
 	assertGlyphSizeEqual(t, glyph, Glyph{XMin: 12, YMin: 0, XMax: 1172, YMax: 1430})
 
 	glyphData, ok := glyph.Data.(SimpleGlyph)
-	assert(t, ok)
-	assert(t, len(glyphData.Instructions) == 0)
-	assert(t, reflect.DeepEqual(glyphData.EndPtsOfContours, []uint16{6, 10}))
+	tu.Assert(t, ok)
+	tu.Assert(t, len(glyphData.Instructions) == 0)
+	tu.Assert(t, reflect.DeepEqual(glyphData.EndPtsOfContours, []uint16{6, 10}))
 
 	exp := [...]struct {
 		x, y    int16
@@ -97,14 +98,14 @@ func TestGlyphCoordinates(t *testing.T) {
 		{x: 935, y: 352},
 		{x: 249, y: 352},
 	}
-	assert(t, len(glyphData.Points) == len(exp))
+	tu.Assert(t, len(glyphData.Points) == len(exp))
 
 	const overlapSimple = 0x40
 
 	for i, v := range glyphData.Points {
 		e := exp[i]
-		assert(t, v.X == e.x && v.Y == e.y)
-		assert(t, (v.Flag&overlapSimple != 0) == e.overlap)
+		tu.Assert(t, v.X == e.x && v.Y == e.y)
+		tu.Assert(t, (v.Flag&overlapSimple != 0) == e.overlap)
 	}
 }
 
@@ -113,11 +114,11 @@ func TestGlyphCoordinates2(t *testing.T) {
 	fp := readFontFile(t, filepath)
 	ng := numGlyphs(t, fp)
 	head, _, err := ParseHead(readTable(t, fp, "head"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	loca, err := ParseLoca(readTable(t, fp, "loca"), ng, head.IndexToLocFormat == 1)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	glyf, err := ParseGlyf(readTable(t, fp, "glyf"), loca)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	exp := Glyf{
 		Glyph{
@@ -199,21 +200,21 @@ func TestGlyphCoordinates2(t *testing.T) {
 		},
 	}
 
-	assert(t, len(glyf) == len(exp))
+	tu.Assert(t, len(glyf) == len(exp))
 	for i, e := range exp {
 		g := glyf[i]
 		assertGlyphSizeEqual(t, e, g)
 		switch data := g.Data.(type) {
 		case SimpleGlyph:
 			eData := e.Data.(SimpleGlyph)
-			assert(t, reflect.DeepEqual(eData.EndPtsOfContours, data.EndPtsOfContours))
-			assert(t, len(eData.Points) == len(data.Points))
+			tu.Assert(t, reflect.DeepEqual(eData.EndPtsOfContours, data.EndPtsOfContours))
+			tu.Assert(t, len(eData.Points) == len(data.Points))
 			for i, got := range data.Points {
 				assertPointEqual(t, eData.Points[i], got)
 			}
 		case CompositeGlyph:
 			eData := e.Data.(CompositeGlyph)
-			assert(t, len(eData.Glyphs) == len(data.Glyphs))
+			tu.Assert(t, len(eData.Glyphs) == len(data.Glyphs))
 			for i, got := range data.Glyphs {
 				assertCompositeEqual(t, eData.Glyphs[i], got)
 			}
@@ -226,13 +227,13 @@ func TestParseSbix(t *testing.T) {
 		fp := readFontFile(t, file.Path)
 
 		maxp, _, err := ParseMaxp(readTable(t, fp, "maxp"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		sbix, _, err := ParseSbix(readTable(t, fp, "sbix"), int(maxp.NumGlyphs))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
-		assertNoErr(t, err)
-		assert(t, len(sbix.Strikes) == file.StrikesNumber)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(sbix.Strikes) == file.StrikesNumber)
 	}
 }
 
@@ -241,20 +242,20 @@ func TestParseCBLC(t *testing.T) {
 		fp := readFontFile(t, file.Path)
 
 		cblc, _, err := ParseCBLC(readTable(t, fp, "CBLC"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
-		assertNoErr(t, err)
-		assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
 	}
 
 	// The following sample has subtable format 3, and is copied from
 	// https://github.com/fonttools/fonttools/blob/main/Tests/ttLib/tables/C_B_L_C_test.py
 	cblcSample, err := base64.StdEncoding.DecodeString("AAMAAAAAAAEAAAA4AAAALAAAAAIAAAAAZeWIAAAAAAAAAAAAZeWIAAAAAAAAAAAAAAEAA" +
 		"21tIAEAAQACAAAAEAADAAMAAAAgAAMAEQAAAAQAAAOmEQ0AAAADABEAABERAAAIUg==")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	cblc, _, err := ParseCBLC(cblcSample)
-	assertNoErr(t, err)
-	assert(t, len(cblc.BitmapSizes) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(cblc.BitmapSizes) == 1)
 }
 
 func TestParseEBLC(t *testing.T) {
@@ -262,36 +263,36 @@ func TestParseEBLC(t *testing.T) {
 		fp := readFontFile(t, file.Path)
 
 		cblc, _, err := ParseCBLC(readTable(t, fp, "EBLC"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
-		assertNoErr(t, err)
-		assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(cblc.BitmapSizes) == file.StrikesNumber)
 	}
 }
 
 func TestParseBloc(t *testing.T) {
 	blocT, err := td.Files.ReadFile("toys/tables/bloc.bin")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	bloc, _, err := ParseCBLC(blocT)
-	assertNoErr(t, err)
-	assert(t, len(bloc.BitmapSizes) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(bloc.BitmapSizes) == 1)
 }
 
 func TestParseVORG(t *testing.T) {
 	filename := "collections/NotoSansCJK-Bold.ttc"
 
 	file, err := td.Files.ReadFile(filename)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	fonts, err := loader.NewLoaders(bytes.NewReader(file))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	for _, fp := range fonts {
 		vorg, _, err := ParseVORG(readTable(t, fp, "VORG"))
-		assertNoErr(t, err)
-		assert(t, len(vorg.VertOriginYMetrics) == 233)
-		assert(t, vorg.DefaultVertOriginY == 880)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(vorg.VertOriginYMetrics) == 233)
+		tu.Assert(t, vorg.DefaultVertOriginY == 880)
 	}
 
 	// GID : 700-1000
@@ -315,6 +316,6 @@ func TestParseVORG(t *testing.T) {
 	vorg, _, _ := ParseVORG(readTable(t, fonts[0], "VORG"))
 	for i, exp := range expectedVorg0 {
 		gid := GlyphID(i + 700)
-		assert(t, vorg.YOrigin(gid) == exp)
+		tu.Assert(t, vorg.YOrigin(gid) == exp)
 	}
 }

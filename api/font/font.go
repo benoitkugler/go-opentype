@@ -163,7 +163,7 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 
 	raw, err = ld.RawTable(loader.MustNewTag("CFF "))
 	if err == nil { // error only if the table is present and invalid
-		out.cff, err = cff.ParseFont(raw)
+		out.cff, err = cff.Parse(raw)
 		if err != nil {
 			return nil, err
 		}

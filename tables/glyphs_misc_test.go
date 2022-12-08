@@ -2,12 +2,14 @@ package tables
 
 import (
 	"testing"
+
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func TestParseSVG(t *testing.T) {
 	fp := readFontFile(t, "toys/chromacheck-svg.ttf")
 	_, _, err := ParseSVG(readTable(t, fp, "SVG "))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 }
 
 func TestParseCFF(t *testing.T) {

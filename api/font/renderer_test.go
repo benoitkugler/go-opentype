@@ -10,6 +10,7 @@ import (
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func loadFont(t testing.TB, filename string) *Font {
@@ -209,7 +210,7 @@ func TestGlyfSegments1(t *testing.T) {
 		transform_(22381, 8192, 5996, 14188, 237, 258, lineTo(205, 0)),
 	}}
 
-	assert(t, len(f.glyf) == len(expecteds))
+	tu.Assert(t, len(f.glyf) == len(expecteds))
 
 	face := Face{Font: f}
 	for i, expected := range expecteds {
@@ -221,7 +222,7 @@ func TestGlyfSegments1(t *testing.T) {
 			expected = nil
 		}
 
-		assert(t, reflect.DeepEqual(expected, got))
+		tu.Assert(t, reflect.DeepEqual(expected, got))
 	}
 }
 
@@ -371,7 +372,7 @@ func TestGlyfSegments2(t *testing.T) {
 		if len(expected) == 0 {
 			expected = nil
 		}
-		assert(t, reflect.DeepEqual(expected, got))
+		tu.Assert(t, reflect.DeepEqual(expected, got))
 	}
 }
 
@@ -450,8 +451,8 @@ func TestCFFSegments(t *testing.T) {
 
 	for i, expected := range expecteds {
 		got, err := font.glyphDataFromCFF1(gID(i))
-		assertNoErr(t, err)
-		assert(t, reflect.DeepEqual(expected, got.Segments))
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, reflect.DeepEqual(expected, got.Segments))
 	}
 }
 
@@ -468,7 +469,7 @@ func TestGlyphDataCrash(t *testing.T) {
 			_, g := iter.Char()
 			data := face.GlyphData(g)
 			_, isOutline := data.(api.GlyphOutline)
-			assert(t, isOutline)
+			tu.Assert(t, isOutline)
 		}
 	}
 	for _, filename := range []string{
@@ -489,15 +490,15 @@ func TestSbixGlyph(t *testing.T) {
 	face := Face{Font: ft, XPpem: 100, YPpem: 100}
 	data := face.GlyphData(1)
 	asBitmap, ok := data.(api.GlyphBitmap)
-	assert(t, ok)
-	assert(t, asBitmap.Format == api.PNG)
+	tu.Assert(t, ok)
+	tu.Assert(t, asBitmap.Format == api.PNG)
 
 	ft = loadFont(t, "toys/Sbix3.ttf")
 	face = Face{Font: ft, XPpem: 100, YPpem: 100}
 	data = face.GlyphData(4)
 	asBitmap, ok = data.(api.GlyphBitmap)
-	assert(t, ok)
-	assert(t, asBitmap.Format == api.PNG)
+	tu.Assert(t, ok)
+	tu.Assert(t, asBitmap.Format == api.PNG)
 }
 
 func TestCblcGlyph(t *testing.T) {
@@ -508,10 +509,10 @@ func TestCblcGlyph(t *testing.T) {
 		for gid := filename.GlyphRange[0]; gid <= filename.GlyphRange[1]; gid++ {
 			data := face.GlyphData(api.GID(gid))
 			asBitmap, ok := data.(api.GlyphBitmap)
-			assert(t, ok)
-			assert(t, asBitmap.Format == api.PNG)
-			assert(t, asBitmap.Width == 136)
-			assert(t, asBitmap.Height == 128)
+			tu.Assert(t, ok)
+			tu.Assert(t, asBitmap.Format == api.PNG)
+			tu.Assert(t, asBitmap.Width == 136)
+			tu.Assert(t, asBitmap.Height == 128)
 		}
 	}
 }
@@ -526,25 +527,25 @@ func TestEblcGlyph(t *testing.T) {
 		// so loadFont errors
 		ld := readFontFile(t, filename.Path)
 		eblc, _, err := tables.ParseCBLC(readTable(t, ld, "EBLC"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		bm, err := newBitmap(eblc, readTable(t, ld, "EBDT"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		cmapT, _, err := tables.ParseCmap(readTable(t, ld, "cmap"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		cmap, _, err := api.ProcessCmap(cmapT)
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		runes := runess[i]
 		for _, r := range runes {
 			gid, ok := cmap.Lookup(r)
-			assert(t, ok)
+			tu.Assert(t, ok)
 
 			data, err := bm.glyphData(tables.GlyphID(gid), 94, 94)
-			assertNoErr(t, err)
-			assert(t, data.Format == api.BlackAndWhite)
+			tu.AssertNoErr(t, err)
+			tu.Assert(t, data.Format == api.BlackAndWhite)
 		}
 	}
 }
@@ -552,39 +553,39 @@ func TestEblcGlyph(t *testing.T) {
 func TestAppleBitmapGlyph(t *testing.T) {
 	filename := "collections/Gacha_9.dfont"
 	f, err := td.Files.ReadFile(filename)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	fonts, err := loader.NewLoaders(bytes.NewReader(f))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	ft, err := NewFont(fonts[0])
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	face := Face{Font: ft, XPpem: 94, YPpem: 94}
 
 	runes := "The quick brown fox jumps over the lazy dog"
 	for _, r := range runes {
 		gid, ok := face.NominalGlyph(r)
-		assert(t, ok)
+		tu.Assert(t, ok)
 
 		data := face.GlyphData(gid)
 		asBitmap, ok := data.(api.GlyphBitmap)
-		assert(t, ok)
-		assert(t, asBitmap.Format == api.BlackAndWhite)
+		tu.Assert(t, ok)
+		tu.Assert(t, asBitmap.Format == api.BlackAndWhite)
 	}
 }
 
 func TestMixedGlyphs(t *testing.T) {
-	for _, filename := range filenames(t, "common") {
+	for _, filename := range tu.Filenames(t, "common") {
 		if strings.HasPrefix(filename, "common/SourceSans") {
 			continue
 		}
 		font := loadFont(t, filename)
 		space, ok := font.NominalGlyph(' ')
-		assert(t, ok)
+		tu.Assert(t, ok)
 		face := Face{Font: font, XPpem: 94, YPpem: 94}
 
 		gd := face.GlyphData(space)
-		assert(t, gd != nil)
+		tu.Assert(t, gd != nil)
 	}
 }

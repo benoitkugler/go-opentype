@@ -7,62 +7,63 @@ import (
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func TestParseOTLayout(t *testing.T) {
 	for _, filename := range td.WithOTLayout {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-		assertNoErr(t, err)
-		assert(t, len(gsub.LookupList.Lookups) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(gsub.LookupList.Lookups) > 0)
 
 		for _, lookup := range gsub.LookupList.Lookups {
-			assert(t, lookup.lookupType > 0)
+			tu.Assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGSUBLookups()
-			assertNoErr(t, err)
+			tu.AssertNoErr(t, err)
 		}
 
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
-		assertNoErr(t, err)
-		assert(t, len(gpos.LookupList.Lookups) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(gpos.LookupList.Lookups) > 0)
 
 		for _, lookup := range gpos.LookupList.Lookups {
-			assert(t, lookup.lookupType > 0)
+			tu.Assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGPOSLookups()
-			assertNoErr(t, err)
+			tu.AssertNoErr(t, err)
 		}
 
 		_, _, err = ParseGDEF(readTable(t, fp, "GDEF"))
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 	}
 }
 
 func TestGSUB(t *testing.T) {
-	for _, filename := range filenames(t, "toys/gsub") {
+	for _, filename := range tu.Filenames(t, "toys/gsub") {
 		fp := readFontFile(t, filename)
 		gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-		assertNoErr(t, err)
-		assert(t, len(gsub.LookupList.Lookups) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(gsub.LookupList.Lookups) > 0)
 
 		for _, lookup := range gsub.LookupList.Lookups {
-			assert(t, lookup.lookupType > 0)
+			tu.Assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGSUBLookups()
-			assertNoErr(t, err)
+			tu.AssertNoErr(t, err)
 		}
 	}
 }
 
 func TestGPOS(t *testing.T) {
-	for _, filename := range filenames(t, "toys/gpos") {
+	for _, filename := range tu.Filenames(t, "toys/gpos") {
 		fp := readFontFile(t, filename)
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
-		assertNoErr(t, err)
-		assert(t, len(gpos.LookupList.Lookups) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(gpos.LookupList.Lookups) > 0)
 
 		for _, lookup := range gpos.LookupList.Lookups {
-			assert(t, lookup.lookupType > 0)
+			tu.Assert(t, lookup.lookupType > 0)
 			_, err = lookup.AsGPOSLookups()
-			assertNoErr(t, err)
+			tu.AssertNoErr(t, err)
 		}
 	}
 }
@@ -71,7 +72,7 @@ func TestGSUBIndic(t *testing.T) {
 	filepath := "toys/gsub/GSUBChainedContext2.ttf"
 	fp := readFontFile(t, filepath)
 	gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	expectedScripts := []Script{
 		{
@@ -189,9 +190,9 @@ func TestGSUBIndic(t *testing.T) {
 	}
 	for i, lk := range gsub.LookupList.Lookups {
 		got, err := lk.AsGSUBLookups()
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 		exp := expectedLookups[i]
-		assertC(t, reflect.DeepEqual(got, exp), fmt.Sprintf("lookup %d expected \n%v\n, got \n%v\n", i, exp, got))
+		tu.AssertC(t, reflect.DeepEqual(got, exp), fmt.Sprintf("lookup %d expected \n%v\n, got \n%v\n", i, exp, got))
 	}
 }
 
@@ -199,10 +200,10 @@ func TestGSUBLigature(t *testing.T) {
 	filepath := "toys/gsub/GSUBLigature.ttf"
 	fp := readFontFile(t, filepath)
 	gsub, _, err := ParseLayout(readTable(t, fp, "GSUB"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	lookups, err := gsub.LookupList.Lookups[0].AsGSUBLookups()
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	lookup := lookups[0]
 
 	expected := LigatureSubs{
@@ -247,31 +248,31 @@ func TestGSUBLigature(t *testing.T) {
 		},
 	}
 
-	assertC(t, reflect.DeepEqual(lookup, expected), fmt.Sprintf("expected %v, got %v", expected, lookup))
+	tu.AssertC(t, reflect.DeepEqual(lookup, expected), fmt.Sprintf("expected %v, got %v", expected, lookup))
 }
 
 func TestGPOSCursive(t *testing.T) {
 	filepath := "toys/gpos/GPOSCursive.ttf"
 	fp := readFontFile(t, filepath)
 	gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	if len(gpos.LookupList.Lookups) != 4 || len(gpos.LookupList.Lookups[0].subtableOffsets) != 1 {
 		t.Fatalf("invalid gpos lookups: %v", gpos.LookupList)
 	}
 
 	lookups, err := gpos.LookupList.Lookups[0].AsGPOSLookups()
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	cursive, ok := lookups[0].(CursivePos)
-	assertC(t, ok, fmt.Sprintf("unexpected type for lookup %T", lookups[0]))
+	tu.AssertC(t, ok, fmt.Sprintf("unexpected type for lookup %T", lookups[0]))
 
 	got := cursive.EntryExits
 	expected := []EntryExit{
 		{AnchorFormat1{1, 405, 45}, AnchorFormat1{1, 0, 0}},
 		{AnchorFormat1{1, 452, 500}, AnchorFormat1{1, 0, 0}},
 	}
-	assertC(t, reflect.DeepEqual(expected, got), fmt.Sprintf("expected %v, got %v", expected, got))
+	tu.AssertC(t, reflect.DeepEqual(expected, got), fmt.Sprintf("expected %v, got %v", expected, got))
 }
 
 func TestBits(t *testing.T) {
@@ -298,7 +299,7 @@ func TestGDEFCaretList3(t *testing.T) {
 	filepath := "toys/GDEFCaretList3.ttf"
 	fp := readFontFile(t, filepath)
 	gdef, _, err := ParseGDEF(readTable(t, fp, "GDEF"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	expectedLigGlyphs := [][]CaretValue3{ //  LigGlyphCount=4
 		// CaretCount=1
@@ -323,13 +324,13 @@ func TestGDEFCaretList3(t *testing.T) {
 
 	for i := range expectedLigGlyphs {
 		expL, gotL := expectedLigGlyphs[i], gdef.LigCaretList.LigGlyphs[i]
-		assert(t, len(expL) == len(gotL.CaretValues))
+		tu.Assert(t, len(expL) == len(gotL.CaretValues))
 		for j := range expL {
 			exp, got := expL[j], gotL.CaretValues[j]
 			asFormat3, ok := got.(CaretValue3)
-			assert(t, ok)
-			assert(t, exp.Coordinate == asFormat3.Coordinate)
-			assert(t, exp.Device == asFormat3.Device)
+			tu.Assert(t, ok)
+			tu.Assert(t, exp.Coordinate == asFormat3.Coordinate)
+			tu.Assert(t, exp.Device == asFormat3.Device)
 		}
 	}
 }
@@ -338,41 +339,41 @@ func TestGDEFVarStore(t *testing.T) {
 	filepath := "common/Commissioner-VF.ttf"
 	fp := readFontFile(t, filepath)
 	gdef, _, err := ParseGDEF(readTable(t, fp, "GDEF"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
-	assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
-	assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
+	tu.Assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
+	tu.Assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
 }
 
 func TestGetProps(t *testing.T) {
 	file := readFontFile(t, "common/Raleway-v4020-Regular.otf")
 
 	gpos, _, err := ParseLayout(readTable(t, file, "GPOS"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	gsub, _, err := ParseLayout(readTable(t, file, "GSUB"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	for _, table := range []Layout{gpos, gsub} {
 		var tags []int
 		for _, s := range table.scriptList.records {
 			tags = append(tags, int(s.Tag))
 		}
-		assert(t, sort.IntsAreSorted(tags))
+		tu.Assert(t, sort.IntsAreSorted(tags))
 
 		for i, s := range table.scriptList.records {
 			ptr := table.FindScript(s.Tag)
-			assert(t, ptr == i)
+			tu.Assert(t, ptr == i)
 		}
 
 		s := table.FindScript(Tag(0)) // invalid
-		assert(t, s == -1)
+		tu.Assert(t, s == -1)
 
 		for _, feat := range table.featureList.records {
 			_, ok := table.FindFeatureIndex(feat.Tag)
-			assert(t, ok)
+			tu.Assert(t, ok)
 		}
 		_, ok := table.FindFeatureIndex(Tag(0)) // invalid
-		assert(t, !ok)
+		tu.Assert(t, !ok)
 
 		// now check the languages
 
@@ -381,18 +382,18 @@ func TestGetProps(t *testing.T) {
 			for _, s := range script.langSysRecords {
 				tags = append(tags, int(s.Tag))
 			}
-			assert(t, sort.IntsAreSorted(tags))
+			tu.Assert(t, sort.IntsAreSorted(tags))
 
 			for i, l := range script.langSysRecords {
 				ptr := script.FindLanguage(l.Tag)
-				assert(t, ptr == i)
+				tu.Assert(t, ptr == i)
 			}
 
 			s := script.FindLanguage(Tag(0)) // invalid
-			assert(t, s == -1)
+			tu.Assert(t, s == -1)
 
-			assert(t, script.DefaultLangSys != nil)
-			assert(t, reflect.DeepEqual(script.GetLangSys(0xFFFF), *script.DefaultLangSys))
+			tu.Assert(t, script.DefaultLangSys != nil)
+			tu.Assert(t, reflect.DeepEqual(script.GetLangSys(0xFFFF), *script.DefaultLangSys))
 		}
 	}
 }
@@ -401,8 +402,8 @@ func TestOTFeatureVariation(t *testing.T) {
 	ft := readFontFile(t, "common/Commissioner-VF.ttf")
 
 	gsub, _, err := ParseLayout(readTable(t, ft, "GSUB"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
-	assert(t, gsub.FindVariationIndex([]float32{0.8}) == 0)
-	assert(t, gsub.FindVariationIndex([]float32{0.4}) == -1)
+	tu.Assert(t, gsub.FindVariationIndex([]float32{0.8}) == 0)
+	tu.Assert(t, gsub.FindVariationIndex([]float32{0.4}) == -1)
 }

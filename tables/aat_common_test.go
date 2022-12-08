@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/data"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 func TestAATLookup4(t *testing.T) {
@@ -17,49 +18,49 @@ func TestAATLookup4(t *testing.T) {
 			"FFFF FFFF FFFF " + // end of search table
 			"0007 0008")
 	class, _, err := ParseAATLookup(src, 4)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	gids := []GlyphID{1, 2, 4, 5}
 	classes := []uint16{7, 8, 7, 8}
 	for i, gid := range gids {
 		c, ok := class.Class(gid)
-		assert(t, ok)
-		assert(t, c == classes[i])
+		tu.Assert(t, ok)
+		tu.Assert(t, c == classes[i])
 	}
 	_, found := class.Class(0xFF)
-	assert(t, !found)
+	tu.Assert(t, !found)
 
 	// extracted from macos Tamil MN font
 	src = []byte{0, 4, 0, 6, 0, 5, 0, 24, 0, 2, 0, 6, 0, 151, 0, 129, 0, 42, 0, 156, 0, 153, 0, 88, 0, 163, 0, 163, 0, 96, 1, 48, 1, 48, 0, 98, 255, 255, 255, 255, 0, 100, 0, 4, 0, 10, 0, 11, 0, 12, 0, 13, 0, 14, 0, 15, 0, 16, 0, 17, 0, 18, 0, 19, 0, 20, 0, 21, 0, 22, 0, 23, 0, 24, 0, 25, 0, 26, 0, 27, 0, 28, 0, 29, 0, 30, 0, 31, 0, 5, 0, 6, 0, 7, 0, 8, 0, 9, 0, 32}
 	class, _, err = ParseAATLookup(src, 0xFFFF)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 	gids = []GlyphID{132, 129, 144, 145, 146, 140, 137, 130, 135, 138, 133, 139, 142, 143, 136, 134, 147, 141, 151, 132, 150, 148, 149, 304, 153, 154, 163, 155, 156}
 	classes = []uint16{
 		12, 4, 24, 25, 26, 20, 17, 10, 15, 18, 13, 19, 22, 23, 16, 14, 27, 21, 31, 12, 30, 28, 29, 32, 5, 6, 9, 7, 8,
 	}
 	for i, gid := range gids {
 		c, ok := class.Class(gid)
-		assert(t, ok)
-		assert(t, c == classes[i])
+		tu.Assert(t, ok)
+		tu.Assert(t, c == classes[i])
 	}
 	_, found = class.Class(0xFF)
-	assert(t, !found)
+	tu.Assert(t, !found)
 }
 
 func TestParseTrak(t *testing.T) {
 	fp := readFontFile(t, "toys/Trak.ttf")
 	trak, _, err := ParseTrak(readTable(t, fp, "trak"))
-	assertNoErr(t, err)
-	assert(t, len(trak.Horiz.SizeTable) == 4)
-	assert(t, len(trak.Vert.SizeTable) == 0)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(trak.Horiz.SizeTable) == 4)
+	tu.Assert(t, len(trak.Vert.SizeTable) == 0)
 
-	assert(t, reflect.DeepEqual(trak.Horiz.SizeTable, []float32{1, 2, 12, 96}))
-	assert(t, reflect.DeepEqual(trak.Horiz.TrackTable[0].PerSizeTracking, []int16{200, 200, 0, -100}))
+	tu.Assert(t, reflect.DeepEqual(trak.Horiz.SizeTable, []float32{1, 2, 12, 96}))
+	tu.Assert(t, reflect.DeepEqual(trak.Horiz.TrackTable[0].PerSizeTracking, []int16{200, 200, 0, -100}))
 }
 
 func TestParseFeat(t *testing.T) {
 	fp := readFontFile(t, "toys/Feat.ttf")
 	feat, _, err := ParseFeat(readTable(t, fp, "feat"))
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	expectedSettings := [...][]FeatureSettingName{
 		{{2, 260}, {4, 259}, {10, 304}},
@@ -74,41 +75,41 @@ func TestParseFeat(t *testing.T) {
 		{{0, 294}, {1, 295}, {2, 296}, {3, 297}},
 		{{0, 309}, {1, 301}},
 	}
-	assert(t, len(feat.Names) == len(expectedSettings))
+	tu.Assert(t, len(feat.Names) == len(expectedSettings))
 	for i, name := range feat.Names {
 		exp := expectedSettings[i]
 		got := name.SettingTable
-		assert(t, reflect.DeepEqual(exp, got))
+		tu.Assert(t, reflect.DeepEqual(exp, got))
 	}
 }
 
 func TestParseAnkr(t *testing.T) {
 	table, err := td.Files.ReadFile("toys/tables/ankr.bin")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	ankr, _, err := ParseAnkr(table, 1409)
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	_, isFormat4 := ankr.LookupTable.(AATLoopkup4)
-	assert(t, isFormat4)
+	tu.Assert(t, isFormat4)
 }
 
 func TestParseMorx(t *testing.T) {
-	files := filenames(t, "morx")
+	files := tu.Filenames(t, "morx")
 	files = append(files, "toys/Trak.ttf")
 	for _, filename := range files {
 		fp := readFontFile(t, filename)
 		ng := numGlyphs(t, fp)
 
 		table, _, err := ParseMorx(readTable(t, fp, "morx"), ng)
-		assertNoErr(t, err)
-		assert(t, int(table.nChains) == len(table.Chains))
-		assert(t, int(table.nChains) == 1)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, int(table.nChains) == len(table.Chains))
+		tu.Assert(t, int(table.nChains) == 1)
 
 		for _, chain := range table.Chains {
-			assertNoErr(t, err)
-			assert(t, len(chain.Subtables) == int(chain.nSubtable))
-			assert(t, chain.Flags == 1)
+			tu.AssertNoErr(t, err)
+			tu.Assert(t, len(chain.Subtables) == int(chain.nSubtable))
+			tu.Assert(t, chain.Flags == 1)
 		}
 	}
 }
@@ -203,32 +204,32 @@ func TestMorxLigature(t *testing.T) {
 			"03EC 03ED " + // 218: LigList[4]=1004, LigList[3]=1005
 			"03EE 03EF ") // 222: LigList[5]=1006, LigList[6]=1007
 
-	assert(t, len(morxLigatureData) == 226)
+	tu.Assert(t, len(morxLigatureData) == 226)
 	out, _, err := ParseMorx(morxLigatureData, 1515)
-	assertNoErr(t, err)
-	assert(t, len(out.Chains) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(out.Chains) == 1)
 
 	chain := out.Chains[0]
-	assert(t, chain.Flags == 1)
-	assert(t, len(chain.Subtables) == 1)
+	tu.Assert(t, chain.Flags == 1)
+	tu.Assert(t, len(chain.Subtables) == 1)
 	subtable := chain.Subtables[0]
 
 	const vertical uint8 = 0x80
-	assert(t, subtable.Coverage == vertical)
-	assert(t, subtable.SubFeatureFlags == 1)
+	tu.Assert(t, subtable.Coverage == vertical)
+	tu.Assert(t, subtable.SubFeatureFlags == 1)
 	lig, ok := subtable.Content.(MorxSubtableLigature)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	machine := lig.AATStateTableExt
-	assert(t, machine.stateSize == 7)
+	tu.Assert(t, machine.stateSize == 7)
 
 	class, ok := machine.Class.(AATLoopkup2)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	expMachineClassRecords := []LookupRecord2{
 		{FirstGlyph: 20, LastGlyph: 22, Value: 4},
 		{FirstGlyph: 23, LastGlyph: 24, Value: 5},
 		{FirstGlyph: 26, LastGlyph: 28, Value: 6},
 	}
-	assert(t, reflect.DeepEqual(class.Records, expMachineClassRecords))
+	tu.Assert(t, reflect.DeepEqual(class.Records, expMachineClassRecords))
 
 	expMachineStates := [][]uint16{
 		{0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000, 0x0000}, // State[0][0..6]
@@ -236,7 +237,7 @@ func TestMorxLigature(t *testing.T) {
 		{0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0002, 0x0000}, // State[2][0..6]
 		{0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0002, 0x0003}, // State[3][0..6]
 	}
-	assert(t, reflect.DeepEqual(machine.States, expMachineStates))
+	tu.Assert(t, reflect.DeepEqual(machine.States, expMachineStates))
 
 	expMachineEntries := []AATStateEntry{
 		{NewState: 0, Flags: 0},
@@ -244,7 +245,7 @@ func TestMorxLigature(t *testing.T) {
 		{NewState: 0x0003, Flags: 0x8000},
 		{NewState: 0, Flags: 0xA000},
 	}
-	assert(t, reflect.DeepEqual(machine.Entries, expMachineEntries))
+	tu.Assert(t, reflect.DeepEqual(machine.Entries, expMachineEntries))
 
 	expLigActions := []uint32{
 		0x3FFFFFE7,
@@ -255,9 +256,9 @@ func TestMorxLigature(t *testing.T) {
 	expLigatures := []GlyphID{
 		1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007,
 	}
-	assert(t, reflect.DeepEqual(lig.LigActions, expLigActions))
-	assert(t, reflect.DeepEqual(lig.Components, expComponents))
-	assert(t, reflect.DeepEqual(lig.Ligatures, expLigatures))
+	tu.Assert(t, reflect.DeepEqual(lig.LigActions, expLigActions))
+	tu.Assert(t, reflect.DeepEqual(lig.Components, expComponents))
+	tu.Assert(t, reflect.DeepEqual(lig.Ligatures, expLigatures))
 }
 
 func TestMorxInsertion(t *testing.T) {
@@ -312,28 +313,28 @@ func TestMorxInsertion(t *testing.T) {
 			// Insertion action table.
 			"022F") // 170: InsertionActionTable[0]=GlyphID 559
 
-	assert(t, len(morxInsertionData) == 172)
+	tu.Assert(t, len(morxInsertionData) == 172)
 
 	out, _, err := ParseMorx(morxInsertionData, 910)
-	assertNoErr(t, err)
-	assert(t, len(out.Chains) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(out.Chains) == 1)
 
 	chain := out.Chains[0]
 
-	assert(t, chain.Flags == 1)
-	assert(t, len(chain.Subtables) == 1)
+	tu.Assert(t, chain.Flags == 1)
+	tu.Assert(t, len(chain.Subtables) == 1)
 	subtable := chain.Subtables[0]
 
 	const vertical uint8 = 0
-	assert(t, subtable.Coverage == vertical)
-	assert(t, subtable.SubFeatureFlags == 1)
+	tu.Assert(t, subtable.Coverage == vertical)
+	tu.Assert(t, subtable.SubFeatureFlags == 1)
 	insert, ok := subtable.Content.(MorxSubtableInsertion)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	machine := insert.AATStateTableExt
-	assert(t, machine.stateSize == 6)
+	tu.Assert(t, machine.stateSize == 6)
 
 	class, ok := machine.Class.(AATLoopkup2)
-	assert(t, ok)
+	tu.Assert(t, ok)
 	expMachineClassRecords := []LookupRecord2{
 		{FirstGlyph: 172, LastGlyph: 172, Value: 5},
 		{FirstGlyph: 486, LastGlyph: 491, Value: 5},
@@ -342,23 +343,23 @@ func TestMorxInsertion(t *testing.T) {
 		{FirstGlyph: 506, LastGlyph: 508, Value: 4},
 		{FirstGlyph: 592, LastGlyph: 592, Value: 5},
 	}
-	assert(t, reflect.DeepEqual(class.Records, expMachineClassRecords))
+	tu.Assert(t, reflect.DeepEqual(class.Records, expMachineClassRecords))
 
 	expMachineStates := [][]uint16{
 		{0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000}, // 110: State[0][0..5]
 		{0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0x0000}, // 122: State[1][0..5]
 		{0x0000, 0x0000, 0x0001, 0x0000, 0x0001, 0x0002}, // 134: State[2][0..5]
 	}
-	assert(t, reflect.DeepEqual(machine.States, expMachineStates))
+	tu.Assert(t, reflect.DeepEqual(machine.States, expMachineStates))
 
 	expMachineEntries := []AATStateEntry{
 		{NewState: 0, Flags: 0, data: [4]byte{0xff, 0xff, 0xff, 0xff}},
 		{NewState: 0x0002, Flags: 0, data: [4]byte{0xff, 0xff, 0xff, 0xff}},
 		{NewState: 0, Flags: 0x2820, data: [4]byte{0, 0, 0xff, 0xff}},
 	}
-	assert(t, reflect.DeepEqual(machine.Entries, expMachineEntries))
+	tu.Assert(t, reflect.DeepEqual(machine.Entries, expMachineEntries))
 
-	assert(t, reflect.DeepEqual(insert.Insertions, []GlyphID{0x022f}))
+	tu.Assert(t, reflect.DeepEqual(insert.Insertions, []GlyphID{0x022f}))
 }
 
 func TestParseKerx(t *testing.T) {
@@ -373,23 +374,23 @@ func TestParseKerx(t *testing.T) {
 		"toys/tables/kerx6-VF.bin",
 	} {
 		table, err := td.Files.ReadFile(filepath)
-		assertNoErr(t, err)
+		tu.AssertNoErr(t, err)
 
 		kerx, _, err := ParseKerx(table, 0xFF)
-		assertNoErr(t, err)
-		assert(t, len(kerx.Tables) > 0)
+		tu.AssertNoErr(t, err)
+		tu.Assert(t, len(kerx.Tables) > 0)
 
 		for _, subtable := range kerx.Tables {
-			assert(t, subtable.TupleCount > 0 == strings.Contains(filepath, "VF"))
+			tu.Assert(t, subtable.TupleCount > 0 == strings.Contains(filepath, "VF"))
 			switch data := subtable.Data.(type) {
 			case KerxData0:
-				assert(t, len(data.Pairs) > 0)
+				tu.Assert(t, len(data.Pairs) > 0)
 			case KerxData2:
-				assert(t, data.Left != nil)
-				assert(t, data.Right != nil)
-				assert(t, int(data.array) <= len(data.kerningData))
+				tu.Assert(t, data.Left != nil)
+				tu.Assert(t, data.Right != nil)
+				tu.Assert(t, int(data.array) <= len(data.kerningData))
 			case KerxData4:
-				assert(t, data.Anchors != nil)
+				tu.Assert(t, data.Anchors != nil)
 			}
 		}
 	}
@@ -397,14 +398,14 @@ func TestParseKerx(t *testing.T) {
 
 func TestKerx6(t *testing.T) {
 	table, err := td.Files.ReadFile("toys/tables/kerx6Exp-VF.bin")
-	assertNoErr(t, err)
+	tu.AssertNoErr(t, err)
 
 	kerx, _, err := ParseKerx(table, 0xFF)
-	assertNoErr(t, err)
-	assert(t, len(kerx.Tables) == 1)
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(kerx.Tables) == 1)
 
 	k, ok := kerx.Tables[0].Data.(KerxData6)
-	assert(t, ok)
+	tu.Assert(t, ok)
 
 	expecteds := []struct { // value extracted from harfbuzz run
 		left, right GlyphID
@@ -433,6 +434,6 @@ func TestKerx6(t *testing.T) {
 
 	for _, exp := range expecteds {
 		got := k.KernPair(exp.left, exp.right)
-		assert(t, got == exp.kerning)
+		tu.Assert(t, got == exp.kerning)
 	}
 }
