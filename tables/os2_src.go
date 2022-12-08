@@ -4,7 +4,7 @@ package tables
 // See https://learn.microsoft.com/en-us/typography/opentype/spec/os2
 type Os2 struct {
 	Version             uint16
-	xAvgCharWidth       uint16
+	XAvgCharWidth       uint16
 	USWeightClass       uint16
 	USWidthClass        uint16
 	fSType              uint16

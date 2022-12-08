@@ -524,15 +524,6 @@ func (p *cffParser) read(n int) ([]byte, error) {
 	return out, nil
 }
 
-// skip advances p.offset by n.
-func (p *cffParser) skip(n int) error {
-	if len(p.src) < p.offset+n {
-		return errors.New("invalid CFF font file (EOF)")
-	}
-	p.offset += n
-	return nil
-}
-
 func (p *cffParser) seek(offset int32) error {
 	if offset < 0 || len(p.src) < int(offset) {
 		return errors.New("invalid CFF font file (EOF)")

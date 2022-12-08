@@ -8,14 +8,13 @@ import (
 	"io"
 
 	"github.com/benoitkugler/go-opentype/api"
-	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // GlyphData returns the glyph content for [gid], or nil if
 // not found.
 func (f *Face) GlyphData(gid GID) api.GlyphData {
 	// since outline may be specified for SVG and bitmaps, check it at the end
-	outB, err := sbixGlyphData(f.sbix, gID(gid), f.XPpem, f.YPpem)
+	outB, err := f.sbix.glyphData(gID(gid), f.XPpem, f.YPpem)
 	if err == nil {
 		outline, ok := f.outlineGlyphData(gID(gid))
 		if ok {
@@ -49,8 +48,8 @@ func (f *Face) GlyphData(gid GID) api.GlyphData {
 	return nil
 }
 
-func sbixGlyphData(sbix tables.Sbix, gid gID, xPpem, yPpem uint16) (api.GlyphBitmap, error) {
-	st := chooseSbixStrike(sbix, xPpem, yPpem)
+func (sb sbix) glyphData(gid gID, xPpem, yPpem uint16) (api.GlyphBitmap, error) {
+	st := sb.chooseStrike(xPpem, yPpem)
 	if st == nil {
 		return api.GlyphBitmap{}, errors.New("empty 'sbix' table")
 	}
@@ -266,15 +265,39 @@ func (f *Face) glyphDataFromGlyf(glyph gID) (api.GlyphOutline, error) {
 	return api.GlyphOutline{Segments: segments}, nil
 }
 
-var noCFFTable error = errors.New("no CFF table")
+var errNoCFFTable error = errors.New("no CFF table")
 
 func (f *Font) glyphDataFromCFF1(glyph gID) (api.GlyphOutline, error) {
 	if f.cff == nil {
-		return api.GlyphOutline{}, noCFFTable
+		return api.GlyphOutline{}, errNoCFFTable
 	}
 	segments, _, err := f.cff.LoadGlyph(glyph)
 	if err != nil {
 		return api.GlyphOutline{}, err
 	}
 	return api.GlyphOutline{Segments: segments}, nil
+}
+
+// BitmapSizes returns the size of bitmap glyphs present in the font.
+func (font *Font) BitmapSizes() []api.BitmapSize {
+	upem := font.head.UnitsPerEm
+
+	avgWidth := font.os2.xAvgCharWidth
+
+	// handle invalid head/os2 tables
+	if upem == 0 || font.os2.version == 0xFFFF {
+		avgWidth = 1
+		upem = 1
+	}
+
+	// adapted from freetype tt_face_load_sbit
+	if font.bitmap != nil {
+		return font.bitmap.availableSizes(avgWidth, upem)
+	}
+
+	if hori := font.hhea; hori != nil {
+		return font.sbix.availableSizes(hori, avgWidth, upem)
+	}
+
+	return nil
 }

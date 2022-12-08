@@ -15,7 +15,7 @@ func ParseOs2(src []byte) (Os2, int, error) {
 	}
 	_ = src[77] // early bound checking
 	item.Version = binary.BigEndian.Uint16(src[0:])
-	item.xAvgCharWidth = binary.BigEndian.Uint16(src[2:])
+	item.XAvgCharWidth = binary.BigEndian.Uint16(src[2:])
 	item.USWeightClass = binary.BigEndian.Uint16(src[4:])
 	item.USWidthClass = binary.BigEndian.Uint16(src[6:])
 	item.fSType = binary.BigEndian.Uint16(src[8:])

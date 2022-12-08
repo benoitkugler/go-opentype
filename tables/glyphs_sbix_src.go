@@ -15,6 +15,7 @@ type Sbix struct {
 	Strikes []Strike `arrayCount:"FirstUint32" offsetsArray:"Offset32"` // [numStrikes]	Offsets from the beginning of the 'sbix' table to data for each individual bitmap strike.
 }
 
+// Strike stores one size of bitmap glyphs in the 'sbix' table.
 // binarygen: argument=numGlyphs int
 type Strike struct {
 	Ppem       uint16            // The PPEM size for which this strike was designed.

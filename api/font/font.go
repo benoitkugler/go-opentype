@@ -24,8 +24,6 @@ type Font struct {
 	cmap    api.Cmap
 	cmapVar api.UnicodeVariations
 
-	name tables.Name
-
 	hhea *tables.Hhea
 	vhea *tables.Vhea
 	vorg *tables.VORG // optional
@@ -46,7 +44,7 @@ type Font struct {
 	hmtx   tables.Hmtx
 	vmtx   tables.Vmtx
 	bitmap bitmap
-	sbix   tables.Sbix
+	sbix   sbix
 
 	os2 os2
 
@@ -156,10 +154,11 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 
 	raw, err = ld.RawTable(loader.MustNewTag("sbix"))
 	if err == nil { // error only if the table is present and invalid
-		out.sbix, _, err = tables.ParseSbix(raw, int(maxp.NumGlyphs))
+		sbix, _, err := tables.ParseSbix(raw, int(maxp.NumGlyphs))
 		if err != nil {
 			return nil, err
 		}
+		out.sbix = newSbix(sbix)
 	}
 
 	raw, err = ld.RawTable(loader.MustNewTag("CFF "))

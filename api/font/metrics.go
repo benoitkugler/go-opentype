@@ -121,8 +121,6 @@ var (
 	tagUnderlineSize      = loader.MustNewTag("unds")
 	tagUnderlineOffset    = loader.MustNewTag("undo")
 	tagSuperscriptYSize   = loader.MustNewTag("spys")
-	tagSuperscriptYOffset = loader.MustNewTag("spyo")
-	tagSuperscriptXSize   = loader.MustNewTag("spxs")
 	tagSuperscriptXOffset = loader.MustNewTag("spxo")
 	tagSubscriptYSize     = loader.MustNewTag("sbys")
 	tagSubscriptYOffset   = loader.MustNewTag("sbyo")
@@ -269,19 +267,6 @@ func (f *Face) getGlyphSideBearingVar(gid gID, isVertical bool) int16 {
 }
 
 // take variations into account
-func (f *Face) getHorizontalSideBearing(glyph gID) int16 {
-	// base side bearing
-	sideBearing := getSideBearing(glyph, f.hmtx)
-	if !f.isVar() {
-		return sideBearing
-	}
-	if f.hvar != nil {
-		return sideBearing + int16(getSideBearingVar(f.hvar, glyph, f.Coords))
-	}
-	return f.getGlyphSideBearingVar(glyph, false)
-}
-
-// take variations into account
 func (f *Face) getVerticalSideBearing(glyph gID) int16 {
 	// base side bearing
 	sideBearing := getSideBearing(glyph, f.vmtx)
@@ -361,7 +346,7 @@ func (f *Font) getExtentsFromBitmap(glyph gID, xPpem, yPpem uint16) (api.GlyphEx
 }
 
 func (f *Font) getExtentsFromSbix(glyph gID, xPpem, yPpem uint16) (api.GlyphExtents, bool) {
-	strike := chooseSbixStrike(f.sbix, xPpem, yPpem)
+	strike := f.sbix.chooseStrike(xPpem, yPpem)
 	if strike == nil || strike.Ppem == 0 {
 		return api.GlyphExtents{}, false
 	}

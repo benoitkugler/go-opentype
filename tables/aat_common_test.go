@@ -213,7 +213,7 @@ func TestMorxLigature(t *testing.T) {
 	assert(t, len(chain.Subtables) == 1)
 	subtable := chain.Subtables[0]
 
-	const vertical, logical uint8 = 0x80, 0x10
+	const vertical uint8 = 0x80
 	assert(t, subtable.Coverage == vertical)
 	assert(t, subtable.SubFeatureFlags == 1)
 	lig, ok := subtable.Content.(MorxSubtableLigature)
@@ -324,7 +324,7 @@ func TestMorxInsertion(t *testing.T) {
 	assert(t, len(chain.Subtables) == 1)
 	subtable := chain.Subtables[0]
 
-	const vertical, logical uint8 = 0, 0
+	const vertical uint8 = 0
 	assert(t, subtable.Coverage == vertical)
 	assert(t, subtable.SubFeatureFlags == 1)
 	insert, ok := subtable.Content.(MorxSubtableInsertion)
@@ -400,6 +400,7 @@ func TestKerx6(t *testing.T) {
 	assertNoErr(t, err)
 
 	kerx, _, err := ParseKerx(table, 0xFF)
+	assertNoErr(t, err)
 	assert(t, len(kerx.Tables) == 1)
 
 	k, ok := kerx.Tables[0].Data.(KerxData6)

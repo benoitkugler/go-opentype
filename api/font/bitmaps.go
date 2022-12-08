@@ -12,17 +12,14 @@ import (
 
 // sbix
 
-func maxu16(a, b uint16) uint16 {
-	if a > b {
-		return a
-	}
-	return b
-}
+type sbix []tables.Strike
 
-// chooseSbixStrike selects the best match for the given resolution.
+func newSbix(table tables.Sbix) sbix { return table.Strikes }
+
+// chooseStrike selects the best match for the given resolution.
 // It returns nil only if the table is empty
-func chooseSbixStrike(sb tables.Sbix, xPpem, yPpem uint16) *tables.Strike {
-	if len(sb.Strikes) == 0 {
+func (sb sbix) chooseStrike(xPpem, yPpem uint16) *tables.Strike {
+	if len(sb) == 0 {
 		return nil
 	}
 
@@ -33,16 +30,38 @@ func chooseSbixStrike(sb tables.Sbix, xPpem, yPpem uint16) *tables.Strike {
 
 	var (
 		bestIndex = 0
-		bestPpem  = sb.Strikes[0].Ppem
+		bestPpem  = sb[0].Ppem
 	)
-	for i, s := range sb.Strikes {
+	for i, s := range sb {
 		ppem := s.Ppem
 		if request <= ppem && ppem < bestPpem || request > bestPpem && ppem > bestPpem {
 			bestIndex = i
 			bestPpem = ppem
 		}
 	}
-	return &sb.Strikes[bestIndex]
+	return &sb[bestIndex]
+}
+
+func (sb sbix) availableSizes(horizontal *tables.Hhea, avgWidth, upem uint16) []api.BitmapSize {
+	out := make([]api.BitmapSize, 0, len(sb))
+	for _, size := range sb {
+		v := strikeSizeMetrics(size, horizontal, avgWidth, upem)
+		// only use strikes with valid PPEM values
+		if v.XPpem == 0 || v.YPpem == 0 {
+			continue
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+func strikeSizeMetrics(b tables.Strike, hori *tables.Hhea, avgWidth, upem uint16) (out api.BitmapSize) {
+	out.XPpem, out.YPpem = b.Ppem, b.Ppem
+	out.Height = mulDiv(uint16(hori.Ascender-hori.Descender+hori.LineGap), b.Ppem, upem)
+
+	inferBitmapWidth(&out, avgWidth, upem)
+
+	return out
 }
 
 // ---------------------------- bitmap ----------------------------
@@ -86,6 +105,19 @@ func newBitmap(table tables.EBLC, imageTable []byte) (bitmap, error) {
 		}
 	}
 	return out, nil
+}
+
+func (t bitmap) availableSizes(avgWidth, upem uint16) []api.BitmapSize {
+	out := make([]api.BitmapSize, 0, len(t))
+	for _, size := range t {
+		v := size.sizeMetrics(avgWidth, upem)
+		// only use strikes with valid PPEM values
+		if v.XPpem == 0 || v.YPpem == 0 {
+			continue
+		}
+		out = append(out, v)
+	}
+	return out
 }
 
 type bitmapStrike struct {
@@ -429,4 +461,15 @@ func parseBitmapDataStandalone(imageData []byte, start, end uint32, format uint1
 	default:
 		return nil, fmt.Errorf("unsupported bitmap image format: %d", format)
 	}
+}
+
+func maxu16(a, b uint16) uint16 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func mulDiv(a, b, c uint16) uint16 {
+	return uint16(uint32(a) * uint32(b) / uint32(c))
 }

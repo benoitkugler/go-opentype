@@ -77,7 +77,6 @@ func transform_(txx, txy, tyx, tyy uint16, dx, dy float32, s api.Segment) api.Se
 // transformArgs applies an affine transformation to args. The t?? arguments
 // are 2.14 fixed point values.
 func tform(txx, txy, tyx, tyy uint16, dx, dy float32, p api.SegmentPoint) api.SegmentPoint {
-	const half = 1 << 13
 	return api.SegmentPoint{
 		X: dx +
 			p.X*tables.Float214FromUint(txx) +

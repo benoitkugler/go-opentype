@@ -7,10 +7,6 @@ import (
 	"io"
 )
 
-const (
-	otfHeaderLength = 12
-)
-
 // An Entry in an OpenType table.
 type otfEntry struct {
 	Tag      Tag
