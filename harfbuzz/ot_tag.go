@@ -4,7 +4,8 @@ import (
 	"encoding/hex"
 	"strings"
 
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
 
@@ -12,13 +13,13 @@ import (
 
 var (
 	// OpenType script tag, `DFLT`, for features that are not script-specific.
-	tagDefaultScript = tt.NewTag('D', 'F', 'L', 'T')
+	tagDefaultScript = loader.NewTag('D', 'F', 'L', 'T')
 	// OpenType language tag, `dflt`. Not a valid language tag, but some fonts
 	// mistakenly use it.
-	tagDefaultLanguage = tt.NewTag('d', 'f', 'l', 't')
+	tagDefaultLanguage = loader.NewTag('d', 'f', 'l', 't')
 )
 
-func oldTagFromScript(script language.Script) tt.Tag {
+func oldTagFromScript(script language.Script) tables.Tag {
 	/* This seems to be accurate as of end of 2012. */
 
 	switch script {
@@ -27,23 +28,23 @@ func oldTagFromScript(script language.Script) tt.Tag {
 
 	/* KATAKANA and HIRAGANA both map to 'kana' */
 	case language.Hiragana:
-		return tt.NewTag('k', 'a', 'n', 'a')
+		return loader.NewTag('k', 'a', 'n', 'a')
 
 	/* Spaces at the end are preserved, unlike ISO 15924 */
 	case language.Lao:
-		return tt.NewTag('l', 'a', 'o', ' ')
+		return loader.NewTag('l', 'a', 'o', ' ')
 	case language.Yi:
-		return tt.NewTag('y', 'i', ' ', ' ')
+		return loader.NewTag('y', 'i', ' ', ' ')
 	/* Unicode-5.0 additions */
 	case language.Nko:
-		return tt.NewTag('n', 'k', 'o', ' ')
+		return loader.NewTag('n', 'k', 'o', ' ')
 	/* Unicode-5.1 additions */
 	case language.Vai:
-		return tt.NewTag('v', 'a', 'i', ' ')
+		return loader.NewTag('v', 'a', 'i', ' ')
 	}
 
 	/* Else, just change first char to lowercase and return */
-	return tt.Tag(script | 0x20000000)
+	return tables.Tag(script | 0x20000000)
 }
 
 //  static language.Script
@@ -65,28 +66,28 @@ func oldTagFromScript(script language.Script) tt.Tag {
 //    return (language.Script) (tag & ~0x20000000u);
 //  }
 
-func newTagFromScript(script language.Script) tt.Tag {
+func newTagFromScript(script language.Script) tables.Tag {
 	switch script {
 	case language.Bengali:
-		return tt.NewTag('b', 'n', 'g', '2')
+		return loader.NewTag('b', 'n', 'g', '2')
 	case language.Devanagari:
-		return tt.NewTag('d', 'e', 'v', '2')
+		return loader.NewTag('d', 'e', 'v', '2')
 	case language.Gujarati:
-		return tt.NewTag('g', 'j', 'r', '2')
+		return loader.NewTag('g', 'j', 'r', '2')
 	case language.Gurmukhi:
-		return tt.NewTag('g', 'u', 'r', '2')
+		return loader.NewTag('g', 'u', 'r', '2')
 	case language.Kannada:
-		return tt.NewTag('k', 'n', 'd', '2')
+		return loader.NewTag('k', 'n', 'd', '2')
 	case language.Malayalam:
-		return tt.NewTag('m', 'l', 'm', '2')
+		return loader.NewTag('m', 'l', 'm', '2')
 	case language.Oriya:
-		return tt.NewTag('o', 'r', 'y', '2')
+		return loader.NewTag('o', 'r', 'y', '2')
 	case language.Tamil:
-		return tt.NewTag('t', 'm', 'l', '2')
+		return loader.NewTag('t', 'm', 'l', '2')
 	case language.Telugu:
-		return tt.NewTag('t', 'e', 'l', '2')
+		return loader.NewTag('t', 'e', 'l', '2')
 	case language.Myanmar:
-		return tt.NewTag('m', 'y', 'm', '2')
+		return loader.NewTag('m', 'y', 'm', '2')
 	}
 
 	return tagDefaultScript
@@ -133,13 +134,13 @@ func newTagFromScript(script language.Script) tt.Tag {
 //   * So we just do that, and handle the exceptional cases in a switch.
 //   */
 
-func allTagsFromScript(script language.Script) []tt.Tag {
-	var tags []tt.Tag
+func allTagsFromScript(script language.Script) []tables.Tag {
+	var tags []tables.Tag
 
 	tag := newTagFromScript(script)
 	if tag != tagDefaultScript {
 		// HB_SCRIPT_MYANMAR maps to 'mym2', but there is no 'mym3'.
-		if tag != tt.NewTag('m', 'y', 'm', '2') {
+		if tag != loader.NewTag('m', 'y', 'm', '2') {
 			tags = append(tags, tag|'3')
 		}
 		tags = append(tags, tag)
@@ -219,7 +220,7 @@ func allTagsFromScript(script language.Script) []tt.Tag {
 //  }
 //  #endif
 
-func otTagsFromLanguage(langStr string, limit int) []tt.Tag {
+func otTagsFromLanguage(langStr string, limit int) []tables.Tag {
 	// check for matches of multiple subtags.
 	if tags := tagsFromComplexLanguage(langStr, limit); len(tags) != 0 {
 		return tags
@@ -243,7 +244,7 @@ func otTagsFromLanguage(langStr string, limit int) []tt.Tag {
 		for tagIdx != 0 && otLanguages[tagIdx].language == otLanguages[tagIdx-1].language {
 			tagIdx--
 		}
-		var out []tt.Tag
+		var out []tables.Tag
 		for i := 0; tagIdx+i < len(otLanguages) &&
 			otLanguages[tagIdx+i].tag != 0 &&
 			otLanguages[tagIdx+i].language == otLanguages[tagIdx].language; i++ {
@@ -257,14 +258,14 @@ func otTagsFromLanguage(langStr string, limit int) []tt.Tag {
 	}
 	if s == 3 {
 		// assume it's ISO-639-3 and upper-case and use it.
-		return []tt.Tag{tt.NewTag(langStr[0], langStr[1], langStr[2], ' ') & ^tt.Tag(0x20202000)}
+		return []tables.Tag{loader.NewTag(langStr[0], langStr[1], langStr[2], ' ') & ^tables.Tag(0x20202000)}
 	}
 
 	return nil
 }
 
 // return 0 if no tag
-func parsePrivateUseSubtag(privateUseSubtag string, prefix string, normalize func(byte) byte) (tt.Tag, bool) {
+func parsePrivateUseSubtag(privateUseSubtag string, prefix string, normalize func(byte) byte) (tables.Tag, bool) {
 	s := strings.Index(privateUseSubtag, prefix)
 	if s == -1 {
 		return 0, false
@@ -295,16 +296,16 @@ func parsePrivateUseSubtag(privateUseSubtag string, prefix string, normalize fun
 			tag[i] = ' '
 		}
 	}
-	out := tt.NewTag(tag[0], tag[1], tag[2], tag[3])
+	out := loader.NewTag(tag[0], tag[1], tag[2], tag[3])
 	if (out & 0xDFDFDFDF) == tagDefaultScript {
-		out ^= ^tt.Tag(0xDFDFDFDF)
+		out ^= ^tables.Tag(0xDFDFDFDF)
 	}
 	return out, true
 }
 
 // NewOTTagsFromScriptAndLanguage converts an `language.Script` and an `Language`
 // to script and language tags.
-func NewOTTagsFromScriptAndLanguage(script language.Script, language language.Language) (scriptTags, languageTags []tt.Tag) {
+func NewOTTagsFromScriptAndLanguage(script language.Script, language language.Language) (scriptTags, languageTags []tables.Tag) {
 	if language != "" {
 		langStr := languageToString(language)
 		limit := -1
@@ -333,7 +334,7 @@ func NewOTTagsFromScriptAndLanguage(script language.Script, language language.La
 
 		s, hasScript := parsePrivateUseSubtag(privateUseSubtag, "-hbsc", toLower)
 		if hasScript {
-			scriptTags = []tt.Tag{s}
+			scriptTags = []tables.Tag{s}
 		}
 
 		l, hasLanguage := parsePrivateUseSubtag(privateUseSubtag, "-hbot", toUpper)

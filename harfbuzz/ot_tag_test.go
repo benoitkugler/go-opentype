@@ -3,13 +3,14 @@ package harfbuzz
 import (
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/tables"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 	"github.com/benoitkugler/textlayout/language"
 )
 
 // ported from harfbuzz/test/api/test-ot-tag.c Copyright © 2011  Google, Inc. Behdad Esfahbod
 
-func assertEqualTag(t *testing.T, t1, t2 tt.Tag) {
+func assertEqualTag(t *testing.T, t1, t2 tables.Tag) {
 	if t1 != t2 {
 		t.Fatalf("unexpected %s != %s", t1, t2)
 	}
@@ -33,7 +34,7 @@ func testSimpleTags(t *testing.T, s string, script language.Script) {
 func testScriptTagsFromLanguage(t *testing.T, s, langS string, script language.Script) {
 	// t.Logf("Testing script %s: script tag %s, language tag %s", script, s, langS)
 
-	var tag tt.Tag
+	var tag tables.Tag
 	if s != "" {
 		tag = tt.MustNewTag(s)
 	}
@@ -444,7 +445,7 @@ func testTags(t *testing.T, script language.Script, langS string, expectedScript
 
 	for i, s := range expected {
 		expectedTag := tt.MustNewTag(s)
-		var actualTag tt.Tag
+		var actualTag tables.Tag
 		if i < expectedScriptCount {
 			actualTag = scriptTags[i]
 		} else {

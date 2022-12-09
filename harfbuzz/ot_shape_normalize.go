@@ -2,8 +2,6 @@ package harfbuzz
 
 import (
 	"fmt"
-
-	"github.com/benoitkugler/go-opentype/api"
 )
 
 // ported from harfbuzz/src/hb-ot-shape-normalize.cc Copyright © 2011,2012  Google, Inc. Behdad Esfahbod
@@ -76,20 +74,20 @@ func setGlyph(info *GlyphInfo, font *Font) {
 	info.Glyph, _ = font.face.NominalGlyph(info.codepoint)
 }
 
-func outputChar(buffer *Buffer, unichar rune, glyph api.GID) {
+func outputChar(buffer *Buffer, unichar rune, glyph GID) {
 	buffer.cur(0).Glyph = glyph
 	buffer.outputRune(unichar) // this is very confusing indeed.
 	buffer.prev().setUnicodeProps(buffer)
 }
 
-func nextChar(buffer *Buffer, glyph api.GID) {
+func nextChar(buffer *Buffer, glyph GID) {
 	buffer.cur(0).Glyph = glyph
 	buffer.nextGlyph()
 }
 
 // returns 0 if didn't decompose, number of resulting characters otherwise.
 func decompose(c *otNormalizeContext, shortest bool, ab rune) int {
-	var aGlyph, bGlyph api.GID
+	var aGlyph, bGlyph GID
 	buffer := c.buffer
 	font := c.font
 	a, b, ok := c.decompose(c, ab)

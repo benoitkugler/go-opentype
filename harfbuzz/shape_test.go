@@ -15,7 +15,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/benoitkugler/go-opentype/api"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
 	"github.com/benoitkugler/textlayout/fonts"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
@@ -215,7 +214,7 @@ type shapeOptions struct {
 	shaper                    string
 	features                  string
 	props                     SegmentProperties
-	invisibleGlyph            api.GID
+	invisibleGlyph            GID
 	clusterLevel              ClusterLevel
 	bot                       bool
 	eot                       bool
@@ -453,7 +452,7 @@ func (so *shapeOptions) verifyBufferSafeToBreak(buffer, textBuffer *Buffer, font
 		}
 	}
 
-	diff := bufferDiff(reconstruction, buffer, ^api.GID(0), 0)
+	diff := bufferDiff(reconstruction, buffer, ^GID(0), 0)
 	if diff != bufferDiffFlagEqual {
 		/* Return the reconstructed result instead so it can be inspected. */
 		buffer.Info = nil

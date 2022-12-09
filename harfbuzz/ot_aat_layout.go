@@ -3,7 +3,6 @@ package harfbuzz
 import (
 	"fmt"
 
-	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
@@ -703,11 +702,11 @@ func (c *aatApplyContext) applyMorxSubtable(subtable font.MorxSubtable) bool {
 		hasGlyphClass := gdef.GlyphClassDef != nil
 		info := c.buffer.Info
 		for i := range c.buffer.Info {
-			replacement, has := data.Class.Class(tables.GlyphID(info[i].Glyph))
+			replacement, has := data.Class.Class(gID(info[i].Glyph))
 			if has {
-				info[i].Glyph = api.GID(replacement)
+				info[i].Glyph = GID(replacement)
 				if hasGlyphClass {
-					info[i].glyphProps = gdef.GlyphProps(tables.GlyphID(replacement))
+					info[i].glyphProps = gdef.GlyphProps(gID(replacement))
 				}
 				ret = true
 			}
@@ -866,13 +865,13 @@ func (dc *driverContextContextual) transition(driver stateTableDriver, entry tab
 	)
 	if markIndex != 0xFFFF {
 		lookup := dc.table.Substitutions[markIndex]
-		replacement, hasRep = lookup.Class(tables.GlyphID(buffer.Info[dc.mark].Glyph))
+		replacement, hasRep = lookup.Class(gID(buffer.Info[dc.mark].Glyph))
 	}
 	if hasRep {
 		buffer.unsafeToBreak(dc.mark, min(buffer.idx+1, len(buffer.Info)))
-		buffer.Info[dc.mark].Glyph = api.GID(replacement)
+		buffer.Info[dc.mark].Glyph = GID(replacement)
 		if dc.hasGlyphClass {
-			buffer.Info[dc.mark].glyphProps = dc.gdef.GlyphProps(tables.GlyphID(replacement))
+			buffer.Info[dc.mark].glyphProps = dc.gdef.GlyphProps(gID(replacement))
 		}
 		dc.ret = true
 	}
@@ -881,13 +880,13 @@ func (dc *driverContextContextual) transition(driver stateTableDriver, entry tab
 	idx := min(buffer.idx, len(buffer.Info)-1)
 	if currentIndex != 0xFFFF {
 		lookup := dc.table.Substitutions[currentIndex]
-		replacement, hasRep = lookup.Class(tables.GlyphID(buffer.Info[idx].Glyph))
+		replacement, hasRep = lookup.Class(gID(buffer.Info[idx].Glyph))
 	}
 
 	if hasRep {
-		buffer.Info[idx].Glyph = api.GID(replacement)
+		buffer.Info[idx].Glyph = GID(replacement)
 		if dc.hasGlyphClass {
-			buffer.Info[idx].glyphProps = dc.gdef.GlyphProps(tables.GlyphID(replacement))
+			buffer.Info[idx].glyphProps = dc.gdef.GlyphProps(gID(replacement))
 		}
 		dc.ret = true
 	}
@@ -1084,7 +1083,7 @@ const (
 )
 
 type driverContextInsertion struct {
-	insertionAction []api.GID
+	insertionAction []GID
 	mark            int
 }
 
@@ -1499,8 +1498,8 @@ func (dc *driverContextKerx4) transition(driver stateTableDriver, entry tables.A
 			/* Indexed into 'ankr' table. */
 			action := dc.table.Anchors.(tables.KerxAnchorAnchors).Anchors[ankrActionIndex]
 
-			markAnchor := dc.c.ankrTable.GetAnchor(tables.GlyphID(dc.c.buffer.Info[dc.mark].Glyph), int(action.Mark))
-			currAnchor := dc.c.ankrTable.GetAnchor(tables.GlyphID(dc.c.buffer.cur(0).Glyph), int(action.Current))
+			markAnchor := dc.c.ankrTable.GetAnchor(gID(dc.c.buffer.Info[dc.mark].Glyph), int(action.Mark))
+			currAnchor := dc.c.ankrTable.GetAnchor(gID(dc.c.buffer.cur(0).Glyph), int(action.Current))
 
 			o.XOffset = dc.c.font.emScaleX(markAnchor.X) - dc.c.font.emScaleX(currAnchor.X)
 			o.YOffset = dc.c.font.emScaleY(markAnchor.Y) - dc.c.font.emScaleY(currAnchor.Y)

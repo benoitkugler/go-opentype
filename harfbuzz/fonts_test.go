@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/textlayout/fonts"
 )
 
@@ -19,8 +18,8 @@ type dummyFace struct {
 
 func (dummyFace) LoadMetrics() fonts.FaceMetrics { return dummyFace{} }
 
-func (dummyFace) Upem() uint16             { return 1000 }
-func (dummyFace) GlyphName(api.GID) string { return "" }
+func (dummyFace) Upem() uint16         { return 1000 }
+func (dummyFace) GlyphName(GID) string { return "" }
 func (dummyFace) FontHExtents() (fonts.FontExtents, bool) {
 	return fonts.FontExtents{}, false
 }
@@ -28,24 +27,24 @@ func (dummyFace) FontHExtents() (fonts.FontExtents, bool) {
 func (dummyFace) FontVExtents() (fonts.FontExtents, bool) {
 	return fonts.FontExtents{}, false
 }
-func (dummyFace) LineMetric(fonts.LineMetric) (float32, bool)         { return 0, false }
-func (dummyFace) NominalGlyph(ch rune) (api.GID, bool)                { return 0, false }
-func (dummyFace) VariationGlyph(ch, varSelector rune) (api.GID, bool) { return 0, false }
-func (dummyFace) HorizontalAdvance(gid api.GID) float32               { return 0 }
-func (dummyFace) VerticalAdvance(gid api.GID) float32                 { return 0 }
-func (dummyFace) GlyphHOrigin(api.GID) (x, y Position, found bool) {
+func (dummyFace) LineMetric(fonts.LineMetric) (float32, bool)     { return 0, false }
+func (dummyFace) NominalGlyph(ch rune) (GID, bool)                { return 0, false }
+func (dummyFace) VariationGlyph(ch, varSelector rune) (GID, bool) { return 0, false }
+func (dummyFace) HorizontalAdvance(gid GID) float32               { return 0 }
+func (dummyFace) VerticalAdvance(gid GID) float32                 { return 0 }
+func (dummyFace) GlyphHOrigin(GID) (x, y Position, found bool) {
 	return 0, 0, false
 }
 
-func (dummyFace) GlyphVOrigin(api.GID) (x, y Position, found bool) {
+func (dummyFace) GlyphVOrigin(GID) (x, y Position, found bool) {
 	return 0, 0, false
 }
 
-func (dummyFace) GlyphExtents(api.GID, uint16, uint16) (fonts.GlyphExtents, bool) {
+func (dummyFace) GlyphExtents(GID, uint16, uint16) (fonts.GlyphExtents, bool) {
 	return fonts.GlyphExtents{}, false
 }
 
-func (dummyFace) GetGlyphContourPoint(glyph api.GID, pointIndex uint16) (x, y Position, ok bool) {
+func (dummyFace) GetGlyphContourPoint(glyph GID, pointIndex uint16) (x, y Position, ok bool) {
 	return 0, 0, false
 }
 

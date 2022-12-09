@@ -3,7 +3,8 @@ package harfbuzz
 import (
 	"fmt"
 
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	ucd "github.com/benoitkugler/textlayout/unicodedata"
 )
 
@@ -20,21 +21,21 @@ var _ otComplexShaper = (*complexShaperUSE)(nil)
  * Basic features.
  * These features are applied all at once, before reordering.
  */
-var useBasicFeatures = [...]tt.Tag{
-	tt.NewTag('r', 'k', 'r', 'f'),
-	tt.NewTag('a', 'b', 'v', 'f'),
-	tt.NewTag('b', 'l', 'w', 'f'),
-	tt.NewTag('h', 'a', 'l', 'f'),
-	tt.NewTag('p', 's', 't', 'f'),
-	tt.NewTag('v', 'a', 't', 'u'),
-	tt.NewTag('c', 'j', 'c', 't'),
+var useBasicFeatures = [...]tables.Tag{
+	loader.NewTag('r', 'k', 'r', 'f'),
+	loader.NewTag('a', 'b', 'v', 'f'),
+	loader.NewTag('b', 'l', 'w', 'f'),
+	loader.NewTag('h', 'a', 'l', 'f'),
+	loader.NewTag('p', 's', 't', 'f'),
+	loader.NewTag('v', 'a', 't', 'u'),
+	loader.NewTag('c', 'j', 'c', 't'),
 }
 
-var useTopographicalFeatures = [...]tt.Tag{
-	tt.NewTag('i', 's', 'o', 'l'),
-	tt.NewTag('i', 'n', 'i', 't'),
-	tt.NewTag('m', 'e', 'd', 'i'),
-	tt.NewTag('f', 'i', 'n', 'a'),
+var useTopographicalFeatures = [...]tables.Tag{
+	loader.NewTag('i', 's', 'o', 'l'),
+	loader.NewTag('i', 'n', 'i', 't'),
+	loader.NewTag('m', 'e', 'd', 'i'),
+	loader.NewTag('f', 'i', 'n', 'a'),
 }
 
 /* Same order as useTopographicalFeatures. */
@@ -51,12 +52,12 @@ const (
  * These features are applied all at once, after reordering and
  * clearing syllables.
  */
-var useOtherFeatures = [...]tt.Tag{
-	tt.NewTag('a', 'b', 'v', 's'),
-	tt.NewTag('b', 'l', 'w', 's'),
-	tt.NewTag('h', 'a', 'l', 'n'),
-	tt.NewTag('p', 'r', 'e', 's'),
-	tt.NewTag('p', 's', 't', 's'),
+var useOtherFeatures = [...]tables.Tag{
+	loader.NewTag('a', 'b', 'v', 's'),
+	loader.NewTag('b', 'l', 'w', 's'),
+	loader.NewTag('h', 'a', 'l', 'n'),
+	loader.NewTag('p', 'r', 'e', 's'),
+	loader.NewTag('p', 's', 't', 's'),
 }
 
 type useShapePlan struct {
@@ -77,17 +78,17 @@ func (cs *complexShaperUSE) collectFeatures(plan *otShapePlanner) {
 	map_.addGSUBPause(cs.setupSyllablesUse)
 
 	/* "Default glyph pre-processing group" */
-	map_.enableFeature(tt.NewTag('l', 'o', 'c', 'l'))
-	map_.enableFeature(tt.NewTag('c', 'c', 'm', 'p'))
-	map_.enableFeature(tt.NewTag('n', 'u', 'k', 't'))
-	map_.enableFeatureExt(tt.NewTag('a', 'k', 'h', 'n'), ffManualZWJ, 1)
+	map_.enableFeature(loader.NewTag('l', 'o', 'c', 'l'))
+	map_.enableFeature(loader.NewTag('c', 'c', 'm', 'p'))
+	map_.enableFeature(loader.NewTag('n', 'u', 'k', 't'))
+	map_.enableFeatureExt(loader.NewTag('a', 'k', 'h', 'n'), ffManualZWJ, 1)
 
 	/* "Reordering group" */
 	map_.addGSUBPause(clearSubstitutionFlags)
-	map_.addFeatureExt(tt.NewTag('r', 'p', 'h', 'f'), ffManualZWJ, 1)
+	map_.addFeatureExt(loader.NewTag('r', 'p', 'h', 'f'), ffManualZWJ, 1)
 	map_.addGSUBPause(cs.recordRphfUse)
 	map_.addGSUBPause(clearSubstitutionFlags)
-	map_.enableFeatureExt(tt.NewTag('p', 'r', 'e', 'f'), ffManualZWJ, 1)
+	map_.enableFeatureExt(loader.NewTag('p', 'r', 'e', 'f'), ffManualZWJ, 1)
 	map_.addGSUBPause(recordPrefUse)
 
 	/* "Orthographic unit shaping group" */
@@ -113,7 +114,7 @@ func (cs *complexShaperUSE) collectFeatures(plan *otShapePlanner) {
 func (cs *complexShaperUSE) dataCreate(plan *otShapePlan) {
 	var usePlan useShapePlan
 
-	usePlan.rphfMask = plan.map_.getMask1(tt.NewTag('r', 'p', 'h', 'f'))
+	usePlan.rphfMask = plan.map_.getMask1(loader.NewTag('r', 'p', 'h', 'f'))
 
 	if ucd.HasArabicJoining(plan.props.Script) {
 		pl := newArabicPlan(plan)

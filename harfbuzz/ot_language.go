@@ -3,13 +3,13 @@ package harfbuzz
 import (
 	"strings"
 
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
 
 type langTag struct {
 	language string
-	tag      tt.Tag
+	tag      tables.Tag
 }
 
 // return -1 if `a` < `l`

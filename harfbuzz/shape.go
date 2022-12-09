@@ -38,19 +38,6 @@ const (
 	skGraphite
 )
 
-// shaper shapes a string of runes.
-// Depending on the font used, different shapers will be choosen.
-type shaper interface {
-	kind() shaperKind
-
-	// used to defer costly setup : a shaper object
-	// is always created to be used as key for caching,
-	// but this method is only called for new shaper
-	compile(props SegmentProperties, userFeatures []Feature)
-
-	shape(*Font, *Buffer, []Feature)
-}
-
 // Shape plans are an internal mechanism. Each plan contains state
 // describing how HarfBuzz will shape a particular text segment, based on
 // the combination of segment properties and the capabilities in the

@@ -6,16 +6,11 @@ import (
 	"math/bits"
 	"sort"
 
+	"github.com/benoitkugler/go-opentype/tables"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from harfbuzz/src/hb-ot-map.cc, hb-ot-map.hh Copyright © 2009,2010  Red Hat, Inc. 2010,2011,2013  Google, Inc. Behdad Esfahbod
-
-var (
-	otTagGSUB = tt.TagGsub
-	otTagGPOS = tt.TagGpos
-	tableTags = [2]tt.Tag{otTagGSUB, otTagGPOS}
-)
 
 type otMapFeatureFlags uint8
 
@@ -38,12 +33,12 @@ const (
 )
 
 type otMapFeature struct {
-	tag   tt.Tag
+	tag   tables.Tag
 	flags otMapFeatureFlags
 }
 
 type featureInfo struct {
-	Tag tt.Tag
+	Tag tables.Tag
 	// seq           int /* sequence#, used for stable sorting only */
 	maxValue     uint32
 	flags        otMapFeatureFlags
@@ -64,7 +59,7 @@ type otMapBuilder struct {
 	scriptIndex   [2]int
 	languageIndex [2]int
 	currentStage  [2]int
-	chosenScript  [2]tt.Tag
+	chosenScript  [2]tables.Tag
 	foundScript   [2]bool
 }
 
@@ -93,7 +88,7 @@ func newOtMapBuilder(tables *tt.LayoutTables, props SegmentProperties) otMapBuil
 	return out
 }
 
-func (mb *otMapBuilder) addFeatureExt(tag tt.Tag, flags otMapFeatureFlags, value uint32) {
+func (mb *otMapBuilder) addFeatureExt(tag tables.Tag, flags otMapFeatureFlags, value uint32) {
 	var info featureInfo
 	info.Tag = tag
 	info.maxValue = value
@@ -120,12 +115,12 @@ func (mb *otMapBuilder) addPause(tableIndex int, fn pauseFunc) {
 func (mb *otMapBuilder) addGSUBPause(fn pauseFunc) { mb.addPause(0, fn) }
 func (mb *otMapBuilder) addGPOSPause(fn pauseFunc) { mb.addPause(1, fn) }
 
-func (mb *otMapBuilder) enableFeatureExt(tag tt.Tag, flags otMapFeatureFlags, value uint32) {
+func (mb *otMapBuilder) enableFeatureExt(tag tables.Tag, flags otMapFeatureFlags, value uint32) {
 	mb.addFeatureExt(tag, ffGLOBAL|flags, value)
 }
-func (mb *otMapBuilder) enableFeature(tag tt.Tag)  { mb.enableFeatureExt(tag, ffNone, 1) }
-func (mb *otMapBuilder) addFeature(tag tt.Tag)     { mb.addFeatureExt(tag, ffNone, 1) }
-func (mb *otMapBuilder) disableFeature(tag tt.Tag) { mb.addFeatureExt(tag, ffGLOBAL, 0) }
+func (mb *otMapBuilder) enableFeature(tag tables.Tag)  { mb.enableFeatureExt(tag, ffNone, 1) }
+func (mb *otMapBuilder) addFeature(tag tables.Tag)     { mb.addFeatureExt(tag, ffNone, 1) }
+func (mb *otMapBuilder) disableFeature(tag tables.Tag) { mb.addFeatureExt(tag, ffGLOBAL, 0) }
 
 func (mb *otMapBuilder) compile(m *otMap, key otShapePlanKey) {
 	const globalBitShift = 8*4 - 1
@@ -135,7 +130,7 @@ func (mb *otMapBuilder) compile(m *otMap, key otShapePlanKey) {
 
 	var (
 		requiredFeatureIndex [2]uint16 // HB_OT_LAYOUT_NO_FEATURE_INDEX for empty
-		requiredFeatureTag   [2]tt.Tag
+		requiredFeatureTag   [2]tables.Tag
 		/* We default to applying required feature in stage 0. If the required
 		* feature has a tag that is known to the shaper, we apply the required feature
 		* in the stage for that tag. */
@@ -311,9 +306,9 @@ func (mb *otMapBuilder) compile(m *otMap, key otShapePlanKey) {
 }
 
 type featureMap struct {
-	tag           tt.Tag    /* should be first for our bsearch to work */
-	index         [2]uint16 /* GSUB/GPOS */
-	stage         [2]int    /* GSUB/GPOS */
+	tag           tables.Tag /* should be first for our bsearch to work */
+	index         [2]uint16  /* GSUB/GPOS */
+	stage         [2]int     /* GSUB/GPOS */
 	shift         int
 	mask          GlyphMask
 	mask1         GlyphMask /* mask for value=1, for quick access */
@@ -326,7 +321,7 @@ type featureMap struct {
 	// { return tag_ < tag ? -1 : tag_ > tag ? 1 : 0; }
 }
 
-func bsearchFeature(features []featureMap, tag tt.Tag) *featureMap {
+func bsearchFeature(features []featureMap, tag tables.Tag) *featureMap {
 	low, high := 0, len(features)
 	for low < high {
 		mid := low + (high-low)/2 // avoid overflow when computing mid
@@ -366,42 +361,42 @@ type otMap struct {
 	lookups      [2][]lookupMap
 	stages       [2][]stageMap
 	features     []featureMap // sorted
-	chosenScript [2]tt.Tag
+	chosenScript [2]tables.Tag
 	globalMask   GlyphMask
 	foundScript  [2]bool
 }
 
 //   friend struct hb_ot_map_builder_t;
 
-func (m *otMap) needsFallback(featureTag tt.Tag) bool {
+func (m *otMap) needsFallback(featureTag tables.Tag) bool {
 	if ma := bsearchFeature(m.features, featureTag); ma != nil {
 		return ma.needsFallback
 	}
 	return false
 }
 
-func (m *otMap) getMask(featureTag tt.Tag) (GlyphMask, int) {
+func (m *otMap) getMask(featureTag tables.Tag) (GlyphMask, int) {
 	if ma := bsearchFeature(m.features, featureTag); ma != nil {
 		return ma.mask, ma.shift
 	}
 	return 0, 0
 }
 
-func (m *otMap) getMask1(featureTag tt.Tag) GlyphMask {
+func (m *otMap) getMask1(featureTag tables.Tag) GlyphMask {
 	if ma := bsearchFeature(m.features, featureTag); ma != nil {
 		return ma.mask1
 	}
 	return 0
 }
 
-func (m *otMap) getFeatureIndex(tableIndex int, featureTag tt.Tag) uint16 {
+func (m *otMap) getFeatureIndex(tableIndex int, featureTag tables.Tag) uint16 {
 	if ma := bsearchFeature(m.features, featureTag); ma != nil {
 		return ma.index[tableIndex]
 	}
 	return NoFeatureIndex
 }
 
-func (m *otMap) getFeatureStage(tableIndex int, featureTag tt.Tag) int {
+func (m *otMap) getFeatureStage(tableIndex int, featureTag tables.Tag) int {
 	if ma := bsearchFeature(m.features, featureTag); ma != nil {
 		return ma.stage[tableIndex]
 	}
@@ -423,7 +418,8 @@ func (m *otMap) getStageLookups(tableIndex, stage int) []lookupMap {
 }
 
 func (m *otMap) addLookups(table *tt.TableLayout, tableIndex int, featureIndex uint16, variationsIndex int,
-	mask GlyphMask, autoZwnj, autoZwj, random bool) {
+	mask GlyphMask, autoZwnj, autoZwj, random bool,
+) {
 	lookupIndices := getFeatureLookupsWithVar(table, featureIndex, variationsIndex)
 	for _, lookupInd := range lookupIndices {
 		lookup := lookupMap{

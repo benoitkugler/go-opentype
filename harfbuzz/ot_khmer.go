@@ -3,8 +3,8 @@ package harfbuzz
 import (
 	"fmt"
 
-	"github.com/benoitkugler/go-opentype/api"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // ported from harfbuzz/src/hb-ot-shape-complex-khmer.cc Copyright © 2011,2012  Google, Inc. Behdad Esfahbod
@@ -21,19 +21,19 @@ var khmerFeatures = [...]otMapFeature{
 	* Basic features.
 	* These features are applied in order, one at a time, after reordering.
 	 */
-	{tt.NewTag('p', 'r', 'e', 'f'), ffManualJoiners},
-	{tt.NewTag('b', 'l', 'w', 'f'), ffManualJoiners},
-	{tt.NewTag('a', 'b', 'v', 'f'), ffManualJoiners},
-	{tt.NewTag('p', 's', 't', 'f'), ffManualJoiners},
-	{tt.NewTag('c', 'f', 'a', 'r'), ffManualJoiners},
+	{loader.NewTag('p', 'r', 'e', 'f'), ffManualJoiners},
+	{loader.NewTag('b', 'l', 'w', 'f'), ffManualJoiners},
+	{loader.NewTag('a', 'b', 'v', 'f'), ffManualJoiners},
+	{loader.NewTag('p', 's', 't', 'f'), ffManualJoiners},
+	{loader.NewTag('c', 'f', 'a', 'r'), ffManualJoiners},
 	/*
 	* Other features.
 	* These features are applied all at once after clearing syllables.
 	 */
-	{tt.NewTag('p', 'r', 'e', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('a', 'b', 'v', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('b', 'l', 'w', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('p', 's', 't', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('p', 'r', 'e', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('a', 'b', 'v', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('b', 'l', 'w', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('p', 's', 't', 's'), ffGlobalManualJoiners},
 }
 
 // Must be in the same order as the khmerFeatures array.
@@ -70,8 +70,8 @@ func (cs *complexShaperKhmer) collectFeatures(plan *otShapePlanner) {
 	*
 	* https://github.com/harfbuzz/harfbuzz/issues/974
 	 */
-	map_.enableFeature(tt.NewTag('l', 'o', 'c', 'l'))
-	map_.enableFeature(tt.NewTag('c', 'c', 'm', 'p'))
+	map_.enableFeature(loader.NewTag('l', 'o', 'c', 'l'))
+	map_.enableFeature(loader.NewTag('c', 'c', 'm', 'p'))
 
 	i := 0
 	for ; i < khmerBasicFeatures; i++ {
@@ -91,25 +91,25 @@ func (complexShaperKhmer) overrideFeatures(plan *otShapePlanner) {
 	/* Khmer spec has 'clig' as part of required shaping features:
 	* "Apply feature 'clig' to form ligatures that are desired for
 	* typographical correctness.", hence in overrides... */
-	map_.enableFeature(tt.NewTag('c', 'l', 'i', 'g'))
+	map_.enableFeature(loader.NewTag('c', 'l', 'i', 'g'))
 
 	/* Uniscribe does not apply 'kern' in Khmer. */
 	if UniscribeBugCompatible {
-		map_.disableFeature(tt.NewTag('k', 'e', 'r', 'n'))
+		map_.disableFeature(loader.NewTag('k', 'e', 'r', 'n'))
 	}
 
-	map_.disableFeature(tt.NewTag('l', 'i', 'g', 'a'))
+	map_.disableFeature(loader.NewTag('l', 'i', 'g', 'a'))
 }
 
 type khmerShapePlan struct {
-	viramaGlyph api.GID
+	viramaGlyph GID
 	maskArray   [khmerNumFeatures]GlyphMask
 }
 
 func (cs *complexShaperKhmer) dataCreate(plan *otShapePlan) {
 	var khmerPlan khmerShapePlan
 
-	khmerPlan.viramaGlyph = ^api.GID(0)
+	khmerPlan.viramaGlyph = ^GID(0)
 
 	for i := range khmerPlan.maskArray {
 		if khmerFeatures[i].flags&ffGLOBAL == 0 {
@@ -334,7 +334,7 @@ func (complexShaperKhmer) normalizationPreference() normalizationMode {
 	return nmComposedDiacriticsNoShortCircuit
 }
 
-func (complexShaperKhmer) gposTag() tt.Tag                             { return 0 }
+func (complexShaperKhmer) gposTag() tables.Tag                         { return 0 }
 func (complexShaperKhmer) preprocessText(*otShapePlan, *Buffer, *Font) {}
 func (complexShaperKhmer) postprocessGlyphs(*otShapePlan, *Buffer, *Font) {
 }

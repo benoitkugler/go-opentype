@@ -1,15 +1,14 @@
 package harfbuzz
 
 import (
-	"github.com/benoitkugler/go-opentype/api"
-	"github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // ported from src/hb-set-digest.hh Copyright © 2012  Google, Inc. Behdad Esfahbod
 
 const maskBits = 4 * 8 // 4 = size(setDigestLowestBits)
 
-type setType = api.GID
+type setType = gID
 
 type setDigestLowestBits uint32
 
@@ -98,13 +97,13 @@ func (sd setDigest) mayHave(g setType) bool {
 	return sd[0].mayHave(g, shift0) && sd[1].mayHave(g, shift1) && sd[2].mayHave(g, shift2)
 }
 
-func (sd *setDigest) collectCoverage(cov truetype.Coverage) {
+func (sd *setDigest) collectCoverage(cov tables.Coverage) {
 	switch cov := cov.(type) {
-	case truetype.CoverageList:
-		sd.addArray(cov)
-	case truetype.CoverageRanges:
-		for _, r := range cov {
-			sd.addRange(r.Start, r.End)
+	case tables.Coverage1:
+		sd.addArray(cov.Glyphs)
+	case tables.Coverage2:
+		for _, r := range cov.Ranges {
+			sd.addRange(r.StartGlyphID, r.EndGlyphID)
 		}
 	}
 }

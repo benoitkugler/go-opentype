@@ -1,7 +1,7 @@
 package harfbuzz
 
 import (
-	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
@@ -74,7 +74,7 @@ func (c *otApplyContext) applyForward(accel *otLayoutLookupAccelerator) bool {
 	buffer := c.buffer
 	for buffer.idx < len(buffer.Info) {
 		applied := false
-		if accel.digest.mayHave(buffer.cur(0).Glyph) &&
+		if accel.digest.mayHave(gID(buffer.cur(0).Glyph)) &&
 			(buffer.cur(0).Mask&c.lookupMask) != 0 &&
 			c.checkGlyphProperty(buffer.cur(0), c.lookupProps) {
 			applied = accel.apply(c)
@@ -93,7 +93,7 @@ func (c *otApplyContext) applyBackward(accel *otLayoutLookupAccelerator) bool {
 	ret := false
 	buffer := c.buffer
 	for do := true; do; do = buffer.idx >= 0 {
-		if accel.digest.mayHave(buffer.cur(0).Glyph) &&
+		if accel.digest.mayHave(gID(buffer.cur(0).Glyph)) &&
 			(buffer.cur(0).Mask&c.lookupMask != 0) &&
 			c.checkGlyphProperty(buffer.cur(0), c.lookupProps) {
 			applied := accel.apply(c)
@@ -144,7 +144,7 @@ func (sp *otShapePlan) otLayoutKern(font *Font, buffer *Buffer) {
 	c.applyKernx(kern)
 }
 
-var otTagLatinScript = tt.NewTag('l', 'a', 't', 'n')
+var otTagLatinScript = loader.NewTag('l', 'a', 't', 'n')
 
 // SelectScript selects an OpenType script from the `scriptTags` array,
 // returning its index in the Scripts slice and the script tag.
@@ -155,7 +155,7 @@ var otTagLatinScript = tt.NewTag('l', 'a', 't', 'n')
 //
 // An additional boolean if returned : it is `true` if one of the requested scripts is selected, or `false` if a fallback
 // script is selected or if no scripts are selected.
-func SelectScript(table *tt.TableLayout, scriptTags []tt.Tag) (int, tt.Tag, bool) {
+func SelectScript(table *tt.TableLayout, scriptTags []tables.Tag) (int, tables.Tag, bool) {
 	for _, tag := range scriptTags {
 		if scriptIndex := table.FindScript(tag); scriptIndex != -1 {
 			return scriptIndex, tag, true
@@ -186,7 +186,7 @@ func SelectScript(table *tt.TableLayout, scriptTags []tt.Tag) (int, tt.Tag, bool
 // It not found, the `dflt` language tag is searched.
 // Return `true` if the requested language tag is found, `false` otherwise.
 // If `scriptIndex` is `NoScriptIndex` or if no language is found, `DefaultLanguageIndex` is returned.
-func SelectLanguage(table *tt.TableLayout, scriptIndex int, languageTags []tt.Tag) (int, bool) {
+func SelectLanguage(table *tt.TableLayout, scriptIndex int, languageTags []tables.Tag) (int, bool) {
 	if scriptIndex == NoScriptIndex {
 		return DefaultLanguageIndex, false
 	}
@@ -207,7 +207,7 @@ func SelectLanguage(table *tt.TableLayout, scriptIndex int, languageTags []tt.Ta
 	return DefaultLanguageIndex, false
 }
 
-func findFeature(g *tt.TableLayout, featureTag tt.Tag) uint16 {
+func findFeature(g *tt.TableLayout, featureTag tables.Tag) uint16 {
 	if index, ok := g.FindFeatureIndex(featureTag); ok {
 		return index
 	}
@@ -217,7 +217,7 @@ func findFeature(g *tt.TableLayout, featureTag tt.Tag) uint16 {
 // Fetches the index of a given feature tag in the specified face's GSUB table
 // or GPOS table, underneath the specified script and language.
 // Return `NoFeatureIndex` it the the feature is not found.
-func FindFeatureForLang(table *tt.TableLayout, scriptIndex, languageIndex int, featureTag tt.Tag) uint16 {
+func FindFeatureForLang(table *tt.TableLayout, scriptIndex, languageIndex int, featureTag tables.Tag) uint16 {
 	if scriptIndex == NoScriptIndex {
 		return NoFeatureIndex
 	}
@@ -234,7 +234,7 @@ func FindFeatureForLang(table *tt.TableLayout, scriptIndex, languageIndex int, f
 
 // Fetches the tag of a requested feature index in the given layout table,
 // underneath the specified script and language. Returns -1 if no feature is requested.
-func getRequiredFeature(g *tt.TableLayout, scriptIndex, languageIndex int) (uint16, tt.Tag) {
+func getRequiredFeature(g *tt.TableLayout, scriptIndex, languageIndex int) (uint16, tables.Tag) {
 	if scriptIndex == NoScriptIndex || languageIndex == DefaultLanguageIndex {
 		return NoFeatureIndex, 0
 	}
@@ -272,12 +272,12 @@ func getFeatureLookupsWithVar(table *tt.TableLayout, featureIndex uint16, variat
 // tests whether a specified lookup index in the specified face would
 // trigger a substitution on the given glyph sequence.
 // zeroContext indicating whether substitutions should be context-free.
-func otLayoutLookupWouldSubstitute(font *Font, lookupIndex uint16, glyphs []api.GID, zeroContext bool) bool {
+func otLayoutLookupWouldSubstitute(font *Font, lookupIndex uint16, glyphs []GID, zeroContext bool) bool {
 	gsub := font.face.GSUB
 	if int(lookupIndex) >= len(gsub.Lookups) {
 		return false
 	}
-	c := wouldApplyContext{font.face, glyphs, nil, zeroContext}
+	c := wouldApplyContext{glyphs, nil, zeroContext}
 
 	l := lookupGSUB(gsub.Lookups[lookupIndex])
 	return l.wouldApply(&c, &font.gsubAccels[lookupIndex])
@@ -290,7 +290,7 @@ func layoutSubstituteStart(font *Font, buffer *Buffer) {
 	hasClass := gdef.GlyphClassDef != nil
 	for i := range buffer.Info {
 		if hasClass {
-			buffer.Info[i].glyphProps = gdef.GlyphProps(tables.GlyphID(buffer.Info[i].Glyph))
+			buffer.Info[i].glyphProps = gdef.GlyphProps(gID(buffer.Info[i].Glyph))
 		}
 		buffer.Info[i].ligProps = 0
 		buffer.Info[i].syllable = 0

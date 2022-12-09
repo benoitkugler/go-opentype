@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/loader"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 	ucd "github.com/benoitkugler/textlayout/unicodedata"
 )
@@ -635,7 +635,7 @@ var arabicFallbackFeatures = [...]loader.Tag{
 
 // used to sort both array at the same time
 type jointGlyphs struct {
-	glyphs, substitutes []api.GID
+	glyphs, substitutes []gID
 }
 
 func (a jointGlyphs) Len() int { return len(a.glyphs) }
@@ -645,21 +645,21 @@ func (a jointGlyphs) Swap(i, j int) {
 }
 func (a jointGlyphs) Less(i, j int) bool { return a.glyphs[i] < a.glyphs[j] }
 
-func arabicFallbackSynthesizeLookupSingle(font *Font, featureIndex int) *lookupGSUB {
-	var glyphs, substitutes []api.GID
+func arabicFallbackSynthesizeLookupSingle(ft *Font, featureIndex int) *lookupGSUB {
+	var glyphs, substitutes []gID
 
 	// populate arrays
 	for u := rune(ucd.FirstArabicShape); u <= ucd.LastArabicShape; u++ {
 		s := rune(ucd.ArabicShaping[u-ucd.FirstArabicShape][featureIndex])
-		uGlyph, hasU := font.face.NominalGlyph(u)
-		sGlyph, hasS := font.face.NominalGlyph(s)
+		uGlyph, hasU := ft.face.NominalGlyph(u)
+		sGlyph, hasS := ft.face.NominalGlyph(s)
 
 		if s == 0 || !hasU || !hasS || uGlyph == sGlyph || uGlyph > 0xFFFF || sGlyph > 0xFFFF {
 			continue
 		}
 
-		glyphs = append(glyphs, uGlyph)
-		substitutes = append(substitutes, sGlyph)
+		glyphs = append(glyphs, gID(uGlyph))
+		substitutes = append(substitutes, gID(sGlyph))
 	}
 
 	if len(glyphs) == 0 {
@@ -669,17 +669,19 @@ func arabicFallbackSynthesizeLookupSingle(font *Font, featureIndex int) *lookupG
 	sort.Stable(jointGlyphs{glyphs: glyphs, substitutes: substitutes})
 
 	return &lookupGSUB{
-		LookupOptions: tt.LookupOptions{Flag: tt.IgnoreMarks},
-		Subtables: []tt.GSUBSubtable{{
-			Coverage: tt.CoverageList(glyphs),
-			Data:     tt.GSUBSingle2(substitutes),
-		}},
+		LookupOptions: font.LookupOptions{Flag: otIgnoreMarks},
+		Subtables: []tables.GSUBLookup{
+			tables.SingleSubs{Data: tables.SingleSubstData2{
+				Coverage:           tables.Coverage1{Glyphs: glyphs},
+				SubstituteGlyphIDs: substitutes,
+			}},
+		},
 	}
 }
 
 // used to sort both array at the same time
 type glyphsIndirections struct {
-	glyphs       []api.GID
+	glyphs       []gID
 	indirections []int
 }
 
@@ -690,9 +692,9 @@ func (a glyphsIndirections) Swap(i, j int) {
 }
 func (a glyphsIndirections) Less(i, j int) bool { return a.glyphs[i] < a.glyphs[j] }
 
-func arabicFallbackSynthesizeLookupLigature(font *Font) *lookupGSUB {
+func arabicFallbackSynthesizeLookupLigature(ft *Font) *lookupGSUB {
 	var (
-		firstGlyphs            tt.CoverageList
+		firstGlyphs            []gID
 		firstGlyphsIndirection []int // original index into ArabicLigatures
 	)
 
@@ -700,11 +702,11 @@ func arabicFallbackSynthesizeLookupLigature(font *Font) *lookupGSUB {
 
 	// sort out the first-glyphs
 	for firstGlyphIdx, lig := range ucd.ArabicLigatures {
-		firstGlyph, ok := font.face.NominalGlyph(lig.First)
+		firstGlyph, ok := ft.face.NominalGlyph(lig.First)
 		if !ok {
 			continue
 		}
-		firstGlyphs = append(firstGlyphs, firstGlyph)
+		firstGlyphs = append(firstGlyphs, gID(firstGlyph))
 		firstGlyphsIndirection = append(firstGlyphsIndirection, firstGlyphIdx)
 	}
 
@@ -714,31 +716,32 @@ func arabicFallbackSynthesizeLookupLigature(font *Font) *lookupGSUB {
 
 	sort.Stable(glyphsIndirections{glyphs: firstGlyphs, indirections: firstGlyphsIndirection})
 
-	var out tt.GSUBLigature1
+	var out tables.LigatureSubs
+	out.Coverage = tables.Coverage1{Glyphs: firstGlyphs}
 
-	// ow that the first-glyphs are sorted, walk again, populate ligatures.
+	// now that the first-glyphs are sorted, walk again, populate ligatures.
 	for _, firstGlyphIdx := range firstGlyphsIndirection {
 		ligs := ucd.ArabicLigatures[firstGlyphIdx].Ligatures
-		var ligatureSet []tt.LigatureGlyph
+		var ligatureSet tables.LigatureSet
 		for _, v := range ligs {
 			secondU, ligatureU := v[0], v[1]
-			secondGlyph, hasSecond := font.face.NominalGlyph(secondU)
-			ligatureGlyph, hasLigature := font.face.NominalGlyph(ligatureU)
+			secondGlyph, hasSecond := ft.face.NominalGlyph(secondU)
+			ligatureGlyph, hasLigature := ft.face.NominalGlyph(ligatureU)
 			if secondU == 0 || !hasSecond || !hasLigature {
 				continue
 			}
-			ligatureSet = append(ligatureSet, tt.LigatureGlyph{
-				Glyph:      ligatureGlyph,
-				Components: []uint16{uint16(secondGlyph)}, // ligatures are 2-component
+			ligatureSet.Ligatures = append(ligatureSet.Ligatures, tables.Ligature{
+				LigatureGlyph:     gID(ligatureGlyph),
+				ComponentGlyphIDs: []uint16{uint16(secondGlyph)}, // ligatures are 2-component
 			})
 		}
-		out = append(out, ligatureSet)
+		out.LigatureSets = append(out.LigatureSets, ligatureSet)
 	}
 
 	return &lookupGSUB{
-		LookupOptions: tt.LookupOptions{Flag: tt.IgnoreMarks},
-		Subtables: []tt.GSUBSubtable{
-			{Coverage: firstGlyphs, Data: out},
+		LookupOptions: font.LookupOptions{Flag: otIgnoreMarks},
+		Subtables: []tables.GSUBLookup{
+			out,
 		},
 	}
 }

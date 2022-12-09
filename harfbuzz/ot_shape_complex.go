@@ -1,7 +1,8 @@
 package harfbuzz
 
 import (
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
 
@@ -19,7 +20,7 @@ type otComplexShaper interface {
 	normalizationPreference() normalizationMode
 	// If not 0, then must match found GPOS script tag for
 	// GPOS to be applied. Otherwise, fallback positioning will be used.
-	gposTag() tt.Tag
+	gposTag() tables.Tag
 
 	// collectFeatures is alled during shape_plan().
 	// Shapers should use plan.map to add their features and callbacks.
@@ -57,7 +58,7 @@ type otComplexShaper interface {
  * For lack of a better place, put Zawgyi script hack here.
  * https://github.com/harfbuzz/harfbuzz/issues/1162
  */
-var scriptMyanmarZawgyi = language.Script(tt.NewTag('Q', 'a', 'a', 'g'))
+var scriptMyanmarZawgyi = language.Script(loader.NewTag('Q', 'a', 'a', 'g'))
 
 func (planner *otShapePlanner) categorizeComplex() otComplexShaper {
 	switch planner.props.Script {
@@ -85,8 +86,8 @@ func (planner *otShapePlanner) categorizeComplex() otComplexShaper {
 		 * Otherwise, use the specific shaper.
 		 *
 		 * If it's indy3 tag, send to USE. */
-		if planner.map_.chosenScript[0] == tt.NewTag('D', 'F', 'L', 'T') ||
-			planner.map_.chosenScript[0] == tt.NewTag('l', 'a', 't', 'n') {
+		if planner.map_.chosenScript[0] == loader.NewTag('D', 'F', 'L', 'T') ||
+			planner.map_.chosenScript[0] == loader.NewTag('l', 'a', 't', 'n') {
 			return complexShaperDefault{}
 		} else if (planner.map_.chosenScript[0] & 0x000000FF) == '3' {
 			return &complexShaperUSE{}
@@ -102,9 +103,9 @@ func (planner *otShapePlanner) categorizeComplex() otComplexShaper {
 		 * If designer designed for 'mymr' tag, also send to default
 		 * shaper.  That's tag used from before Myanmar shaping spec
 		 * was developed.  The shaping spec uses 'mym2' tag. */
-		if planner.map_.chosenScript[0] == tt.NewTag('D', 'F', 'L', 'T') ||
-			planner.map_.chosenScript[0] == tt.NewTag('l', 'a', 't', 'n') ||
-			planner.map_.chosenScript[0] == tt.NewTag('m', 'y', 'm', 'r') {
+		if planner.map_.chosenScript[0] == loader.NewTag('D', 'F', 'L', 'T') ||
+			planner.map_.chosenScript[0] == loader.NewTag('l', 'a', 't', 'n') ||
+			planner.map_.chosenScript[0] == loader.NewTag('m', 'y', 'm', 'r') {
 			return complexShaperDefault{}
 		}
 		return complexShaperMyanmar{}
@@ -139,8 +140,8 @@ func (planner *otShapePlanner) categorizeComplex() otComplexShaper {
 		 * Otherwise, use the specific shaper.
 		 * Note that for some simple scripts, there may not be *any*
 		 * GSUB/GPOS needed, so there may be no scripts found! */
-		if planner.map_.chosenScript[0] == tt.NewTag('D', 'F', 'L', 'T') ||
-			planner.map_.chosenScript[0] == tt.NewTag('l', 'a', 't', 'n') {
+		if planner.map_.chosenScript[0] == loader.NewTag('D', 'F', 'L', 'T') ||
+			planner.map_.chosenScript[0] == loader.NewTag('l', 'a', 't', 'n') {
 			return complexShaperDefault{}
 		}
 		return &complexShaperUSE{}
@@ -152,7 +153,7 @@ func (planner *otShapePlanner) categorizeComplex() otComplexShaper {
 // zero byte struct providing no-ops, used to reduced boilerplate
 type complexShaperNil struct{}
 
-func (complexShaperNil) gposTag() tt.Tag { return 0 }
+func (complexShaperNil) gposTag() tables.Tag { return 0 }
 
 func (complexShaperNil) collectFeatures(plan *otShapePlanner)  {}
 func (complexShaperNil) overrideFeatures(plan *otShapePlanner) {}
@@ -194,7 +195,8 @@ func (cs complexShaperDefault) normalizationPreference() normalizationMode {
 }
 
 func syllabicInsertDottedCircles(font *Font, buffer *Buffer, brokenSyllableType,
-	dottedcircleCategory uint8, rephaCategory, dottedCirclePosition int) {
+	dottedcircleCategory uint8, rephaCategory, dottedCirclePosition int,
+) {
 	if (buffer.Flags & DoNotinsertDottedCircle) != 0 {
 		return
 	}

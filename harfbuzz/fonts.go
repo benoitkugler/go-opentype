@@ -32,11 +32,11 @@ type FaceOpentype interface {
 
 	// GetGlyphContourPoint retrieves the (X,Y) coordinates (in font units) for a
 	// specified contour point in a glyph, or false if not found.
-	GetGlyphContourPoint(glyph api.GID, pointIndex uint16) (x, y int32, ok bool)
+	GetGlyphContourPoint(glyph GID, pointIndex uint16) (x, y int32, ok bool)
 
 	// VariationGlyph retrieves the glyph ID for a specified Unicode code point
 	// followed by a specified Variation Selector code point, or false if not found
-	VariationGlyph(ch, varSelector rune) (api.GID, bool)
+	VariationGlyph(ch, varSelector rune) (GID, bool)
 }
 
 // Font is used internally as a light wrapper around the provided Face.
@@ -106,7 +106,7 @@ func (f *Font) SetVarCoordsDesign(coords []float32) {
 // in the `NewFont` constructor.
 func (f *Font) Face() Face { return f.face }
 
-func (f *Font) nominalGlyph(r rune, notFound api.GID) (api.GID, bool) {
+func (f *Font) nominalGlyph(r rune, notFound GID) (GID, bool) {
 	g, ok := f.face.NominalGlyph(r)
 	if !ok {
 		g = notFound
@@ -141,7 +141,7 @@ type GlyphExtents struct {
 
 // GlyphExtents fetches the GlyphExtents data for a glyph ID
 // in the specified font, or false if not found
-func (f *Font) GlyphExtents(glyph api.GID) (out GlyphExtents, ok bool) {
+func (f *Font) GlyphExtents(glyph GID) (out GlyphExtents, ok bool) {
 	ext, ok := f.face.GlyphExtents(glyph)
 	if !ok {
 		return out, false
@@ -158,7 +158,7 @@ func (f *Font) GlyphExtents(glyph api.GID) (out GlyphExtents, ok bool) {
 //
 // Calls the appropriate direction-specific variant (horizontal
 // or vertical) depending on the value of `dir`.
-func (f *Font) GlyphAdvanceForDirection(glyph api.GID, dir Direction) (x, y Position) {
+func (f *Font) GlyphAdvanceForDirection(glyph GID, dir Direction) (x, y Position) {
 	if dir.isHorizontal() {
 		return f.GlyphHAdvance(glyph), 0
 	}
@@ -167,14 +167,14 @@ func (f *Font) GlyphAdvanceForDirection(glyph api.GID, dir Direction) (x, y Posi
 
 // GlyphHAdvance fetches the advance for a glyph ID in the font,
 // for horizontal text segments.
-func (f *Font) GlyphHAdvance(glyph api.GID) Position {
+func (f *Font) GlyphHAdvance(glyph GID) Position {
 	adv := f.face.HorizontalAdvance(glyph)
 	return f.emScalefX(adv)
 }
 
 // Fetches the advance for a glyph ID in the font,
 // for vertical text segments.
-func (f *Font) getGlyphVAdvance(glyph api.GID) Position {
+func (f *Font) getGlyphVAdvance(glyph GID) Position {
 	adv := f.face.VerticalAdvance(glyph)
 	return f.emScalefY(adv)
 }
@@ -184,7 +184,7 @@ func (f *Font) getGlyphVAdvance(glyph api.GID) Position {
 //
 // Calls the appropriate direction-specific variant (horizontal
 // or vertical) depending on the value of @direction.
-func (f *Font) subtractGlyphOriginForDirection(glyph api.GID, direction Direction,
+func (f *Font) subtractGlyphOriginForDirection(glyph GID, direction Direction,
 	x, y Position,
 ) (Position, Position) {
 	originX, originY := f.getGlyphOriginForDirection(glyph, direction)
@@ -197,14 +197,14 @@ func (f *Font) subtractGlyphOriginForDirection(glyph api.GID, direction Directio
 //
 // Calls the appropriate direction-specific variant (horizontal
 // or vertical) depending on the value of @direction.
-func (f *Font) getGlyphOriginForDirection(glyph api.GID, direction Direction) (x, y Position) {
+func (f *Font) getGlyphOriginForDirection(glyph GID, direction Direction) (x, y Position) {
 	if direction.isHorizontal() {
 		return f.getGlyphHOriginWithFallback(glyph)
 	}
 	return f.getGlyphVOriginWithFallback(glyph)
 }
 
-func (f *Font) getGlyphHOriginWithFallback(glyph api.GID) (Position, Position) {
+func (f *Font) getGlyphHOriginWithFallback(glyph GID) (Position, Position) {
 	x, y, ok := f.face.GlyphHOrigin(glyph)
 	if !ok {
 		x, y, ok = f.face.GlyphVOrigin(glyph)
@@ -216,7 +216,7 @@ func (f *Font) getGlyphHOriginWithFallback(glyph api.GID) (Position, Position) {
 	return x, y
 }
 
-func (f *Font) getGlyphVOriginWithFallback(glyph api.GID) (Position, Position) {
+func (f *Font) getGlyphVOriginWithFallback(glyph GID) (Position, Position) {
 	x, y, ok := f.face.GlyphVOrigin(glyph)
 	if !ok {
 		x, y, ok = f.face.GlyphHOrigin(glyph)
@@ -228,7 +228,7 @@ func (f *Font) getGlyphVOriginWithFallback(glyph api.GID) (Position, Position) {
 	return x, y
 }
 
-func (f *Font) guessVOriginMinusHOrigin(glyph api.GID) (x, y Position) {
+func (f *Font) guessVOriginMinusHOrigin(glyph GID) (x, y Position) {
 	x = f.GlyphHAdvance(glyph) / 2
 	y = f.getHExtendsAscender()
 	return x, y
@@ -247,22 +247,22 @@ func (f *Font) hasGlyph(ch rune) bool {
 	return ok
 }
 
-func (f *Font) subtractGlyphHOrigin(glyph api.GID, x, y Position) (Position, Position) {
+func (f *Font) subtractGlyphHOrigin(glyph GID, x, y Position) (Position, Position) {
 	originX, originY := f.getGlyphHOriginWithFallback(glyph)
 	return x - originX, y - originY
 }
 
-func (f *Font) subtractGlyphVOrigin(glyph api.GID, x, y Position) (Position, Position) {
+func (f *Font) subtractGlyphVOrigin(glyph GID, x, y Position) (Position, Position) {
 	originX, originY := f.getGlyphVOriginWithFallback(glyph)
 	return x - originX, y - originY
 }
 
-func (f *Font) addGlyphHOrigin(glyph api.GID, x, y Position) (Position, Position) {
+func (f *Font) addGlyphHOrigin(glyph GID, x, y Position) (Position, Position) {
 	originX, originY := f.getGlyphHOriginWithFallback(glyph)
 	return x + originX, y + originY
 }
 
-func (f *Font) getGlyphContourPointForOrigin(glyph api.GID, pointIndex uint16, direction Direction) (x, y Position, ok bool) {
+func (f *Font) getGlyphContourPointForOrigin(glyph GID, pointIndex uint16, direction Direction) (x, y Position, ok bool) {
 	x, y, ok = f.face.GetGlyphContourPoint(glyph, pointIndex)
 	if ok {
 		x, y = f.subtractGlyphOriginForDirection(glyph, direction, x, y)
@@ -272,7 +272,7 @@ func (f *Font) getGlyphContourPointForOrigin(glyph api.GID, pointIndex uint16, d
 }
 
 // Generates gidDDD if glyph has no name.
-func (f *Font) glyphToString(glyph api.GID) string {
+func (f *Font) glyphToString(glyph GID) string {
 	if name := f.face.GlyphName(glyph); name != "" {
 		return name
 	}
@@ -340,7 +340,7 @@ func (font *Font) getYDelta(varStore tables.ItemVarStore, device tables.DeviceTa
 
 // GetOTLigatureCarets fetches a list of the caret positions defined for a ligature glyph in the GDEF
 // table of the font (or nil if not found).
-func (f *Font) GetOTLigatureCarets(direction Direction, glyph api.GID) []Position {
+func (f *Font) GetOTLigatureCarets(direction Direction, glyph GID) []Position {
 	varStore := f.face.GDEF.ItemVarStore
 
 	list := f.face.GDEF.LigCaretList
@@ -348,7 +348,7 @@ func (f *Font) GetOTLigatureCarets(direction Direction, glyph api.GID) []Positio
 		return nil
 	}
 
-	index, ok := list.Coverage.Index(tables.GlyphID(glyph))
+	index, ok := list.Coverage.Index(gID(glyph))
 	if !ok {
 		return nil
 	}
@@ -362,7 +362,7 @@ func (f *Font) GetOTLigatureCarets(direction Direction, glyph api.GID) []Positio
 }
 
 // interpreted the CaretValue according to its format
-func (f *Font) getCaretValue(caret tables.CaretValue, direction Direction, glyph api.GID, varStore tables.ItemVarStore) Position {
+func (f *Font) getCaretValue(caret tables.CaretValue, direction Direction, glyph GID, varStore tables.ItemVarStore) Position {
 	switch caret := caret.(type) {
 	case tables.CaretValue1:
 		if direction.isHorizontal() {

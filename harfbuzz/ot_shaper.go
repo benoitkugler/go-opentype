@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/benoitkugler/go-opentype/api/font"
-	"github.com/benoitkugler/textlayout/fonts"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // Support functions for OpenType shaping related queries.
@@ -29,7 +29,7 @@ const (
 type otShapePlanner struct {
 	shaper                        otComplexShaper
 	props                         SegmentProperties
-	tables                        *tt.LayoutTables // also used by the map builders
+	tables                        *font.Font // also used by the map builders
 	aatMap                        aatMapBuilder
 	map_                          otMapBuilder
 	applyMorx                     bool
@@ -37,7 +37,7 @@ type otShapePlanner struct {
 	scriptFallbackMarkPositioning bool
 }
 
-func newOtShapePlanner(tables *tt.LayoutTables, props SegmentProperties) *otShapePlanner {
+func newOtShapePlanner(tables *font.Font, props SegmentProperties) *otShapePlanner {
 	var out otShapePlanner
 	out.props = props
 	out.tables = tables
@@ -68,29 +68,29 @@ func (planner *otShapePlanner) compile(plan *otShapePlan, key otShapePlanKey) {
 		planner.aatMap.compile(&plan.aatMap)
 	}
 
-	plan.fracMask = plan.map_.getMask1(tt.NewTag('f', 'r', 'a', 'c'))
-	plan.numrMask = plan.map_.getMask1(tt.NewTag('n', 'u', 'm', 'r'))
-	plan.dnomMask = plan.map_.getMask1(tt.NewTag('d', 'n', 'o', 'm'))
+	plan.fracMask = plan.map_.getMask1(loader.NewTag('f', 'r', 'a', 'c'))
+	plan.numrMask = plan.map_.getMask1(loader.NewTag('n', 'u', 'm', 'r'))
+	plan.dnomMask = plan.map_.getMask1(loader.NewTag('d', 'n', 'o', 'm'))
 	plan.hasFrac = plan.fracMask != 0 || (plan.numrMask != 0 && plan.dnomMask != 0)
 
-	plan.rtlmMask = plan.map_.getMask1(tt.NewTag('r', 't', 'l', 'm'))
-	plan.hasVert = plan.map_.getMask1(tt.NewTag('v', 'e', 'r', 't')) != 0
+	plan.rtlmMask = plan.map_.getMask1(loader.NewTag('r', 't', 'l', 'm'))
+	plan.hasVert = plan.map_.getMask1(loader.NewTag('v', 'e', 'r', 't')) != 0
 
-	kernTag := tt.NewTag('v', 'k', 'r', 'n')
+	kernTag := loader.NewTag('v', 'k', 'r', 'n')
 	if planner.props.Direction.isHorizontal() {
-		kernTag = tt.NewTag('k', 'e', 'r', 'n')
+		kernTag = loader.NewTag('k', 'e', 'r', 'n')
 	}
 
 	plan.kernMask, _ = plan.map_.getMask(kernTag)
 	plan.requestedKerning = plan.kernMask != 0
-	plan.trakMask, _ = plan.map_.getMask(tt.NewTag('t', 'r', 'a', 'k'))
+	plan.trakMask, _ = plan.map_.getMask(loader.NewTag('t', 'r', 'a', 'k'))
 	plan.requestedTracking = plan.trakMask != 0
 
 	hasGposKern := plan.map_.getFeatureIndex(1, kernTag) != NoFeatureIndex
 	disableGpos := plan.shaper.gposTag() != 0 && plan.shaper.gposTag() != plan.map_.chosenScript[1]
 
 	// Decide who provides glyph classes. GDEF or Unicode.
-	if planner.tables.GDEF.Class == nil {
+	if planner.tables.GDEF.GlyphClassDef == nil {
 		plan.fallbackGlyphClasses = true
 	}
 
@@ -121,7 +121,7 @@ func (planner *otShapePlanner) compile(plan *otShapePlan, key otShapePlanKey) {
 
 	plan.zeroMarks = planner.scriptZeroMarks && !plan.applyKerx &&
 		(!plan.applyKern || !hasMachineKerning(planner.tables.Kern))
-	plan.hasGposMark = plan.map_.getMask1(tt.NewTag('m', 'a', 'r', 'k')) != 0
+	plan.hasGposMark = plan.map_.getMask1(loader.NewTag('m', 'a', 'r', 'k')) != 0
 
 	plan.adjustMarkPositioningWhenZeroing = !plan.applyGpos && !plan.applyKerx &&
 		(!plan.applyKern || !hasCrossKerning(planner.tables.Kern))
@@ -171,7 +171,7 @@ type otShapePlan struct {
 	applyTrak         bool
 }
 
-func (sp *otShapePlan) init0(tables *tt.LayoutTables, props SegmentProperties, userFeatures []Feature, otKey otShapePlanKey) {
+func (sp *otShapePlan) init0(tables *font.Font, props SegmentProperties, userFeatures []Feature, otKey otShapePlanKey) {
 	planner := newOtShapePlanner(tables, props)
 
 	planner.collectFeatures(userFeatures)
@@ -209,61 +209,61 @@ func (sp *otShapePlan) position(font *Font, buffer *Buffer) {
 
 var (
 	commonFeatures = [...]otMapFeature{
-		{tt.NewTag('a', 'b', 'v', 'm'), ffGLOBAL},
-		{tt.NewTag('b', 'l', 'w', 'm'), ffGLOBAL},
-		{tt.NewTag('c', 'c', 'm', 'p'), ffGLOBAL},
-		{tt.NewTag('l', 'o', 'c', 'l'), ffGLOBAL},
-		{tt.NewTag('m', 'a', 'r', 'k'), ffGlobalManualJoiners},
-		{tt.NewTag('m', 'k', 'm', 'k'), ffGlobalManualJoiners},
-		{tt.NewTag('r', 'l', 'i', 'g'), ffGLOBAL},
+		{loader.NewTag('a', 'b', 'v', 'm'), ffGLOBAL},
+		{loader.NewTag('b', 'l', 'w', 'm'), ffGLOBAL},
+		{loader.NewTag('c', 'c', 'm', 'p'), ffGLOBAL},
+		{loader.NewTag('l', 'o', 'c', 'l'), ffGLOBAL},
+		{loader.NewTag('m', 'a', 'r', 'k'), ffGlobalManualJoiners},
+		{loader.NewTag('m', 'k', 'm', 'k'), ffGlobalManualJoiners},
+		{loader.NewTag('r', 'l', 'i', 'g'), ffGLOBAL},
 	}
 
 	horizontalFeatures = [...]otMapFeature{
-		{tt.NewTag('c', 'a', 'l', 't'), ffGLOBAL},
-		{tt.NewTag('c', 'l', 'i', 'g'), ffGLOBAL},
-		{tt.NewTag('c', 'u', 'r', 's'), ffGLOBAL},
-		{tt.NewTag('d', 'i', 's', 't'), ffGLOBAL},
-		{tt.NewTag('k', 'e', 'r', 'n'), ffGlobalHasFallback},
-		{tt.NewTag('l', 'i', 'g', 'a'), ffGLOBAL},
-		{tt.NewTag('r', 'c', 'l', 't'), ffGLOBAL},
+		{loader.NewTag('c', 'a', 'l', 't'), ffGLOBAL},
+		{loader.NewTag('c', 'l', 'i', 'g'), ffGLOBAL},
+		{loader.NewTag('c', 'u', 'r', 's'), ffGLOBAL},
+		{loader.NewTag('d', 'i', 's', 't'), ffGLOBAL},
+		{loader.NewTag('k', 'e', 'r', 'n'), ffGlobalHasFallback},
+		{loader.NewTag('l', 'i', 'g', 'a'), ffGLOBAL},
+		{loader.NewTag('r', 'c', 'l', 't'), ffGLOBAL},
 	}
 )
 
 func (planner *otShapePlanner) collectFeatures(userFeatures []Feature) {
 	map_ := &planner.map_
 
-	map_.enableFeature(tt.NewTag('r', 'v', 'r', 'n'))
+	map_.enableFeature(loader.NewTag('r', 'v', 'r', 'n'))
 	map_.addGSUBPause(nil)
 
 	switch planner.props.Direction {
 	case LeftToRight:
-		map_.enableFeature(tt.NewTag('l', 't', 'r', 'a'))
-		map_.enableFeature(tt.NewTag('l', 't', 'r', 'm'))
+		map_.enableFeature(loader.NewTag('l', 't', 'r', 'a'))
+		map_.enableFeature(loader.NewTag('l', 't', 'r', 'm'))
 	case RightToLeft:
-		map_.enableFeature(tt.NewTag('r', 't', 'l', 'a'))
-		map_.addFeature(tt.NewTag('r', 't', 'l', 'm'))
+		map_.enableFeature(loader.NewTag('r', 't', 'l', 'a'))
+		map_.addFeature(loader.NewTag('r', 't', 'l', 'm'))
 	}
 
 	/* Automatic fractions. */
-	map_.addFeature(tt.NewTag('f', 'r', 'a', 'c'))
-	map_.addFeature(tt.NewTag('n', 'u', 'm', 'r'))
-	map_.addFeature(tt.NewTag('d', 'n', 'o', 'm'))
+	map_.addFeature(loader.NewTag('f', 'r', 'a', 'c'))
+	map_.addFeature(loader.NewTag('n', 'u', 'm', 'r'))
+	map_.addFeature(loader.NewTag('d', 'n', 'o', 'm'))
 
 	/* Random! */
-	map_.enableFeatureExt(tt.NewTag('r', 'a', 'n', 'd'), ffRandom, otMapMaxValue)
+	map_.enableFeatureExt(loader.NewTag('r', 'a', 'n', 'd'), ffRandom, otMapMaxValue)
 
 	/* Tracking.  We enable dummy feature here just to allow disabling
 	* AAT 'trak' table using features.
 	* https://github.com/harfbuzz/harfbuzz/issues/1303 */
-	map_.enableFeatureExt(tt.NewTag('t', 'r', 'a', 'k'), ffHasFallback, 1)
+	map_.enableFeatureExt(loader.NewTag('t', 'r', 'a', 'k'), ffHasFallback, 1)
 
-	map_.enableFeature(tt.NewTag('H', 'a', 'r', 'f')) /* Considered required. */
-	map_.enableFeature(tt.NewTag('H', 'A', 'R', 'F')) /* Considered discretionary. */
+	map_.enableFeature(loader.NewTag('H', 'a', 'r', 'f')) /* Considered required. */
+	map_.enableFeature(loader.NewTag('H', 'A', 'R', 'F')) /* Considered discretionary. */
 
 	planner.shaper.collectFeatures(planner)
 
-	map_.enableFeature(tt.NewTag('B', 'u', 'z', 'z')) /* Considered required. */
-	map_.enableFeature(tt.NewTag('B', 'U', 'Z', 'Z')) /* Considered discretionary. */
+	map_.enableFeature(loader.NewTag('B', 'u', 'z', 'z')) /* Considered required. */
+	map_.enableFeature(loader.NewTag('B', 'U', 'Z', 'Z')) /* Considered discretionary. */
 
 	for _, feat := range commonFeatures {
 		map_.addFeatureExt(feat.tag, feat.flags, 1)
@@ -278,7 +278,7 @@ func (planner *otShapePlanner) collectFeatures(userFeatures []Feature) {
 		 * matter which script/langsys it is listed (or not) under.
 		 * See various bugs referenced from:
 		 * https://github.com/harfbuzz/harfbuzz/issues/63 */
-		map_.enableFeatureExt(tt.NewTag('v', 'e', 'r', 't'), ffGlobalSearch, 1)
+		map_.enableFeatureExt(loader.NewTag('v', 'e', 'r', 't'), ffGlobalSearch, 1)
 	}
 
 	for _, f := range userFeatures {
@@ -306,7 +306,6 @@ func (planner *otShapePlanner) collectFeatures(userFeatures []Feature) {
 type otContext struct {
 	plan         *otShapePlan
 	font         *Font
-	face         fonts.FaceMetrics
 	buffer       *Buffer
 	userFeatures []Feature
 
@@ -548,9 +547,9 @@ func synthesizeGlyphClasses(buffer *Buffer) {
 		 * marks them as non-mark.  Some Mongolian fonts without
 		 * GDEF rely on this.  Another notable character that
 		 * this applies to is COMBINING GRAPHEME JOINER. */
-		class := tt.Mark
+		class := tables.GPMark
 		if info[i].unicode.generalCategory() != nonSpacingMark || info[i].isDefaultIgnorable() {
-			class = tt.BaseGlyph
+			class = tables.GPBaseGlyph
 		}
 
 		info[i].glyphProps = class
@@ -738,12 +737,10 @@ func propagateFlags(buffer *Buffer) {
 // shaperOpentype is the main shaper of this library.
 // It handles complex language and Opentype layout features found in fonts.
 type shaperOpentype struct {
-	tables *tt.LayoutTables
+	tables *font.Font
 	plan   otShapePlan
 	key    otShapePlanKey
 }
-
-var _ shaper = (*shaperOpentype)(nil)
 
 type otShapePlanKey = [2]int // -1 for not found
 
@@ -765,7 +762,7 @@ func (sp *shaperOpentype) compile(props SegmentProperties, userFeatures []Featur
 
 // pull it all together!
 func (sp *shaperOpentype) shape(font *Font, buffer *Buffer, features []Feature) {
-	c := otContext{plan: &sp.plan, font: font, face: font.face, buffer: buffer, userFeatures: features}
+	c := otContext{plan: &sp.plan, font: font, buffer: buffer, userFeatures: features}
 	c.buffer.scratchFlags = bsfDefault
 
 	const maxLenFactor = 64

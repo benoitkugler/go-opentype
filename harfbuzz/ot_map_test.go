@@ -3,13 +3,13 @@ package harfbuzz
 import (
 	"testing"
 
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
 )
 
 func TestOTFeature(t *testing.T) {
 	face := openFontFile("fonts/cv01.otf").LayoutTables()
 
-	cv01 := tt.NewTag('c', 'v', '0', '1')
+	cv01 := loader.NewTag('c', 'v', '0', '1')
 
 	featureIndex := FindFeatureForLang(&face.GSUB.TableLayout, 0, DefaultLanguageIndex, cv01)
 	if featureIndex == NoFeatureIndex {

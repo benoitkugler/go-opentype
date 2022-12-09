@@ -1,7 +1,8 @@
 package harfbuzz
 
 import (
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	ucd "github.com/benoitkugler/textlayout/unicodedata"
 )
 
@@ -28,11 +29,11 @@ const (
 	hangulFeatureCount = tjmo + 1
 )
 
-var hangulFeatures = [hangulFeatureCount]tt.Tag{
+var hangulFeatures = [hangulFeatureCount]tables.Tag{
 	0,
-	tt.NewTag('l', 'j', 'm', 'o'),
-	tt.NewTag('v', 'j', 'm', 'o'),
-	tt.NewTag('t', 'j', 'm', 'o'),
+	loader.NewTag('l', 'j', 'm', 'o'),
+	loader.NewTag('v', 'j', 'm', 'o'),
+	loader.NewTag('t', 'j', 'm', 'o'),
 }
 
 func (complexShaperHangul) collectFeatures(plan *otShapePlanner) {
@@ -47,7 +48,7 @@ func (complexShaperHangul) overrideFeatures(plan *otShapePlanner) {
 	/* Uniscribe does not apply 'calt' for Hangul, and certain fonts
 	* (Noto Sans CJK, Source Sans Han, etc) apply all of jamo lookups
 	* in calt, which is not desirable. */
-	plan.map_.disableFeature(tt.NewTag('c', 'a', 'l', 't'))
+	plan.map_.disableFeature(loader.NewTag('c', 'a', 'l', 't'))
 }
 
 type hangulShapePlan struct {
@@ -342,4 +343,4 @@ func (complexShaperHangul) normalizationPreference() normalizationMode {
 	return nmNone
 }
 
-func (complexShaperHangul) gposTag() tt.Tag { return 0 }
+func (complexShaperHangul) gposTag() tables.Tag { return 0 }

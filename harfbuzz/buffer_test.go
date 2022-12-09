@@ -3,7 +3,6 @@ package harfbuzz
 import (
 	"testing"
 
-	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/textlayout/language"
 )
 
@@ -267,12 +266,12 @@ const (
  * Since: 1.5.0
  **/
 
-func bufferDiff(buffer, reference *Buffer, dottedcircleGlyph api.GID, positionFuzz int32) int {
+func bufferDiff(buffer, reference *Buffer, dottedcircleGlyph GID, positionFuzz int32) int {
 	//    if (buffer.content_type != reference.content_type && buffer.len && reference.len){
 	// 	 return HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH;}
 
 	result := bufferDiffFlagEqual
-	contains := dottedcircleGlyph != ^api.GID(0)
+	contains := dottedcircleGlyph != ^GID(0)
 
 	count := len(reference.Info)
 

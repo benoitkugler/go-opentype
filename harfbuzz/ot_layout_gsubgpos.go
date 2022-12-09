@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/benoitkugler/go-opentype/api"
-	"github.com/benoitkugler/textlayout/fonts"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/api/font"
+	"github.com/benoitkugler/go-opentype/tables"
 )
 
 // ported from harfbuzz/src/hb-ot-layout-gsubgpos.hh Copyright © 2007,2008,2009,2010  Red Hat, Inc. 2010,2012  Google, Inc.  Behdad Esfahbod
@@ -29,7 +28,7 @@ type layoutLookup interface {
  * GSUB/GPOS Common
  */
 
-const ignoreFlags = tt.IgnoreBaseGlyphs | tt.IgnoreLigatures | tt.IgnoreMarks
+const ignoreFlags = otIgnoreBaseGlyphs | otIgnoreLigatures | otIgnoreMarks
 
 // use a digest to speedup match
 type otLayoutLookupAccelerator struct {
@@ -58,25 +57,25 @@ func (ac *otLayoutLookupAccelerator) apply(c *otApplyContext) bool {
 
 // represents one layout subtable, with its own coverage
 type applicable struct {
-	obj interface{ apply(c *otApplyContext) bool }
+	objApply func(c *otApplyContext) bool
 
 	digest setDigest
 }
 
-func newGSUBApplicable(table tt.GSUBSubtable) applicable {
-	ap := applicable{obj: gsubSubtable(table)}
-	ap.digest.collectCoverage(table.Coverage)
+func newGSUBApplicable(table tables.GSUBLookup) applicable {
+	ap := applicable{objApply: func(c *otApplyContext) bool { return c.applyGSUB(table) }}
+	ap.digest.collectCoverage(table.Cov())
 	return ap
 }
 
-func newGPOSApplicable(table tt.GPOSSubtable) applicable {
-	ap := applicable{obj: gposSubtable(table)}
-	ap.digest.collectCoverage(table.Coverage)
+func newGPOSApplicable(table tables.GPOSLookup) applicable {
+	ap := applicable{objApply: func(c *otApplyContext) bool { return c.applyGPOS(table) }}
+	ap.digest.collectCoverage(table.Cov())
 	return ap
 }
 
 func (ap applicable) apply(c *otApplyContext) bool {
-	return ap.digest.mayHave(c.buffer.cur(0).Glyph) && ap.obj.apply(c)
+	return ap.digest.mayHave(gID(c.buffer.cur(0).Glyph)) && ap.objApply(c)
 }
 
 type getSubtablesContext []applicable
@@ -99,29 +98,28 @@ type otProxy struct {
 }
 
 type wouldApplyContext struct {
-	face        fonts.FaceMetrics
-	glyphs      []api.GID
+	glyphs      []GID
 	indices     []uint16 // see get1N
 	zeroContext bool
 }
 
 // `value` interpretation is dictated by the context
-type matcherFunc = func(gid api.GID, value uint16) bool
+type matcherFunc = func(gid gID, value uint16) bool
 
 // interprets `value` as a Glyph
-func matchGlyph(gid api.GID, value uint16) bool { return gid == api.GID(value) }
+func matchGlyph(gid gID, value uint16) bool { return gid == gID(value) }
 
 // interprets `value` as a Class
-func matchClass(class tt.Class) matcherFunc {
-	return func(gid api.GID, value uint16) bool {
-		c, _ := class.ClassID(gid)
+func matchClass(class tables.ClassDef) matcherFunc {
+	return func(gid gID, value uint16) bool {
+		c, _ := class.Class(gid)
 		return uint16(c) == value
 	}
 }
 
 // interprets `value` as an index in coverage array
-func matchCoverage(covs []tt.Coverage) matcherFunc {
-	return func(gid api.GID, value uint16) bool {
+func matchCoverage(covs []tables.Coverage) matcherFunc {
+	return func(gid gID, value uint16) bool {
 		_, covered := covs[value].Index(gid)
 		return covered
 	}
@@ -148,7 +146,7 @@ func (m otApplyContextMatcher) mayMatch(info *GlyphInfo, glyphData []uint16) uin
 	}
 
 	if m.matchFunc != nil {
-		if m.matchFunc(info.Glyph, glyphData[0]) {
+		if m.matchFunc(gID(info.Glyph), glyphData[0]) {
 			return yes
 		}
 		return no
@@ -293,13 +291,12 @@ func (it *skippingIterator) prev() bool {
 type recurseFunc = func(c *otApplyContext, lookupIndex uint16) bool
 
 type otApplyContext struct {
-	face   fonts.FaceMetrics
 	font   *Font
 	buffer *Buffer
 
 	recurseFunc recurseFunc
-	gdef        tt.TableGDEF
-	varStore    tt.VariationStore
+	gdef        tables.GDEF
+	varStore    tables.ItemVarStore
 	indices     []uint16 // see get1N()
 
 	iterContext skippingIterator
@@ -322,16 +319,15 @@ type otApplyContext struct {
 func newOtApplyContext(tableIndex int, font *Font, buffer *Buffer) otApplyContext {
 	var out otApplyContext
 	out.font = font
-	out.face = font.face
 	out.buffer = buffer
 	out.gdef = font.face.GDEF
-	out.varStore = out.gdef.VariationStore
+	out.varStore = out.gdef.ItemVarStore
 	out.direction = buffer.Props.Direction
 	out.lookupMask = 1
 	out.tableIndex = tableIndex
 	out.lookupIndex = math.MaxUint16
 	out.nestingLevelLeft = maxNestingLevel
-	out.hasGlyphClasses = out.gdef.Class != nil
+	out.hasGlyphClasses = out.gdef.GlyphClassDef != nil
 	out.autoZWNJ = true
 	out.autoZWJ = true
 	out.randomState = 1
@@ -392,36 +388,36 @@ func (c *otApplyContext) checkGlyphProperty(info *GlyphInfo, matchProps uint32) 
 		return false
 	}
 
-	if glyphProps&tt.Mark != 0 {
+	if glyphProps&tables.GPMark != 0 {
 		return c.matchPropertiesMark(info.Glyph, glyphProps, matchProps)
 	}
 
 	return true
 }
 
-func (c *otApplyContext) matchPropertiesMark(glyph api.GID, glyphProps uint16, matchProps uint32) bool {
+func (c *otApplyContext) matchPropertiesMark(glyph GID, glyphProps uint16, matchProps uint32) bool {
 	/* If using mark filtering sets, the high uint16 of
 	 * matchProps has the set index. */
-	if tt.LookupFlag(matchProps)&tt.UseMarkFilteringSet != 0 {
-		_, has := c.gdef.MarkGlyphSet[matchProps>>16].Index(glyph)
+	if uint16(matchProps)&font.UseMarkFilteringSet != 0 {
+		_, has := c.gdef.MarkGlyphSetsDef.Coverages[matchProps>>16].Index(gID(glyph))
 		return has
 	}
 
 	/* The second byte of matchProps has the meaning
 	 * "ignore marks of attachment type different than
 	 * the attachment type specified." */
-	if tt.LookupFlag(matchProps)&tt.MarkAttachmentType != 0 {
-		return uint16(matchProps)&tt.MarkAttachmentType == (glyphProps & tt.MarkAttachmentType)
+	if uint16(matchProps)&otMarkAttachmentType != 0 {
+		return uint16(matchProps)&otMarkAttachmentType == (glyphProps & otMarkAttachmentType)
 	}
 
 	return true
 }
 
-func (c *otApplyContext) setGlyphProps(glyphIndex api.GID) {
+func (c *otApplyContext) setGlyphProps(glyphIndex GID) {
 	c.setGlyphPropsExt(glyphIndex, 0, false, false)
 }
 
-func (c *otApplyContext) setGlyphPropsExt(glyphIndex api.GID, classGuess uint16, ligature, component bool) {
+func (c *otApplyContext) setGlyphPropsExt(glyphIndex GID, classGuess uint16, ligature, component bool) {
 	addIn := c.buffer.cur(0).glyphProps & preserve
 	addIn |= substituted
 	if ligature {
@@ -438,13 +434,13 @@ func (c *otApplyContext) setGlyphPropsExt(glyphIndex api.GID, classGuess uint16,
 		addIn |= multiplied
 	}
 	if c.hasGlyphClasses {
-		c.buffer.cur(0).glyphProps = addIn | c.gdef.GlyphProps(glyphIndex)
+		c.buffer.cur(0).glyphProps = addIn | c.gdef.GlyphProps(gID(glyphIndex))
 	} else if classGuess != 0 {
 		c.buffer.cur(0).glyphProps = addIn | classGuess
 	}
 }
 
-func (c *otApplyContext) replaceGlyph(glyphIndex api.GID) {
+func (c *otApplyContext) replaceGlyph(glyphIndex GID) {
 	c.setGlyphProps(glyphIndex)
 	c.buffer.replaceGlyphIndex(glyphIndex)
 }
@@ -455,10 +451,10 @@ func (c *otApplyContext) randomNumber() uint32 {
 	return c.randomState
 }
 
-func (c *otApplyContext) applyRuleSet(ruleSet []tt.SequenceRule, match matcherFunc) bool {
-	for _, rule := range ruleSet {
+func (c *otApplyContext) applyRuleSet(ruleSet tables.SequenceRuleSet, match matcherFunc) bool {
+	for _, rule := range ruleSet.SeqRule {
 		// the first which match is applied
-		applied := c.contextApplyLookup(rule.Input, rule.Lookups, match)
+		applied := c.contextApplyLookup(rule.InputSequence, rule.SeqLookupRecords, match)
 		if applied {
 			return true
 		}
@@ -466,14 +462,14 @@ func (c *otApplyContext) applyRuleSet(ruleSet []tt.SequenceRule, match matcherFu
 	return false
 }
 
-func (c *otApplyContext) applyChainRuleSet(ruleSet []tt.ChainedSequenceRule, match [3]matcherFunc) bool {
-	for i, rule := range ruleSet {
+func (c *otApplyContext) applyChainRuleSet(ruleSet tables.ChainedClassSequenceRuleSet, match [3]matcherFunc) bool {
+	for i, rule := range ruleSet.ChainedSeqRules {
 
 		if debugMode >= 2 {
 			fmt.Println("APPLY - chain rule number", i)
 		}
 
-		b := c.chainContextApplyLookup(rule.Backtrack, rule.Input, rule.Lookahead, rule.Lookups, match)
+		b := c.chainContextApplyLookup(rule.BacktrackSequence, rule.InputSequence, rule.LookaheadSequence, rule.SeqLookupRecords, match)
 		if b { // stop at the first application
 			return true
 		}
@@ -482,7 +478,7 @@ func (c *otApplyContext) applyChainRuleSet(ruleSet []tt.ChainedSequenceRule, mat
 }
 
 // `input` starts with second glyph (`inputCount` = len(input)+1)
-func (c *otApplyContext) contextApplyLookup(input []uint16, lookupRecord []tt.SequenceLookup, lookupContext matcherFunc) bool {
+func (c *otApplyContext) contextApplyLookup(input []uint16, lookupRecord []tables.SequenceLookupRecord, lookupContext matcherFunc) bool {
 	matchLength := 0
 	var matchPositions [maxContextLength]int
 	hasMatch, matchLength, _ := c.matchInput(input, lookupContext, &matchPositions)
@@ -498,7 +494,7 @@ func (c *otApplyContext) contextApplyLookup(input []uint16, lookupRecord []tt.Se
 //
 // lookupsContexts : backtrack, input, lookahead
 func (c *otApplyContext) chainContextApplyLookup(backtrack, input, lookahead []uint16,
-	lookupRecord []tt.SequenceLookup, lookupContexts [3]matcherFunc,
+	lookupRecord []tables.SequenceLookupRecord, lookupContexts [3]matcherFunc,
 ) bool {
 	var matchPositions [maxContextLength]int
 
@@ -522,61 +518,61 @@ func (c *otApplyContext) chainContextApplyLookup(backtrack, input, lookahead []u
 	return true
 }
 
-func (c *wouldApplyContext) wouldApplyLookupContext1(data tt.LookupContext1, index int) bool {
-	if index >= len(data) { // index is not sanitized in tt.Parse
+func (c *wouldApplyContext) wouldApplyLookupContext1(data tables.SequenceContextFormat1, index int) bool {
+	if index >= len(data.SeqRuleSet) { // index is not sanitized in tt.Parse
 		return false
 	}
-	ruleSet := data[index]
+	ruleSet := data.SeqRuleSet[index]
 	return c.wouldApplyRuleSet(ruleSet, matchGlyph)
 }
 
-func (c *wouldApplyContext) wouldApplyLookupContext2(data tt.LookupContext2, index int, glyphID api.GID) bool {
-	class, _ := data.Class.ClassID(glyphID)
-	ruleSet := data.SequenceSets[class]
-	return c.wouldApplyRuleSet(ruleSet, matchClass(data.Class))
+func (c *wouldApplyContext) wouldApplyLookupContext2(data tables.SequenceContextFormat2, index int, glyphID GID) bool {
+	class, _ := data.ClassDef.Class(gID(glyphID))
+	ruleSet := data.ClassSeqRuleSet[class]
+	return c.wouldApplyRuleSet(ruleSet, matchClass(data.ClassDef))
 }
 
-func (c *wouldApplyContext) wouldApplyLookupContext3(data tt.LookupContext3, index int) bool {
+func (c *wouldApplyContext) wouldApplyLookupContext3(data tables.SequenceContextFormat3, index int) bool {
 	covIndices := get1N(&c.indices, 1, len(data.Coverages))
 	return c.wouldMatchInput(covIndices, matchCoverage(data.Coverages))
 }
 
-func (c *wouldApplyContext) wouldApplyRuleSet(ruleSet []tt.SequenceRule, match matcherFunc) bool {
-	for _, rule := range ruleSet {
-		if c.wouldMatchInput(rule.Input, match) {
+func (c *wouldApplyContext) wouldApplyRuleSet(ruleSet tables.SequenceRuleSet, match matcherFunc) bool {
+	for _, rule := range ruleSet.SeqRule {
+		if c.wouldMatchInput(rule.InputSequence, match) {
 			return true
 		}
 	}
 	return false
 }
 
-func (c *wouldApplyContext) wouldApplyChainRuleSet(ruleSet []tt.ChainedSequenceRule, inputMatch matcherFunc) bool {
-	for _, rule := range ruleSet {
-		if c.wouldApplyChainLookup(rule.Backtrack, rule.Input, rule.Lookahead, inputMatch) {
+func (c *wouldApplyContext) wouldApplyChainRuleSet(ruleSet tables.ChainedSequenceRuleSet, inputMatch matcherFunc) bool {
+	for _, rule := range ruleSet.ChainedSeqRules {
+		if c.wouldApplyChainLookup(rule.BacktrackSequence, rule.InputSequence, rule.LookaheadSequence, inputMatch) {
 			return true
 		}
 	}
 	return false
 }
 
-func (c *wouldApplyContext) wouldApplyLookupChainedContext1(data tt.LookupChainedContext1, index int) bool {
-	if index >= len(data) { // index is not sanitized in tt.Parse
+func (c *wouldApplyContext) wouldApplyLookupChainedContext1(data tables.ChainedSequenceContextFormat1, index int) bool {
+	if index >= len(data.ChainedSeqRuleSet) { // index is not sanitized in tt.Parse
 		return false
 	}
-	ruleSet := data[index]
+	ruleSet := data.ChainedSeqRuleSet[index]
 	return c.wouldApplyChainRuleSet(ruleSet, matchGlyph)
 }
 
-func (c *wouldApplyContext) wouldApplyLookupChainedContext2(data tt.LookupChainedContext2, index int, glyphID api.GID) bool {
-	class, _ := data.InputClass.ClassID(glyphID)
-	ruleSet := data.SequenceSets[class]
-	return c.wouldApplyChainRuleSet(ruleSet, matchClass(data.InputClass))
+func (c *wouldApplyContext) wouldApplyLookupChainedContext2(data tables.ChainedSequenceContextFormat2, index int, glyphID GID) bool {
+	class, _ := data.InputClassDef.Class(gID(glyphID))
+	ruleSet := data.ChainedClassSeqRuleSet[class]
+	return c.wouldApplyChainRuleSet(ruleSet, matchClass(data.InputClassDef))
 }
 
-func (c *wouldApplyContext) wouldApplyLookupChainedContext3(data tt.LookupChainedContext3, index int) bool {
-	lB, lI, lL := len(data.Backtrack), len(data.Input), len(data.Lookahead)
+func (c *wouldApplyContext) wouldApplyLookupChainedContext3(data tables.ChainedSequenceContextFormat3, index int) bool {
+	lB, lI, lL := len(data.BacktrackCoverages), len(data.InputCoverages), len(data.LookaheadCoverages)
 	return c.wouldApplyChainLookup(get1N(&c.indices, 0, lB), get1N(&c.indices, 1, lI), get1N(&c.indices, 0, lL),
-		matchCoverage(data.Input))
+		matchCoverage(data.InputCoverages))
 }
 
 // `input` starts with second glyph (`inputCount` = len(input)+1)
@@ -596,7 +592,7 @@ func (c *wouldApplyContext) wouldMatchInput(input []uint16, matchFunc matcherFun
 	}
 
 	for i, glyph := range input {
-		if !matchFunc(c.glyphs[i+1], glyph) {
+		if !matchFunc(gID(c.glyphs[i+1]), glyph) {
 			return false
 		}
 	}
@@ -712,7 +708,7 @@ func (c *otApplyContext) matchInput(input []uint16, matchFunc matcherFunc,
 
 // `count` and `matchPositions` include the first glyph
 func (c *otApplyContext) ligateInput(count int, matchPositions [maxContextLength]int,
-	matchLength int, ligGlyph api.GID, totalComponentCount uint8,
+	matchLength int, ligGlyph gID, totalComponentCount uint8,
 ) {
 	buffer := c.buffer
 
@@ -763,7 +759,7 @@ func (c *otApplyContext) ligateInput(count int, matchPositions [maxContextLength
 
 	klass, ligID := uint16(0), uint8(0)
 	if isLigature {
-		klass = tt.Ligature
+		klass = tables.GPLigature
 		ligID = buffer.allocateLigID()
 	}
 	lastLigID := buffer.cur(0).getLigID()
@@ -778,8 +774,8 @@ func (c *otApplyContext) ligateInput(count int, matchPositions [maxContextLength
 	}
 
 	// ReplaceGlyph_with_ligature
-	c.setGlyphPropsExt(ligGlyph, klass, true, false)
-	buffer.replaceGlyphIndex(ligGlyph)
+	c.setGlyphPropsExt(GID(ligGlyph), klass, true, false)
+	buffer.replaceGlyphIndex(GID(ligGlyph))
 
 	for i := 1; i < count; i++ {
 		for buffer.idx < matchPositions[i] {
@@ -840,7 +836,7 @@ func (c *otApplyContext) recurse(subLookupIndex uint16) bool {
 // `count` and `matchPositions` include the first glyph
 // `lookupRecord` is in design order
 func (c *otApplyContext) applyLookup(count int, matchPositions *[maxContextLength]int,
-	lookupRecord []tt.SequenceLookup, matchLength int,
+	lookupRecord []tables.SequenceLookupRecord, matchLength int,
 ) {
 	buffer := c.buffer
 	var end int
@@ -859,14 +855,14 @@ func (c *otApplyContext) applyLookup(count int, matchPositions *[maxContextLengt
 	}
 
 	for _, lk := range lookupRecord {
-		idx := int(lk.InputIndex)
+		idx := int(lk.SequenceIndex)
 		if idx >= count { // invalid, ignored
 			continue
 		}
 
 		/* Don't recurse to ourself at same position.
 		 * Note that this test is too naive, it doesn't catch longer loops. */
-		if idx == 0 && lk.LookupIndex == c.lookupIndex {
+		if idx == 0 && lk.LookupListIndex == c.lookupIndex {
 			continue
 		}
 
@@ -879,10 +875,10 @@ func (c *otApplyContext) applyLookup(count int, matchPositions *[maxContextLengt
 		origLen := buffer.backtrackLen() + buffer.lookaheadLen()
 
 		if debugMode >= 2 {
-			fmt.Printf("\t\tAPPLY nested lookup %d\n", lk.LookupIndex)
+			fmt.Printf("\t\tAPPLY nested lookup %d\n", lk.LookupListIndex)
 		}
 
-		if !c.recurse(lk.LookupIndex) {
+		if !c.recurse(lk.LookupListIndex) {
 			continue
 		}
 
@@ -988,18 +984,18 @@ func (c *otApplyContext) matchLookahead(lookahead []uint16, matchFunc matcherFun
 	return true, skippyIter.idx + 1
 }
 
-func (c *otApplyContext) applyLookupContext1(data tt.LookupContext1, index int) bool {
-	if index >= len(data) { // index is not sanitized in tt.Parse
+func (c *otApplyContext) applyLookupContext1(data tables.SequenceContextFormat1, index int) bool {
+	if index >= len(data.SeqRuleSet) { // index is not sanitized in tt.Parse
 		return false
 	}
-	ruleSet := data[index]
+	ruleSet := data.SeqRuleSet[index]
 	return c.applyRuleSet(ruleSet, matchGlyph)
 }
 
-func (c *otApplyContext) applyLookupContext2(data tt.LookupContext2, index int, glyphID api.GID) bool {
-	class, _ := data.Class.ClassID(glyphID)
-	ruleSet := data.SequenceSets[class]
-	return c.applyRuleSet(ruleSet, matchClass(data.Class))
+func (c *otApplyContext) applyLookupContext2(data tables.SequenceContextFormat2, index int, glyphID GID) bool {
+	class, _ := data.ClassDef.Class(gID(glyphID))
+	ruleSet := data.ClassSeqRuleSet[class]
+	return c.applyRuleSet(ruleSet, matchClass(data.ClassDef))
 }
 
 // return a slice containing [start, start+1, ..., end-1],
@@ -1015,31 +1011,31 @@ func get1N(indices *[]uint16, start, end int) []uint16 {
 	return (*indices)[start:end]
 }
 
-func (c *otApplyContext) applyLookupContext3(data tt.LookupContext3, index int) bool {
+func (c *otApplyContext) applyLookupContext3(data tables.SequenceContextFormat3, index int) bool {
 	covIndices := get1N(&c.indices, 1, len(data.Coverages))
-	return c.contextApplyLookup(covIndices, data.SequenceLookups, matchCoverage(data.Coverages))
+	return c.contextApplyLookup(covIndices, data.SeqLookupRecords, matchCoverage(data.Coverages))
 }
 
-func (c *otApplyContext) applyLookupChainedContext1(data tt.LookupChainedContext1, index int) bool {
-	if index >= len(data) { // index is not sanitized in tt.Parse
+func (c *otApplyContext) applyLookupChainedContext1(data tables.ChainedSequenceContextFormat1, index int) bool {
+	if index >= len(data.ChainedSeqRuleSet) { // index is not sanitized in tt.Parse
 		return false
 	}
-	ruleSet := data[index]
+	ruleSet := data.ChainedSeqRuleSet[index]
 	return c.applyChainRuleSet(ruleSet, [3]matcherFunc{matchGlyph, matchGlyph, matchGlyph})
 }
 
-func (c *otApplyContext) applyLookupChainedContext2(data tt.LookupChainedContext2, index int, glyphID api.GID) bool {
-	class, _ := data.InputClass.ClassID(glyphID)
-	ruleSet := data.SequenceSets[class]
+func (c *otApplyContext) applyLookupChainedContext2(data tables.ChainedSequenceContextFormat2, index int, glyphID GID) bool {
+	class, _ := data.InputClassDef.Class(gID(glyphID))
+	ruleSet := data.ChainedClassSeqRuleSet[class]
 	return c.applyChainRuleSet(ruleSet, [3]matcherFunc{
-		matchClass(data.BacktrackClass), matchClass(data.InputClass), matchClass(data.LookaheadClass),
+		matchClass(data.BacktrackClassDef), matchClass(data.InputClassDef), matchClass(data.LookaheadClassDef),
 	})
 }
 
-func (c *otApplyContext) applyLookupChainedContext3(data tt.LookupChainedContext3, index int) bool {
-	lB, lI, lL := len(data.Backtrack), len(data.Input), len(data.Lookahead)
+func (c *otApplyContext) applyLookupChainedContext3(data tables.ChainedSequenceContextFormat3, index int) bool {
+	lB, lI, lL := len(data.BacktrackCoverages), len(data.InputCoverages), len(data.LookaheadCoverages)
 	return c.chainContextApplyLookup(get1N(&c.indices, 0, lB), get1N(&c.indices, 1, lI), get1N(&c.indices, 0, lL),
-		data.SequenceLookups, [3]matcherFunc{
-			matchCoverage(data.Backtrack), matchCoverage(data.Input), matchCoverage(data.Lookahead),
+		data.SeqLookupRecords, [3]matcherFunc{
+			matchCoverage(data.BacktrackCoverages), matchCoverage(data.InputCoverages), matchCoverage(data.LookaheadCoverages),
 		})
 }

@@ -3,7 +3,6 @@ package harfbuzz
 import (
 	"fmt"
 
-	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
@@ -111,7 +110,7 @@ type GlyphInfo struct {
 
 	// Glyph is the result of the selection of concrete glyph
 	// after shaping, and refers to the font used.
-	Glyph api.GID
+	Glyph GID
 
 	// Mask exposes glyph attributes (see the constants).
 	// It is also used internally during the shaping.

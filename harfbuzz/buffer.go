@@ -3,7 +3,6 @@ package harfbuzz
 import (
 	"math"
 
-	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
@@ -79,12 +78,12 @@ type Buffer struct {
 	// the shaping result. If set to zero (default), the glyph for the
 	// U+0020 SPACE character is used. Otherwise, this value is used
 	// verbatim.
-	Invisible api.GID
+	Invisible GID
 
 	// Glyph that replaces characters not found in the font during shaping.
 	// The not-found glyph defaults to zero, sometimes knows as the
 	// ".notdef" glyph.
-	NotFound api.GID
+	NotFound GID
 
 	// Information about how the text in the buffer should be treated.
 	Flags ShappingOptions
@@ -273,7 +272,7 @@ func (b *Buffer) replaceGlyph(u rune) {
 
 // Copies glyph at `idx` to `outInfo` before replacing its codepoint by `u`
 // Advances `idx`
-func (b *Buffer) replaceGlyphIndex(g api.GID) {
+func (b *Buffer) replaceGlyphIndex(g GID) {
 	b.outInfo = append(b.outInfo, b.Info[b.idx])
 	b.outInfo[len(b.outInfo)-1].Glyph = g
 	b.idx++
@@ -282,7 +281,7 @@ func (b *Buffer) replaceGlyphIndex(g api.GID) {
 // Merges clusters in [idx:idx+numIn], then duplicate `Info[idx]` len(codepoints) times to `outInfo`.
 // Advances `idx` by `numIn`. Assume that idx + numIn <= len(Info)
 // Also replaces their codepoint by `codepoints` and their glyph by `glyphs` if non nil
-func (b *Buffer) replaceGlyphs(numIn int, codepoints []rune, glyphs []api.GID) {
+func (b *Buffer) replaceGlyphs(numIn int, codepoints []rune, glyphs []GID) {
 	b.mergeClusters(b.idx, b.idx+numIn)
 
 	var origInfo *GlyphInfo
@@ -317,8 +316,8 @@ func (b *Buffer) outputRune(r rune) {
 }
 
 // same as outputRune
-func (b *Buffer) outputGlyphIndex(g api.GID) {
-	b.replaceGlyphs(0, nil, []api.GID{g})
+func (b *Buffer) outputGlyphIndex(g GID) {
+	b.replaceGlyphs(0, nil, []GID{g})
 }
 
 // Copies glyph at idx to output but doesn't advance idx

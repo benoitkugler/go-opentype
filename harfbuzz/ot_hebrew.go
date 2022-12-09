@@ -1,6 +1,9 @@
 package harfbuzz
 
-import tt "github.com/benoitkugler/textlayout/fonts/truetype"
+import (
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
+)
 
 // ported from harfbuzz/src/hb-ot-shape-complex-hebrew.cc Copyright © 2010,2012  Google, Inc.  Behdad Esfahbod
 
@@ -113,7 +116,7 @@ func (complexShaperHebrew) normalizationPreference() normalizationMode {
 	return nmDefault
 }
 
-func (complexShaperHebrew) gposTag() tt.Tag {
+func (complexShaperHebrew) gposTag() tables.Tag {
 	// https://github.com/harfbuzz/harfbuzz/issues/347#issuecomment-267838368
-	return tt.NewTag('h', 'e', 'b', 'r')
+	return loader.NewTag('h', 'e', 'b', 'r')
 }

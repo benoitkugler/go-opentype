@@ -15,8 +15,10 @@ import (
 	"math/bits"
 	"strconv"
 
+	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
 
@@ -29,6 +31,11 @@ import (
 //   - 1 : only the main steps are printed
 //   - 2 : details informations are printed
 const debugMode = 0
+
+type (
+	GID = api.GID
+	gID = tables.GlyphID
+)
 
 // Direction is the text direction.
 // The zero value is the initial, unset, invalid direction.

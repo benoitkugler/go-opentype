@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/benoitkugler/go-opentype/api"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
+	"github.com/benoitkugler/go-opentype/loader"
+	"github.com/benoitkugler/go-opentype/tables"
 	"github.com/benoitkugler/textlayout/language"
 )
 
@@ -254,14 +254,14 @@ type indicWouldSubstituteFeature struct {
 	zeroContext bool
 }
 
-func newIndicWouldSubstituteFeature(map_ *otMap, featureTag tt.Tag, zeroContext bool) indicWouldSubstituteFeature {
+func newIndicWouldSubstituteFeature(map_ *otMap, featureTag tables.Tag, zeroContext bool) indicWouldSubstituteFeature {
 	var out indicWouldSubstituteFeature
 	out.zeroContext = zeroContext
 	out.lookups = map_.getStageLookups(0 /*GSUB*/, map_.getFeatureStage(0 /*GSUB*/, featureTag))
 	return out
 }
 
-func (ws indicWouldSubstituteFeature) wouldSubstitute(glyphs []api.GID, font *Font) bool {
+func (ws indicWouldSubstituteFeature) wouldSubstitute(glyphs []GID, font *Font) bool {
 	for _, lk := range ws.lookups {
 		if otLayoutLookupWouldSubstitute(font, lk.index, glyphs, ws.zeroContext) {
 			return true
@@ -343,17 +343,17 @@ var indicFeatures = [...]otMapFeature{
 	* Basic features.
 	* These features are applied in order, one at a time, after initial_reordering.
 	 */
-	{tt.NewTag('n', 'u', 'k', 't'), ffGlobalManualJoiners},
-	{tt.NewTag('a', 'k', 'h', 'n'), ffGlobalManualJoiners},
-	{tt.NewTag('r', 'p', 'h', 'f'), ffManualJoiners},
-	{tt.NewTag('r', 'k', 'r', 'f'), ffGlobalManualJoiners},
-	{tt.NewTag('p', 'r', 'e', 'f'), ffManualJoiners},
-	{tt.NewTag('b', 'l', 'w', 'f'), ffManualJoiners},
-	{tt.NewTag('a', 'b', 'v', 'f'), ffManualJoiners},
-	{tt.NewTag('h', 'a', 'l', 'f'), ffManualJoiners},
-	{tt.NewTag('p', 's', 't', 'f'), ffManualJoiners},
-	{tt.NewTag('v', 'a', 't', 'u'), ffGlobalManualJoiners},
-	{tt.NewTag('c', 'j', 'c', 't'), ffGlobalManualJoiners},
+	{loader.NewTag('n', 'u', 'k', 't'), ffGlobalManualJoiners},
+	{loader.NewTag('a', 'k', 'h', 'n'), ffGlobalManualJoiners},
+	{loader.NewTag('r', 'p', 'h', 'f'), ffManualJoiners},
+	{loader.NewTag('r', 'k', 'r', 'f'), ffGlobalManualJoiners},
+	{loader.NewTag('p', 'r', 'e', 'f'), ffManualJoiners},
+	{loader.NewTag('b', 'l', 'w', 'f'), ffManualJoiners},
+	{loader.NewTag('a', 'b', 'v', 'f'), ffManualJoiners},
+	{loader.NewTag('h', 'a', 'l', 'f'), ffManualJoiners},
+	{loader.NewTag('p', 's', 't', 'f'), ffManualJoiners},
+	{loader.NewTag('v', 'a', 't', 'u'), ffGlobalManualJoiners},
+	{loader.NewTag('c', 'j', 'c', 't'), ffGlobalManualJoiners},
 	/*
 	* Other features.
 	* These features are applied all at once, after final_reordering
@@ -361,12 +361,12 @@ var indicFeatures = [...]otMapFeature{
 	* Default Bengali font in Windows for example has intermixed
 	* lookups for init,pres,abvs,blws features.
 	 */
-	{tt.NewTag('i', 'n', 'i', 't'), ffManualJoiners},
-	{tt.NewTag('p', 'r', 'e', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('a', 'b', 'v', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('b', 'l', 'w', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('p', 's', 't', 's'), ffGlobalManualJoiners},
-	{tt.NewTag('h', 'a', 'l', 'n'), ffGlobalManualJoiners},
+	{loader.NewTag('i', 'n', 'i', 't'), ffManualJoiners},
+	{loader.NewTag('p', 'r', 'e', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('a', 'b', 'v', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('b', 'l', 'w', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('p', 's', 't', 's'), ffGlobalManualJoiners},
+	{loader.NewTag('h', 'a', 'l', 'n'), ffGlobalManualJoiners},
 }
 
 // in the same order as the indicFeatures array
@@ -400,10 +400,10 @@ func (cs *complexShaperIndic) collectFeatures(plan *otShapePlanner) {
 	/* Do this before any lookups have been applied. */
 	map_.addGSUBPause(setupSyllablesIndic)
 
-	map_.enableFeature(tt.NewTag('l', 'o', 'c', 'l'))
+	map_.enableFeature(loader.NewTag('l', 'o', 'c', 'l'))
 	/* The Indic specs do not require ccmp, but we apply it here since if
 	* there is a use of it, it's typically at the beginning. */
-	map_.enableFeature(tt.NewTag('c', 'c', 'm', 'p'))
+	map_.enableFeature(loader.NewTag('c', 'c', 'm', 'p'))
 
 	i := 0
 	map_.addGSUBPause(cs.initialReorderingIndic)
@@ -423,7 +423,7 @@ func (cs *complexShaperIndic) collectFeatures(plan *otShapePlanner) {
 }
 
 func (complexShaperIndic) overrideFeatures(plan *otShapePlanner) {
-	plan.map_.disableFeature(tt.NewTag('l', 'i', 'g', 'a'))
+	plan.map_.disableFeature(loader.NewTag('l', 'i', 'g', 'a'))
 }
 
 type indicShapePlan struct {
@@ -435,14 +435,14 @@ type indicShapePlan struct {
 
 	maskArray   [indicNumFeatures]GlyphMask
 	config      indicConfig
-	viramaGlyph api.GID // cached value
+	viramaGlyph GID // cached value
 
 	isOldSpec              bool
 	uniscribeBugCompatible bool
 }
 
-func (indicPlan *indicShapePlan) loadViramaGlyph(font *Font) api.GID {
-	if indicPlan.viramaGlyph == ^api.GID(0) {
+func (indicPlan *indicShapePlan) loadViramaGlyph(font *Font) GID {
+	if indicPlan.viramaGlyph == ^GID(0) {
 		glyph, ok := font.face.NominalGlyph(indicPlan.config.virama)
 		if indicPlan.config.virama == 0 || !ok {
 			glyph = 0
@@ -471,7 +471,7 @@ func (cs *complexShaperIndic) dataCreate(plan *otShapePlan) {
 
 	indicPlan.isOldSpec = indicPlan.config.hasOldSpec && ((plan.map_.chosenScript[0] & 0x000000FF) != '2')
 	indicPlan.uniscribeBugCompatible = UniscribeBugCompatible
-	indicPlan.viramaGlyph = ^api.GID(0)
+	indicPlan.viramaGlyph = ^GID(0)
 
 	/* Use zero-context wouldSubstitute() matching for new-spec of the main
 	* Indic scripts, and scripts with one spec only, but not for old-specs.
@@ -482,11 +482,11 @@ func (cs *complexShaperIndic) dataCreate(plan *otShapePlan) {
 	* So, the heuristic here is the way it is.  It should *only* be changed,
 	* as we discover more cases of what Windows does.  DON'T TOUCH OTHERWISE. */
 	zeroContext := !indicPlan.isOldSpec && plan.props.Script != language.Malayalam
-	indicPlan.rphf = newIndicWouldSubstituteFeature(&plan.map_, tt.NewTag('r', 'p', 'h', 'f'), zeroContext)
-	indicPlan.pref = newIndicWouldSubstituteFeature(&plan.map_, tt.NewTag('p', 'r', 'e', 'f'), zeroContext)
-	indicPlan.blwf = newIndicWouldSubstituteFeature(&plan.map_, tt.NewTag('b', 'l', 'w', 'f'), zeroContext)
-	indicPlan.pstf = newIndicWouldSubstituteFeature(&plan.map_, tt.NewTag('p', 's', 't', 'f'), zeroContext)
-	indicPlan.vatu = newIndicWouldSubstituteFeature(&plan.map_, tt.NewTag('v', 'a', 't', 'u'), zeroContext)
+	indicPlan.rphf = newIndicWouldSubstituteFeature(&plan.map_, loader.NewTag('r', 'p', 'h', 'f'), zeroContext)
+	indicPlan.pref = newIndicWouldSubstituteFeature(&plan.map_, loader.NewTag('p', 'r', 'e', 'f'), zeroContext)
+	indicPlan.blwf = newIndicWouldSubstituteFeature(&plan.map_, loader.NewTag('b', 'l', 'w', 'f'), zeroContext)
+	indicPlan.pstf = newIndicWouldSubstituteFeature(&plan.map_, loader.NewTag('p', 's', 't', 'f'), zeroContext)
+	indicPlan.vatu = newIndicWouldSubstituteFeature(&plan.map_, loader.NewTag('v', 'a', 't', 'u'), zeroContext)
 
 	for i := range indicPlan.maskArray {
 		if indicFeatures[i].flags&ffGLOBAL != 0 {
@@ -499,7 +499,7 @@ func (cs *complexShaperIndic) dataCreate(plan *otShapePlan) {
 	cs.plan = indicPlan
 }
 
-func (indicPlan *indicShapePlan) consonantPositionFromFace(consonant, virama api.GID, font *Font) uint8 {
+func (indicPlan *indicShapePlan) consonantPositionFromFace(consonant, virama GID, font *Font) uint8 {
 	/* For old-spec, the order of glyphs is Consonant,Virama,
 	* whereas for new-spec, it's Virama,Consonant.  However,
 	* some broken fonts (like Free Sans) simply copied lookups
@@ -514,7 +514,7 @@ func (indicPlan *indicShapePlan) consonantPositionFromFace(consonant, virama api
 	* Vatu is done as well, for:
 	* https://github.com/harfbuzz/harfbuzz/issues/1587
 	 */
-	glyphs := [3]api.GID{virama, consonant, virama}
+	glyphs := [3]GID{virama, consonant, virama}
 	if indicPlan.blwf.wouldSubstitute(glyphs[0:2], font) ||
 		indicPlan.blwf.wouldSubstitute(glyphs[1:3], font) ||
 		indicPlan.vatu.wouldSubstitute(glyphs[0:2], font) ||
@@ -620,7 +620,7 @@ func (indicPlan *indicShapePlan) initialReorderingConsonantSyllable(font *Font, 
 			((indicPlan.config.rephMode == rephModeImplicit && !isJoiner(&info[start+2])) ||
 				(indicPlan.config.rephMode == rephModeExplicit && info[start+2].complexCategory == otZWJ)) {
 			/* See if it matches the 'rphf' feature. */
-			glyphs := [3]api.GID{info[start].Glyph, info[start+1].Glyph, 0}
+			glyphs := [3]GID{info[start].Glyph, info[start+1].Glyph, 0}
 			if indicPlan.config.rephMode == rephModeExplicit {
 				glyphs[2] = info[start+2].Glyph
 			}
@@ -1039,7 +1039,7 @@ func (indicPlan *indicShapePlan) initialReorderingConsonantSyllable(font *Font, 
 	if indicPlan.maskArray[indicPref] != 0 && base+prefLen < end {
 		/* Find a Halant,Ra sequence and mark it for pre-base-reordering processing. */
 		for i := base + 1; i+prefLen-1 < end; i++ {
-			var glyphs [2]api.GID
+			var glyphs [2]GID
 			for j := 0; j < prefLen; j++ {
 				glyphs[j] = info[i+j].Glyph
 			}
@@ -1633,7 +1633,7 @@ func (cs *complexShaperIndic) decompose(c *otNormalizeContext, ab rune) (rune, r
 		indicPlan := cs.plan
 		glyph, ok := c.font.face.NominalGlyph(ab)
 		if indicPlan.uniscribeBugCompatible ||
-			(ok && indicPlan.pstf.wouldSubstitute([]api.GID{glyph}, c.font)) {
+			(ok && indicPlan.pstf.wouldSubstitute([]GID{glyph}, c.font)) {
 			/* Ok, safe to use Uniscribe-style decomposition. */
 			return 0x0DD9, ab, true
 		}
