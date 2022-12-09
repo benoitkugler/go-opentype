@@ -96,10 +96,4 @@ func ParseKern(src []byte) (Kern, int, error) {
 
 func (k AATKernSubtableHeader) Data() KernData { return k.data }
 
-// OT kern flags
-const (
-	kernHorizontal  = 0x01
-	kernCrossStream = 0x04
-)
-
 func (k OTKernSubtableHeader) Data() KernData { return k.data }
