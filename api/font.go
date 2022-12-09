@@ -191,3 +191,17 @@ type BitmapSize struct {
 	Height, Width uint16
 	XPpem, YPpem  uint16
 }
+
+// FontID represents an identifier of a font (possibly in a collection),
+// and an optional variable instance.
+type FontID struct {
+	File string // The filename or identifier of the font file.
+
+	// The index of the face in a collection. It is always 0 for
+	// single font files.
+	Index uint16
+
+	// For variable fonts, stores 1 + the instance index.
+	// (0 to ignore variations).
+	Instance uint16
+}
