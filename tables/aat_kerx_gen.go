@@ -29,8 +29,8 @@ func (item *KACoordinates) mustParse(src []byte) {
 
 func (item *Kernx0Record) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.Left = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.Right = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.Left = binary.BigEndian.Uint16(src[0:])
+	item.Right = binary.BigEndian.Uint16(src[2:])
 	item.Value = int16(binary.BigEndian.Uint16(src[4:]))
 }
 
@@ -101,7 +101,7 @@ func ParseAATLoopkupExt10(src []byte) (AATLoopkupExt10, int, error) {
 	_ = src[7] // early bound checking
 	item.version = binary.BigEndian.Uint16(src[0:])
 	item.unitSize = binary.BigEndian.Uint16(src[2:])
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[4:]))
+	item.FirstGlyph = binary.BigEndian.Uint16(src[4:])
 	arrayLengthValues := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
@@ -597,14 +597,14 @@ func ParseKerxSubtable(src []byte, valuesCount int) (KerxSubtable, int, error) {
 
 func (item *lookupRecordExt2) mustParse(src []byte) {
 	_ = src[7] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.LastGlyph = binary.BigEndian.Uint16(src[0:])
+	item.FirstGlyph = binary.BigEndian.Uint16(src[2:])
 	item.Value = binary.BigEndian.Uint32(src[4:])
 }
 
 func (item *loopkupRecordExt6) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.Glyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.Glyph = binary.BigEndian.Uint16(src[0:])
 	item.Value = binary.BigEndian.Uint32(src[2:])
 }
 
@@ -615,8 +615,8 @@ func parseLoopkupRecordExt4(src []byte, parentSrc []byte) (loopkupRecordExt4, in
 		return item, 0, fmt.Errorf("reading loopkupRecordExt4: "+"EOF: expected length: 6, got %d", L)
 	}
 	_ = src[5] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.LastGlyph = binary.BigEndian.Uint16(src[0:])
+	item.FirstGlyph = binary.BigEndian.Uint16(src[2:])
 	offsetValues := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 

@@ -119,6 +119,18 @@ type LookupOptions struct {
 	MarkFilteringSet uint16
 }
 
+const UseMarkFilteringSet = 1 << 4
+
+// Props returns a 32-bit integer where the lower 16-bit is `Flag` and
+// the higher 16-bit is `MarkFilteringSet` if the lookup uses one.
+func (lo LookupOptions) Props() uint32 {
+	flag := uint32(lo.Flag)
+	if lo.Flag&UseMarkFilteringSet != 0 {
+		flag |= uint32(lo.MarkFilteringSet) << 16
+	}
+	return flag
+}
+
 type GSUBLookup struct {
 	LookupOptions
 	Subtables []tables.GSUBLookup

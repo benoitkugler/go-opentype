@@ -21,8 +21,8 @@ func (item *CaretValue2) mustParse(src []byte) {
 
 func (item *ClassRangeRecord) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.StartGlyphID = binary.BigEndian.Uint16(src[0:])
+	item.EndGlyphID = binary.BigEndian.Uint16(src[2:])
 	item.Class = binary.BigEndian.Uint16(src[4:])
 }
 
@@ -214,7 +214,7 @@ func ParseClassDef1(src []byte) (ClassDef1, int, error) {
 	}
 	_ = src[5] // early bound checking
 	item.format = binary.BigEndian.Uint16(src[0:])
-	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.StartGlyphID = binary.BigEndian.Uint16(src[2:])
 	arrayLengthClassValueArray := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
@@ -302,9 +302,9 @@ func ParseCoverage1(src []byte) (Coverage1, int, error) {
 			return item, 0, fmt.Errorf("reading Coverage1: "+"EOF: expected length: %d, got %d", 4+arrayLengthGlyphs*2, L)
 		}
 
-		item.Glyphs = make([]GlyphID, arrayLengthGlyphs) // allocation guarded by the previous check
+		item.Glyphs = make([]uint16, arrayLengthGlyphs) // allocation guarded by the previous check
 		for i := range item.Glyphs {
-			item.Glyphs[i] = GlyphID(binary.BigEndian.Uint16(src[4+i*2:]))
+			item.Glyphs[i] = binary.BigEndian.Uint16(src[4+i*2:])
 		}
 		n += arrayLengthGlyphs * 2
 	}
@@ -574,7 +574,7 @@ func ParseMarkGlyphSets(src []byte) (MarkGlyphSets, int, error) {
 
 func (item *RangeRecord) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.StartGlyphID = binary.BigEndian.Uint16(src[0:])
+	item.EndGlyphID = binary.BigEndian.Uint16(src[2:])
 	item.StartCoverageIndex = binary.BigEndian.Uint16(src[4:])
 }

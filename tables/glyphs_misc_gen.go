@@ -96,14 +96,14 @@ func ParseVORG(src []byte) (VORG, int, error) {
 
 func (item *SVGDocumentRecord) mustParse(src []byte) {
 	_ = src[11] // early bound checking
-	item.StartGlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.EndGlyphID = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.StartGlyphID = binary.BigEndian.Uint16(src[0:])
+	item.EndGlyphID = binary.BigEndian.Uint16(src[2:])
 	item.SvgDocOffset = Offset32(binary.BigEndian.Uint32(src[4:]))
 	item.SvgDocLength = binary.BigEndian.Uint32(src[8:])
 }
 
 func (item *VertOriginYMetric) mustParse(src []byte) {
 	_ = src[3] // early bound checking
-	item.GlyphIndex = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.GlyphIndex = binary.BigEndian.Uint16(src[0:])
 	item.VertOriginY = int16(binary.BigEndian.Uint16(src[2:]))
 }

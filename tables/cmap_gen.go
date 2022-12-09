@@ -368,9 +368,9 @@ func ParseCmapSubtable10(src []byte) (CmapSubtable10, int, error) {
 			return item, 0, fmt.Errorf("reading CmapSubtable10: "+"EOF: expected length: %d, got %d", 20+arrayLengthGlyphIdArray*2, L)
 		}
 
-		item.GlyphIdArray = make([]GlyphID, arrayLengthGlyphIdArray) // allocation guarded by the previous check
+		item.GlyphIdArray = make([]uint16, arrayLengthGlyphIdArray) // allocation guarded by the previous check
 		for i := range item.GlyphIdArray {
-			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[20+i*2:]))
+			item.GlyphIdArray[i] = binary.BigEndian.Uint16(src[20+i*2:])
 		}
 		n += arrayLengthGlyphIdArray * 2
 	}
@@ -582,9 +582,9 @@ func ParseCmapSubtable6(src []byte) (CmapSubtable6, int, error) {
 			return item, 0, fmt.Errorf("reading CmapSubtable6: "+"EOF: expected length: %d, got %d", 10+arrayLengthGlyphIdArray*2, L)
 		}
 
-		item.GlyphIdArray = make([]GlyphID, arrayLengthGlyphIdArray) // allocation guarded by the previous check
+		item.GlyphIdArray = make([]uint16, arrayLengthGlyphIdArray) // allocation guarded by the previous check
 		for i := range item.GlyphIdArray {
-			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[10+i*2:]))
+			item.GlyphIdArray[i] = binary.BigEndian.Uint16(src[10+i*2:])
 		}
 		n += arrayLengthGlyphIdArray * 2
 	}
@@ -739,5 +739,5 @@ func (item *UvsMappingRecord) mustParse(src []byte) {
 	item.UnicodeValue[0] = src[0]
 	item.UnicodeValue[1] = src[1]
 	item.UnicodeValue[2] = src[2]
-	item.GlyphID = GlyphID(binary.BigEndian.Uint16(src[3:]))
+	item.GlyphID = binary.BigEndian.Uint16(src[3:])
 }

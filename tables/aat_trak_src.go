@@ -10,6 +10,11 @@ type Trak struct {
 	reserved uint16    // Reserved. Set to 0.
 }
 
+// IsEmpty return `true` it the table has no entries.
+func (t Trak) IsEmpty() bool {
+	return len(t.Horiz.TrackTable)+len(t.Vert.TrackTable) == 0
+}
+
 type TrackData struct {
 	nTracks    uint16            // Number of separate tracks included in this table.
 	nSizes     uint16            // Number of point sizes included in this table.

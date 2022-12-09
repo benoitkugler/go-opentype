@@ -33,7 +33,7 @@ func (item *BitmapSize) mustParse(src []byte) {
 
 func (item *GlyphIdOffsetPair) mustParse(src []byte) {
 	_ = src[3] // early bound checking
-	item.GlyphID = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.GlyphID = binary.BigEndian.Uint16(src[0:])
 	item.SbitOffset = Offset16(binary.BigEndian.Uint16(src[2:]))
 }
 
@@ -45,8 +45,8 @@ func (item *IndexData2) mustParse(src []byte) {
 
 func (item *IndexSubTableHeader) mustParse(src []byte) {
 	_ = src[7] // early bound checking
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.FirstGlyph = binary.BigEndian.Uint16(src[0:])
+	item.LastGlyph = binary.BigEndian.Uint16(src[2:])
 	item.additionalOffsetToIndexSubtable = Offset32(binary.BigEndian.Uint32(src[4:]))
 }
 
@@ -269,9 +269,9 @@ func ParseIndexData5(src []byte) (IndexData5, int, error) {
 			return item, 0, fmt.Errorf("reading IndexData5: "+"EOF: expected length: %d, got %d", 16+arrayLengthGlyphIdArray*2, L)
 		}
 
-		item.GlyphIdArray = make([]GlyphID, arrayLengthGlyphIdArray) // allocation guarded by the previous check
+		item.GlyphIdArray = make([]uint16, arrayLengthGlyphIdArray) // allocation guarded by the previous check
 		for i := range item.GlyphIdArray {
-			item.GlyphIdArray[i] = GlyphID(binary.BigEndian.Uint16(src[16+i*2:]))
+			item.GlyphIdArray[i] = binary.BigEndian.Uint16(src[16+i*2:])
 		}
 		n += arrayLengthGlyphIdArray * 2
 	}

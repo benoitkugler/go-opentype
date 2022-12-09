@@ -143,37 +143,89 @@ func (sc Script) GetLangSys(index uint16) LangSys {
 
 // --------------------------------------- gsub ---------------------------------------
 
-func (d SingleSubstData1) Coverage() Coverage { return d.coverage }
-func (d SingleSubstData2) Coverage() Coverage { return d.coverage }
+func (d SingleSubstData1) Cov() Coverage { return d.Coverage }
+func (d SingleSubstData2) Cov() Coverage { return d.Coverage }
 
-func (cs ContextualSubs1) Coverage() Coverage { return cs.coverage }
-func (cs ContextualSubs2) Coverage() Coverage { return cs.coverage }
-func (cs ContextualSubs3) Coverage() Coverage {
+func (cs ContextualSubs1) Cov() Coverage { return cs.coverage }
+func (cs ContextualSubs2) Cov() Coverage { return cs.coverage }
+func (cs ContextualSubs3) Cov() Coverage {
 	if len(cs.Coverages) == 0 { // return an empty, valid Coverage
 		return Coverage1{}
 	}
 	return cs.Coverages[0]
 }
 
-func (cc ChainedContextualSubs1) Coverage() Coverage { return cc.coverage }
-func (cc ChainedContextualSubs2) Coverage() Coverage { return cc.coverage }
-func (cc ChainedContextualSubs3) Coverage() Coverage {
+func (cc ChainedContextualSubs1) Cov() Coverage { return cc.coverage }
+func (cc ChainedContextualSubs2) Cov() Coverage { return cc.coverage }
+func (cc ChainedContextualSubs3) Cov() Coverage {
 	if len(cc.InputCoverages) == 0 { // return an empty, valid Coverage
 		return Coverage1{}
 	}
 	return cc.InputCoverages[0]
 }
 
-func (lk SingleSubs) Coverage() Coverage             { return lk.Data.Coverage() }
-func (lk MultipleSubs) Coverage() Coverage           { return lk.coverage }
-func (lk AlternateSubs) Coverage() Coverage          { return lk.coverage }
-func (lk LigatureSubs) Coverage() Coverage           { return lk.coverage }
-func (lk ContextualSubs) Coverage() Coverage         { return lk.Data.Coverage() }
-func (lk ChainedContextualSubs) Coverage() Coverage  { return lk.Data.Coverage() }
-func (lk ExtensionSubs) Coverage() Coverage          { return nil } // not used anyway
-func (lk ReverseChainSingleSubs) Coverage() Coverage { return lk.coverage }
+func (lk SingleSubs) Cov() Coverage             { return lk.Data.Cov() }
+func (lk MultipleSubs) Cov() Coverage           { return lk.Coverage }
+func (lk AlternateSubs) Cov() Coverage          { return lk.Coverage }
+func (lk LigatureSubs) Cov() Coverage           { return lk.Coverage }
+func (lk ContextualSubs) Cov() Coverage         { return lk.Data.Cov() }
+func (lk ChainedContextualSubs) Cov() Coverage  { return lk.Data.Cov() }
+func (lk ExtensionSubs) Cov() Coverage          { return nil } // not used anyway
+func (lk ReverseChainSingleSubs) Cov() Coverage { return lk.coverage }
 
 // --------------------------------------- gpos ---------------------------------------
+
+func (d SinglePosData1) Cov() Coverage { return d.coverage }
+func (d SinglePosData2) Cov() Coverage { return d.coverage }
+
+func (d PairPosData1) Cov() Coverage { return d.coverage }
+func (d PairPosData2) Cov() Coverage { return d.coverage }
+
+func (cs ContextualPos1) Cov() Coverage { return cs.coverage }
+func (cs ContextualPos2) Cov() Coverage { return cs.coverage }
+func (cs ContextualPos3) Cov() Coverage {
+	if len(cs.Coverages) == 0 { // return an empty, valid Coverage
+		return Coverage1{}
+	}
+	return cs.Coverages[0]
+}
+
+func (cc ChainedContextualPos1) Cov() Coverage { return cc.coverage }
+func (cc ChainedContextualPos2) Cov() Coverage { return cc.coverage }
+func (cc ChainedContextualPos3) Cov() Coverage {
+	if len(cc.InputCoverages) == 0 { // return an empty, valid Coverage
+		return Coverage1{}
+	}
+	return cc.InputCoverages[0]
+}
+
+func (lk SinglePos) Cov() Coverage            { return lk.Data.Cov() }
+func (lk PairPos) Cov() Coverage              { return lk.Data.Cov() }
+func (lk CursivePos) Cov() Coverage           { return lk.coverage }
+func (lk MarkBasePos) Cov() Coverage          { return lk.markCoverage }
+func (lk MarkLigPos) Cov() Coverage           { return lk.MarkCoverage }
+func (lk MarkMarkPos) Cov() Coverage          { return lk.Mark1Coverage }
+func (lk ContextualPos) Cov() Coverage        { return lk.Data.Cov() }
+func (lk ChainedContextualPos) Cov() Coverage { return lk.Data.Cov() }
+func (lk ExtensionPos) Cov() Coverage         { return nil } // not used anyway
+
+// FindGlyph performs a binary search in the list, returning the record for `secondGlyph`,
+// or `nil` if not found.
+func (ps PairSet) FindGlyph(secondGlyph GlyphID) *PairValueRecord {
+	low, high := 0, len(ps.PairValueRecords)
+	for low < high {
+		mid := low + (high-low)/2 // avoid overflow when computing mid
+		p := ps.PairValueRecords[mid].SecondGlyph
+		if secondGlyph < p {
+			high = mid
+		} else if secondGlyph > p {
+			low = mid + 1
+		} else {
+			return &ps.PairValueRecords[mid]
+		}
+	}
+	return nil
+}
 
 // GetDelta returns the hint for the given `ppem`, scaled by `scale`.
 // It returns 0 for out of range `ppem` values.

@@ -10,7 +10,7 @@ import (
 func (item *CompositeGlyphPart) mustParse(src []byte) {
 	_ = src[23] // early bound checking
 	item.Flags = binary.BigEndian.Uint16(src[0:])
-	item.GlyphIndex = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.GlyphIndex = binary.BigEndian.Uint16(src[2:])
 	item.arg1 = binary.BigEndian.Uint16(src[4:])
 	item.arg2 = binary.BigEndian.Uint16(src[6:])
 	item.Scale[0] = float32(binary.BigEndian.Uint32(src[8:]))

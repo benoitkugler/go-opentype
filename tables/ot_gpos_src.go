@@ -11,6 +11,8 @@ type SinglePos struct {
 
 type SinglePosData interface {
 	isSinglePosData()
+
+	Cov() Coverage
 }
 
 func (SinglePosData1) isSinglePosData() {}
@@ -18,20 +20,20 @@ func (SinglePosData2) isSinglePosData() {}
 
 type SinglePosData1 struct {
 	format      uint16      `unionTag:"1"`
-	Coverage    Coverage    `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of SinglePos subtable.
-	valueFormat ValueFormat //	Defines the types of data in the ValueRecord.
+	coverage    Coverage    `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of SinglePos subtable.
+	ValueFormat ValueFormat //	Defines the types of data in the ValueRecord.
 	ValueRecord ValueRecord `isOpaque:""` //	Defines positioning value(s) — applied to all glyphs in the Coverage table.
 }
 
 func (sp *SinglePosData1) parseValueRecord(src []byte) (err error) {
-	sp.ValueRecord, _, err = parseValueRecord(sp.valueFormat, src, 6)
+	sp.ValueRecord, _, err = parseValueRecord(sp.ValueFormat, src, 6)
 	return err
 }
 
 type SinglePosData2 struct {
 	format       uint16        `unionTag:"2"`
-	Coverage     Coverage      `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of SinglePos subtable.
-	valueFormat  ValueFormat   // Defines the types of data in the ValueRecords.
+	coverage     Coverage      `offsetSize:"Offset16"` // Offset to Coverage table, from beginning of SinglePos subtable.
+	ValueFormat  ValueFormat   // Defines the types of data in the ValueRecords.
 	valueCount   uint16        // Number of ValueRecords — must equal glyphCount in the Coverage table.
 	ValueRecords []ValueRecord `isOpaque:""` //[valueCount]	Array of ValueRecords — positioning values applied to glyphs.
 }
@@ -40,7 +42,7 @@ func (sp *SinglePosData2) parseValueRecords(src []byte) (err error) {
 	offset := 8
 	sp.ValueRecords = make([]ValueRecord, sp.valueCount)
 	for i := range sp.ValueRecords {
-		sp.ValueRecords[i], offset, err = parseValueRecord(sp.valueFormat, src, offset)
+		sp.ValueRecords[i], offset, err = parseValueRecord(sp.ValueFormat, src, offset)
 		if err != nil {
 			return err
 		}
@@ -55,6 +57,8 @@ type PairPos struct {
 
 type PairPosData interface {
 	isPairPosData()
+
+	Cov() Coverage
 }
 
 func (PairPosData1) isPairPosData() {}
@@ -62,11 +66,11 @@ func (PairPosData2) isPairPosData() {}
 
 type PairPosData1 struct {
 	format   uint16   `unionTag:"1"`
-	Coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
+	coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
 
-	valueFormat1  ValueFormat // Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
-	valueFormat2  ValueFormat // Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
-	PairSetOffset []PairSet   `arrayCount:"FirstUint16" offsetsArray:"Offset16" arguments:"valueFormat1=.valueFormat1, valueFormat2=.valueFormat2"` //[pairSetCount] Array of offsets to PairSet tables. Offsets are from beginning of PairPos subtable, ordered by Coverage Index.
+	ValueFormat1 ValueFormat // Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
+	ValueFormat2 ValueFormat // Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
+	PairSets     []PairSet   `arrayCount:"FirstUint16" offsetsArray:"Offset16" arguments:"valueFormat1=.ValueFormat1, valueFormat2=.ValueFormat2"` //[pairSetCount] Array of offsets to PairSet tables. Offsets are from beginning of PairPos subtable, ordered by Coverage Index.
 }
 
 // binarygen: argument=valueFormat1  ValueFormat
@@ -99,38 +103,38 @@ func (ps *PairSet) parsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) err
 
 type PairPosData2 struct {
 	format   uint16   `unionTag:"2"`
-	Coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
+	coverage Coverage `offsetSize:"Offset16"` //	Offset to Coverage table, from beginning of PairPos subtable.
 
-	valueFormat1 ValueFormat //	Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
-	valueFormat2 ValueFormat //	Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
+	ValueFormat1 ValueFormat //	Defines the types of data in valueRecord1 — for the first glyph in the pair (may be zero).
+	ValueFormat2 ValueFormat //	Defines the types of data in valueRecord2 — for the second glyph in the pair (may be zero).
 
 	ClassDef1     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the first glyph of the pair.
-	classDef2     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the second glyph of the pair.
+	ClassDef2     ClassDef       `offsetSize:"Offset16"` // Offset to ClassDef table, from beginning of PairPos subtable — for the second glyph of the pair.
 	class1Count   uint16         //	Number of classes in classDef1 table — includes Class 0.
 	class2Count   uint16         //	Number of classes in classDef2 table — includes Class 0.
-	class1Records []Class1Record `isOpaque:""` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
+	Class1Records []Class1Record `isOpaque:""` //[class1Count]	Array of Class1 records, ordered by classes in classDef1.
 }
 
 func (pp *PairPosData2) parseClass1Records(src []byte) error {
 	const headerSize = 16 // including posFormat and coverageOffset
 
-	pp.class1Records = make([]Class1Record, pp.class1Count)
+	pp.Class1Records = make([]Class1Record, pp.class1Count)
 
 	offset := headerSize
-	for i := range pp.class1Records {
+	for i := range pp.Class1Records {
 		vi := make(Class1Record, pp.class2Count)
 		for j := range vi {
 			var err error
-			vi[j].ValueRecord1, offset, err = parseValueRecord(pp.valueFormat1, src, offset)
+			vi[j].ValueRecord1, offset, err = parseValueRecord(pp.ValueFormat1, src, offset)
 			if err != nil {
 				return err
 			}
-			vi[j].ValueRecord2, offset, err = parseValueRecord(pp.valueFormat2, src, offset)
+			vi[j].ValueRecord2, offset, err = parseValueRecord(pp.ValueFormat2, src, offset)
 			if err != nil {
 				return err
 			}
 		}
-		pp.class1Records[i] = vi
+		pp.Class1Records[i] = vi
 	}
 	return nil
 }
@@ -193,10 +197,10 @@ func (cp *CursivePos) parseEntryExits(src []byte) error {
 type MarkBasePos struct {
 	posFormat      uint16    // Format identifier: format = 1
 	markCoverage   Coverage  `offsetSize:"Offset16"` // Offset to markCoverage table, from beginning of MarkBasePos subtable.
-	baseCoverage   Coverage  `offsetSize:"Offset16"` // Offset to baseCoverage table, from beginning of MarkBasePos subtable.
+	BaseCoverage   Coverage  `offsetSize:"Offset16"` // Offset to baseCoverage table, from beginning of MarkBasePos subtable.
 	markClassCount uint16    // Number of classes defined for marks
-	markArray      MarkArray `offsetSize:"Offset16"`                                          // Offset to MarkArray table, from beginning of MarkBasePos subtable.
-	baseArray      BaseArray `offsetSize:"Offset16" arguments:"offsetsCount=.markClassCount"` // Offset to BaseArray table, from beginning of MarkBasePos subtable.
+	MarkArray      MarkArray `offsetSize:"Offset16"`                                          // Offset to MarkArray table, from beginning of MarkBasePos subtable.
+	BaseArray      BaseArray `offsetSize:"Offset16" arguments:"offsetsCount=.markClassCount"` // Offset to BaseArray table, from beginning of MarkBasePos subtable.
 }
 
 type BaseArray struct {
@@ -289,6 +293,8 @@ type ContextualPos struct {
 
 type ContextualPosITF interface {
 	isContextualPosITF()
+
+	Cov() Coverage
 }
 
 type (
@@ -307,6 +313,8 @@ type ChainedContextualPos struct {
 
 type ChainedContextualPosITF interface {
 	isChainedContextualPosITF()
+
+	Cov() Coverage
 }
 
 type (

@@ -72,7 +72,7 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 			}
 
 			var err error
-			item.ClassTable, _, err = parseClassTable(src[offsetClassTable:])
+			item.ClassTable, _, err = ParseClassTable(src[offsetClassTable:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading AATStateTable: %s", err)
 			}
@@ -93,6 +93,29 @@ func ParseAATStateTable(src []byte) (AATStateTable, int, error) {
 			return item, 0, fmt.Errorf("reading AATStateTable: %s", err)
 		}
 		n = read
+	}
+	return item, n, nil
+}
+
+func ParseClassTable(src []byte) (ClassTable, int, error) {
+	var item ClassTable
+	n := 0
+	if L := len(src); L < 4 {
+		return item, 0, fmt.Errorf("reading ClassTable: "+"EOF: expected length: 4, got %d", L)
+	}
+	_ = src[3] // early bound checking
+	item.StartGlyph = binary.BigEndian.Uint16(src[0:])
+	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
+	n += 4
+
+	{
+
+		L := int(4 + arrayLengthValues)
+		if len(src) < L {
+			return item, 0, fmt.Errorf("reading ClassTable: "+"EOF: expected length: %d, got %d", L, len(src))
+		}
+		item.Values = src[4:L]
+		n = L
 	}
 	return item, n, nil
 }
@@ -316,28 +339,5 @@ func ParseOTKernSubtableHeader(src []byte) (OTKernSubtableHeader, int, error) {
 		return item, 0, fmt.Errorf("reading OTKernSubtableHeader: %s", err)
 	}
 
-	return item, n, nil
-}
-
-func parseClassTable(src []byte) (ClassTable, int, error) {
-	var item ClassTable
-	n := 0
-	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading classTable: "+"EOF: expected length: 4, got %d", L)
-	}
-	_ = src[3] // early bound checking
-	item.StartGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
-	n += 4
-
-	{
-
-		L := int(4 + arrayLengthValues)
-		if len(src) < L {
-			return item, 0, fmt.Errorf("reading classTable: "+"EOF: expected length: %d, got %d", L, len(src))
-		}
-		item.Values = src[4:L]
-		n = L
-	}
 	return item, n, nil
 }

@@ -15,8 +15,8 @@ func (item *AnkrAnchor) mustParse(src []byte) {
 
 func (item *LookupRecord2) mustParse(src []byte) {
 	_ = src[5] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.LastGlyph = binary.BigEndian.Uint16(src[0:])
+	item.FirstGlyph = binary.BigEndian.Uint16(src[2:])
 	item.Value = binary.BigEndian.Uint16(src[4:])
 }
 
@@ -61,8 +61,8 @@ func ParseAATLookupRecord4(src []byte, parentSrc []byte) (AATLookupRecord4, int,
 		return item, 0, fmt.Errorf("reading AATLookupRecord4: "+"EOF: expected length: 6, got %d", L)
 	}
 	_ = src[5] // early bound checking
-	item.LastGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[2:]))
+	item.LastGlyph = binary.BigEndian.Uint16(src[0:])
+	item.FirstGlyph = binary.BigEndian.Uint16(src[2:])
 	offsetValues := int(binary.BigEndian.Uint16(src[4:]))
 	n += 6
 
@@ -122,7 +122,7 @@ func ParseAATLoopkup10(src []byte) (AATLoopkup10, int, error) {
 	_ = src[7] // early bound checking
 	item.version = binary.BigEndian.Uint16(src[0:])
 	item.unitSize = binary.BigEndian.Uint16(src[2:])
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[4:]))
+	item.FirstGlyph = binary.BigEndian.Uint16(src[4:])
 	arrayLengthValues := int(binary.BigEndian.Uint16(src[6:]))
 	n += 8
 
@@ -253,7 +253,7 @@ func ParseAATLoopkup8Data(src []byte) (AATLoopkup8Data, int, error) {
 		return item, 0, fmt.Errorf("reading AATLoopkup8Data: "+"EOF: expected length: 4, got %d", L)
 	}
 	_ = src[3] // early bound checking
-	item.FirstGlyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.FirstGlyph = binary.BigEndian.Uint16(src[0:])
 	arrayLengthValues := int(binary.BigEndian.Uint16(src[2:]))
 	n += 4
 
@@ -316,11 +316,11 @@ func ParseAnkr(src []byte, valuesCount int) (Ankr, int, error) {
 	return item, n, nil
 }
 
-func ParseAnrkAnchor(src []byte) (AnkrAnchor, int, error) {
+func ParseAnkrAnchor(src []byte) (AnkrAnchor, int, error) {
 	var item AnkrAnchor
 	n := 0
 	if L := len(src); L < 4 {
-		return item, 0, fmt.Errorf("reading AnrkAnchor: "+"EOF: expected length: 4, got %d", L)
+		return item, 0, fmt.Errorf("reading AnkrAnchor: "+"EOF: expected length: 4, got %d", L)
 	}
 	item.mustParse(src)
 	n += 4
@@ -338,6 +338,6 @@ func (item *binSearchHeader) mustParse(src []byte) {
 
 func (item *loopkupRecord6) mustParse(src []byte) {
 	_ = src[3] // early bound checking
-	item.Glyph = GlyphID(binary.BigEndian.Uint16(src[0:]))
+	item.Glyph = binary.BigEndian.Uint16(src[0:])
 	item.Value = binary.BigEndian.Uint16(src[2:])
 }

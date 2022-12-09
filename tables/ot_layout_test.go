@@ -18,8 +18,12 @@ func TestParseOTLayout(t *testing.T) {
 
 		for _, lookup := range gsub.LookupList.Lookups {
 			tu.Assert(t, lookup.lookupType > 0)
-			_, err = lookup.AsGSUBLookups()
+			lks, err := lookup.AsGSUBLookups()
 			tu.AssertNoErr(t, err)
+			for _, subtable := range lks {
+				_, isExtension := subtable.(ExtensionSubs)
+				tu.Assert(t, isExtension || subtable.Cov() != nil)
+			}
 		}
 
 		gpos, _, err := ParseLayout(readTable(t, fp, "GPOS"))
@@ -28,8 +32,12 @@ func TestParseOTLayout(t *testing.T) {
 
 		for _, lookup := range gpos.LookupList.Lookups {
 			tu.Assert(t, lookup.lookupType > 0)
-			_, err = lookup.AsGPOSLookups()
+			lks, err := lookup.AsGPOSLookups()
 			tu.AssertNoErr(t, err)
+			for _, subtable := range lks {
+				_, isExtension := subtable.(ExtensionPos)
+				tu.Assert(t, isExtension || subtable.Cov() != nil)
+			}
 		}
 
 		_, _, err = ParseGDEF(readTable(t, fp, "GDEF"))
@@ -46,8 +54,12 @@ func TestGSUB(t *testing.T) {
 
 		for _, lookup := range gsub.LookupList.Lookups {
 			tu.Assert(t, lookup.lookupType > 0)
-			_, err = lookup.AsGSUBLookups()
+			lks, err := lookup.AsGSUBLookups()
 			tu.AssertNoErr(t, err)
+			for _, subtable := range lks {
+				_, isExtension := subtable.(ExtensionSubs)
+				tu.Assert(t, isExtension || subtable.Cov() != nil)
+			}
 		}
 	}
 }
@@ -61,8 +73,12 @@ func TestGPOS(t *testing.T) {
 
 		for _, lookup := range gpos.LookupList.Lookups {
 			tu.Assert(t, lookup.lookupType > 0)
-			_, err = lookup.AsGPOSLookups()
+			lks, err := lookup.AsGPOSLookups()
 			tu.AssertNoErr(t, err)
+			for _, subtable := range lks {
+				_, isExtension := subtable.(ExtensionPos)
+				tu.Assert(t, isExtension || subtable.Cov() != nil)
+			}
 		}
 	}
 }
@@ -113,7 +129,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				coverage:     Coverage1{1, []GlyphID{6, 7}},
+				Coverage:     Coverage1{1, []GlyphID{6, 7}},
 				DeltaGlyphID: 3,
 			},
 		},
@@ -123,7 +139,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				coverage:     Coverage1{1, []GlyphID{6, 7}},
+				Coverage:     Coverage1{1, []GlyphID{6, 7}},
 				DeltaGlyphID: 3,
 			},
 		},
@@ -151,12 +167,12 @@ func TestGSUBIndic(t *testing.T) {
 				ChainedClassSeqRuleSet: []ChainedClassSequenceRuleSet{
 					{},
 					{
-						[]ChainedClassSequenceRule{
+						[]ChainedSequenceRule{
 							{
 								BacktrackSequence: []uint16{1},
 								inputGlyphCount:   1,
 								InputSequence:     []uint16{},
-								LookaheadGlyph:    []uint16{},
+								LookaheadSequence: []uint16{},
 								SeqLookupRecords: []SequenceLookupRecord{
 									{SequenceIndex: 0, LookupListIndex: 3},
 								},
@@ -172,7 +188,7 @@ func TestGSUBIndic(t *testing.T) {
 		SingleSubs{
 			Data: SingleSubstData1{
 				format:       1,
-				coverage:     Coverage1{1, []GlyphID{5}},
+				Coverage:     Coverage1{1, []GlyphID{5}},
 				DeltaGlyphID: 6,
 			},
 		},
@@ -207,7 +223,7 @@ func TestGSUBLigature(t *testing.T) {
 
 	expected := LigatureSubs{
 		substFormat: 1,
-		coverage:    Coverage1{1, []GlyphID{3, 4, 7, 8, 9}},
+		Coverage:    Coverage1{1, []GlyphID{3, 4, 7, 8, 9}},
 		LigatureSets: []LigatureSet{
 			{ // glyph="3"
 				[]Ligature{

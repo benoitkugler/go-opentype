@@ -206,9 +206,9 @@ func ParseMorxSubtableInsertion(src []byte, valuesCount int) (MorxSubtableInsert
 				return item, 0, fmt.Errorf("reading MorxSubtableInsertion: "+"EOF: expected length: %d, got %d", offsetInsertions+arrayLength*2, L)
 			}
 
-			item.Insertions = make([]GlyphID, arrayLength) // allocation guarded by the previous check
+			item.Insertions = make([]uint16, arrayLength) // allocation guarded by the previous check
 			for i := range item.Insertions {
-				item.Insertions[i] = GlyphID(binary.BigEndian.Uint16(src[offsetInsertions+i*2:]))
+				item.Insertions[i] = binary.BigEndian.Uint16(src[offsetInsertions+i*2:])
 			}
 			offsetInsertions += arrayLength * 2
 		}

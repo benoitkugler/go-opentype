@@ -15,7 +15,7 @@ import (
 // but it may be implemented for efficiently.
 // See https://learn.microsoft.com/typography/opentype/spec/chapter2#lookup-table
 type Coverage interface {
-	isCoverage()
+	isCov()
 
 	// Index returns the index of the provided glyph, or
 	// `false` if the glyph is not covered by this lookup.
@@ -29,8 +29,8 @@ type Coverage interface {
 	Len() int
 }
 
-func (Coverage1) isCoverage() {}
-func (Coverage2) isCoverage() {}
+func (Coverage1) isCov() {}
+func (Coverage2) isCov() {}
 
 type Coverage1 struct {
 	format uint16    `unionTag:"1"`
@@ -134,16 +134,9 @@ type SequenceContextFormat2 struct {
 	ClassSeqRuleSet []ClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[classSeqRuleSetCount]	Array of offsets to ClassSequenceRuleSet tables, from beginning of SequenceContextFormat2 table (may be NULL)
 }
 
-type ClassSequenceRuleSet struct {
-	ClassSeqRule []ClassSequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //	Array of offsets to ClassSequenceRule tables, from beginning of ClassSequenceRuleSet table
-}
-
-type ClassSequenceRule struct {
-	glyphCount       uint16                 // Number of glyphs to be matched
-	seqLookupCount   uint16                 // Number of SequenceLookupRecords
-	InputSequence    []uint16               `arrayCount:"ComputedField-glyphCount-1"`   //[glyphCount - 1]	Sequence of classes to be matched to the input glyph sequence, beginning with the second glyph position
-	SeqLookupRecords []SequenceLookupRecord `arrayCount:"ComputedField-seqLookupCount"` //[seqLookupCount]	Array of SequenceLookupRecords
-}
+// ClassSequenceRuleSet has the same binary format as SequenceRuleSet,
+// and using the same type simplifies later processing.
+type ClassSequenceRuleSet = SequenceRuleSet
 
 type SequenceContextFormat3 struct {
 	format           uint16                 `unionTag:"3"`
@@ -180,17 +173,9 @@ type ChainedSequenceContextFormat2 struct {
 	ChainedClassSeqRuleSet []ChainedClassSequenceRuleSet `arrayCount:"FirstUint16" offsetsArray:"Offset16"` //[chainedClassSeqRuleSetCount]	Array of offsets to ChainedClassSequenceRuleSet tables, from beginning of ChainedSequenceContextFormat2 table (may be NULL)
 }
 
-type ChainedClassSequenceRuleSet struct {
-	ChainedClassSeqRules []ChainedClassSequenceRule `arrayCount:"FirstUint16" offsetsArray:"Offset16"` // Array of offsets to ChainedClassSequenceRule tables, from beginning of ChainedClassSequenceRuleSet
-}
-
-type ChainedClassSequenceRule struct {
-	BacktrackSequence []uint16               `arrayCount:"FirstUint16"` //[backtrackGlyphCount]	Array of backtrack-sequence classes
-	inputGlyphCount   uint16                 //	Total number of glyphs in the input sequence
-	InputSequence     []uint16               `arrayCount:"ComputedField-inputGlyphCount-1"` //[inputGlyphCount - 1]	Array of input sequence classes, beginning with the second glyph position
-	LookaheadGlyph    []uint16               `arrayCount:"FirstUint16"`                     //[lookaheadGlyphCount]	Array of lookahead-sequence classes
-	SeqLookupRecords  []SequenceLookupRecord `arrayCount:"FirstUint16"`                     //[seqLookupCount]	Array of SequenceLookupRecords
-}
+// ChainedClassSequenceRuleSet has the same binary format as ChainedSequenceRuleSet,
+// and using the same type simplifies later processing.
+type ChainedClassSequenceRuleSet = ChainedSequenceRuleSet
 
 type ChainedSequenceContextFormat3 struct {
 	format             uint16                 `unionTag:"3"`
@@ -214,12 +199,13 @@ type Extension struct {
 // See https://learn.microsoft.com/fr-fr/typography/opentype/spec/gsub
 type GSUB Layout
 
+// GSUBLookup is one lookup subtable data
 type GSUBLookup interface {
 	isGSUBLookup()
 
-	//  Coverage returns the coverage of the lookup subtable.
+	// Coverage returns the coverage of the lookup subtable.
 	// For ContextualSubs3 and ChainedContextualSubs3, its the coverage of the first input.
-	Coverage() Coverage
+	Cov() Coverage
 }
 
 func (SingleSubs) isGSUBLookup()             {}
@@ -232,14 +218,14 @@ func (ExtensionSubs) isGSUBLookup()          {}
 func (ReverseChainSingleSubs) isGSUBLookup() {}
 
 func (ms MultipleSubs) Sanitize() error {
-	if exp, got := ms.coverage.Len(), len(ms.Sequences); exp != got {
+	if exp, got := ms.Coverage.Len(), len(ms.Sequences); exp != got {
 		return fmt.Errorf("GSUB: invalid MultipleSubs sequences count (%d != %d)", exp, got)
 	}
 	return nil
 }
 
 func (ls LigatureSubs) Sanitize() error {
-	if exp, got := ls.coverage.Len(), len(ls.LigatureSets); exp != got {
+	if exp, got := ls.Coverage.Len(), len(ls.LigatureSets); exp != got {
 		return fmt.Errorf("GSUB: invalid LigatureSubs sets count (%d != %d)", exp, got)
 	}
 	return nil
@@ -325,6 +311,10 @@ type GPOS Layout
 
 type GPOSLookup interface {
 	isGPOSLookup()
+
+	// Coverage returns the coverage of the lookup subtable.
+	// For ContextualPos3 and ChainedContextualPos3, its the coverage of the first input.
+	Cov() Coverage
 }
 
 func (SinglePos) isGPOSLookup()            {}
@@ -339,7 +329,7 @@ func (ExtensionPos) isGPOSLookup()         {}
 
 func (sp *SinglePos) Sanitize() error {
 	if f2, isFormat2 := sp.Data.(SinglePosData2); isFormat2 {
-		if exp, got := f2.Coverage.Len(), len(f2.ValueRecords); exp != got {
+		if exp, got := f2.coverage.Len(), len(f2.ValueRecords); exp != got {
 			return fmt.Errorf("GPOS: invalid SinglePos values count (%d != %d)", exp, got)
 		}
 	}
@@ -348,14 +338,14 @@ func (sp *SinglePos) Sanitize() error {
 
 func (pp *PairPos) Sanitize() error {
 	if f1, isFormat1 := pp.Data.(PairPosData1); isFormat1 {
-		if exp, got := f1.Coverage.Len(), len(f1.PairSetOffset); exp != got {
+		if exp, got := f1.coverage.Len(), len(f1.PairSets); exp != got {
 			return fmt.Errorf("GPOS: invalid PairPos1 sets count (%d != %d)", exp, got)
 		}
 	} else if f2, isFormat2 := pp.Data.(PairPosData2); isFormat2 {
 		if exp, got := f2.ClassDef1.Extent(), int(f2.class1Count); exp != got {
 			return fmt.Errorf("GPOS: invalid PairPos2 class1 count (%d != %d)", exp, got)
 		}
-		if exp, got := f2.classDef2.Extent(), int(f2.class2Count); exp != got {
+		if exp, got := f2.ClassDef2.Extent(), int(f2.class2Count); exp != got {
 			return fmt.Errorf("GPOS: invalid PairPos2 class2 count (%d != %d)", exp, got)
 		}
 	}
@@ -363,10 +353,10 @@ func (pp *PairPos) Sanitize() error {
 }
 
 func (mp *MarkBasePos) Sanitize() error {
-	if exp, got := mp.markCoverage.Len(), len(mp.markArray.MarkRecords); exp != got {
+	if exp, got := mp.markCoverage.Len(), len(mp.MarkArray.MarkRecords); exp != got {
 		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
 	}
-	if exp, got := mp.baseCoverage.Len(), len(mp.baseArray.BaseAnchors); exp != got {
+	if exp, got := mp.BaseCoverage.Len(), len(mp.BaseArray.BaseAnchors); exp != got {
 		return fmt.Errorf("GPOS: invalid MarkBasePos marks count (%d != %d)", exp, got)
 	}
 
@@ -449,7 +439,7 @@ func (lk Lookup) AsGPOSLookups() ([]GPOSLookup, error) {
 }
 
 // ValueFormat is a mask indicating which field
-// are set in a [ValueRecord].
+// are set in a GPOS [ValueRecord].
 // It is often shared between many records.
 type ValueFormat uint16
 
@@ -707,7 +697,7 @@ func (ma *MarkArray) parseMarkAnchors(src []byte) error {
 }
 
 type MarkRecord struct {
-	markClass        uint16   // Class defined for the associated mark.
+	MarkClass        uint16   // Class defined for the associated mark.
 	markAnchorOffset Offset16 // Offset to Anchor table, from beginning of MarkArray table.
 }
 
