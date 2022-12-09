@@ -17,14 +17,14 @@ func TestGetProps(t *testing.T) {
 	gsub, _, err := tables.ParseLayout(readTable(t, file, "GSUB"))
 	tu.AssertNoErr(t, err)
 
-	for _, table := range []layout{newLayout(gpos), newLayout(gsub)} {
+	for _, table := range []Layout{newLayout(gpos), newLayout(gsub)} {
 		var tags []int
-		for _, s := range table.scripts {
+		for _, s := range table.Scripts {
 			tags = append(tags, int(s.Tag))
 		}
 		tu.Assert(t, sort.IntsAreSorted(tags))
 
-		for i, s := range table.scripts {
+		for i, s := range table.Scripts {
 			ptr := table.FindScript(s.Tag)
 			tu.Assert(t, ptr == i)
 		}
@@ -32,7 +32,7 @@ func TestGetProps(t *testing.T) {
 		s := table.FindScript(Tag(0)) // invalid
 		tu.Assert(t, s == -1)
 
-		for _, feat := range table.features {
+		for _, feat := range table.Features {
 			_, ok := table.FindFeatureIndex(feat.Tag)
 			tu.Assert(t, ok)
 		}
@@ -41,7 +41,7 @@ func TestGetProps(t *testing.T) {
 
 		// now check the languages
 
-		for _, script := range table.scripts {
+		for _, script := range table.Scripts {
 			var tags []int
 			for _, s := range script.LangSysRecords {
 				tags = append(tags, int(s.Tag))

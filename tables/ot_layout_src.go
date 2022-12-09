@@ -143,8 +143,8 @@ type FeatureVariation struct {
 }
 
 type FeatureVariationRecord struct {
-	ConditionSet                   ConditionSet `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a condition set table, from beginning of FeatureVariations table.
-	featureTableSubstitutionOffset uint32       // Offset to a feature table substitution table, from beginning of the FeatureVariations table.
+	ConditionSet  ConditionSet             `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a condition set table, from beginning of FeatureVariations table.
+	Substitutions FeatureTableSubstitution `offsetSize:"Offset32" offsetRelativeTo:"Parent"` // Offset to a feature table substitution table, from beginning of the FeatureVariations table.
 }
 
 type ConditionSet struct {
@@ -157,4 +157,15 @@ type ConditionFormat1 struct {
 	AxisIndex           uint16   // Index (zero-based) for the variation axis within the 'fvar' table.
 	FilterRangeMinValue Float214 // Minimum value of the font variation instances that satisfy this condition.
 	FilterRangeMaxValue Float214 // Maximum value of the font variation instances that satisfy this condition.
+}
+
+type FeatureTableSubstitution struct {
+	majorVersion  uint16                           // Major version of the feature table substitution table — set to 1
+	minorVersion  uint16                           // Minor version of the feature table substitution table — set to 0.
+	Substitutions []FeatureTableSubstitutionRecord `arrayCount:"FirstUint16"` // [substitutionCount]	Array of feature table substitution records.
+}
+
+type FeatureTableSubstitutionRecord struct {
+	FeatureIndex     uint16  //	The feature table index to match.
+	AlternateFeature Feature `offsetSize:"Offset32" offsetRelativeTo:"Parent"` //	Offset to an alternate feature table, from start of the FeatureTableSubstitution table.
 }

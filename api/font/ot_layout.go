@@ -3,31 +3,31 @@ package font
 import "github.com/benoitkugler/go-opentype/tables"
 
 // shared between GSUB and GPOS
-type layout struct {
-	scripts           []Script
-	features          []Feature
-	featureVariations []tables.FeatureVariationRecord
+type Layout struct {
+	Scripts           []Script
+	Features          []Feature
+	FeatureVariations []tables.FeatureVariationRecord
 }
 
-func newLayout(table tables.Layout) layout {
-	out := layout{
-		scripts:  make([]Script, len(table.ScriptList.Scripts)),
-		features: make([]Feature, len(table.FeatureList.Features)),
+func newLayout(table tables.Layout) Layout {
+	out := Layout{
+		Scripts:  make([]Script, len(table.ScriptList.Scripts)),
+		Features: make([]Feature, len(table.FeatureList.Features)),
 	}
 	for i, s := range table.ScriptList.Scripts {
-		out.scripts[i] = Script{
+		out.Scripts[i] = Script{
 			Script: s,
 			Tag:    table.ScriptList.Records[i].Tag,
 		}
 	}
 	for i, f := range table.FeatureList.Features {
-		out.features[i] = Feature{
+		out.Features[i] = Feature{
 			Feature: f,
 			Tag:     table.FeatureList.Records[i].Tag,
 		}
 	}
 	if table.FeatureVariations != nil {
-		out.featureVariations = table.FeatureVariations.FeatureVariationRecords
+		out.FeatureVariations = table.FeatureVariations.FeatureVariationRecords
 	}
 	return out
 }
@@ -44,12 +44,12 @@ type Feature struct {
 
 // FindScript looks for [script] and return its index into the Scripts slice,
 // or -1 if the tag is not found.
-func (la *layout) FindScript(script Tag) int {
+func (la *Layout) FindScript(script Tag) int {
 	// Scripts is sorted: binary search
-	low, high := 0, len(la.scripts)
+	low, high := 0, len(la.Scripts)
 	for low < high {
 		mid := low + (high-low)/2 // avoid overflow when computing mid
-		p := la.scripts[mid].Tag
+		p := la.Scripts[mid].Tag
 		if script < p {
 			high = mid
 		} else if script > p {
@@ -65,8 +65,8 @@ func (la *layout) FindScript(script Tag) int {
 // the specified variation coordinates, as an index in the
 // `FeatureVariations` field.
 // It returns `-1` if not found.
-func (la *layout) FindVariationIndex(coords []float32) int {
-	for i, record := range la.featureVariations {
+func (la *Layout) FindVariationIndex(coords []float32) int {
+	for i, record := range la.FeatureVariations {
 		if evaluateVarRec(record, coords) {
 			return i
 		}
@@ -95,8 +95,8 @@ func evaluateCondition(c tables.ConditionFormat1, coords []float32) bool {
 
 // FindFeatureIndex fetches the index for a given feature tag in the GSUB or GPOS table.
 // Returns false if not found
-func (la *layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
-	for i, feat := range la.features { // i fits in uint16
+func (la *Layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
+	for i, feat := range la.Features { // i fits in uint16
 		if featureTag == feat.Tag {
 			return uint16(i), true
 		}
@@ -107,7 +107,7 @@ func (la *layout) FindFeatureIndex(featureTag Tag) (uint16, bool) {
 // ---------------------------------- GSUB ----------------------------------
 
 type GSUB struct {
-	layout
+	Layout
 	Lookups []GSUBLookup
 }
 
@@ -138,7 +138,7 @@ type GSUBLookup struct {
 
 func newGSUB(table tables.Layout) (GSUB, error) {
 	out := GSUB{
-		layout:  newLayout(table),
+		Layout:  newLayout(table),
 		Lookups: make([]GSUBLookup, len(table.LookupList.Lookups)),
 	}
 	for i, lk := range table.LookupList.Lookups {
@@ -182,7 +182,7 @@ func newGSUB(table tables.Layout) (GSUB, error) {
 }
 
 type GPOS struct {
-	layout
+	Layout
 	Lookups []GPOSLookup
 }
 
@@ -193,7 +193,7 @@ type GPOSLookup struct {
 
 func newGPOS(table tables.Layout) (GPOS, error) {
 	out := GPOS{
-		layout:  newLayout(table),
+		Layout:  newLayout(table),
 		Lookups: make([]GPOSLookup, len(table.LookupList.Lookups)),
 	}
 	for i, lk := range table.LookupList.Lookups {

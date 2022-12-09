@@ -121,6 +121,63 @@ func ParseFeatureList(src []byte) (FeatureList, int, error) {
 	return item, n, nil
 }
 
+func ParseFeatureTableSubstitution(src []byte) (FeatureTableSubstitution, int, error) {
+	var item FeatureTableSubstitution
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading FeatureTableSubstitution: "+"EOF: expected length: 6, got %d", L)
+	}
+	_ = src[5] // early bound checking
+	item.majorVersion = binary.BigEndian.Uint16(src[0:])
+	item.minorVersion = binary.BigEndian.Uint16(src[2:])
+	arrayLengthSubstitutions := int(binary.BigEndian.Uint16(src[4:]))
+	n += 6
+
+	{
+
+		offset := 6
+		for i := 0; i < arrayLengthSubstitutions; i++ {
+			elem, read, err := ParseFeatureTableSubstitutionRecord(src[offset:], src)
+			if err != nil {
+				return item, 0, fmt.Errorf("reading FeatureTableSubstitution: %s", err)
+			}
+			item.Substitutions = append(item.Substitutions, elem)
+			offset += read
+		}
+		n = offset
+	}
+	return item, n, nil
+}
+
+func ParseFeatureTableSubstitutionRecord(src []byte, parentSrc []byte) (FeatureTableSubstitutionRecord, int, error) {
+	var item FeatureTableSubstitutionRecord
+	n := 0
+	if L := len(src); L < 6 {
+		return item, 0, fmt.Errorf("reading FeatureTableSubstitutionRecord: "+"EOF: expected length: 6, got %d", L)
+	}
+	_ = src[5] // early bound checking
+	item.FeatureIndex = binary.BigEndian.Uint16(src[0:])
+	offsetAlternateFeature := int(binary.BigEndian.Uint32(src[2:]))
+	n += 6
+
+	{
+
+		if offsetAlternateFeature != 0 { // ignore null offset
+			if L := len(parentSrc); L < offsetAlternateFeature {
+				return item, 0, fmt.Errorf("reading FeatureTableSubstitutionRecord: "+"EOF: expected length: %d, got %d", offsetAlternateFeature, L)
+			}
+
+			var err error
+			item.AlternateFeature, _, err = ParseFeature(parentSrc[offsetAlternateFeature:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading FeatureTableSubstitutionRecord: %s", err)
+			}
+
+		}
+	}
+	return item, n, nil
+}
+
 func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 	var item FeatureVariation
 	n := 0
@@ -162,7 +219,7 @@ func ParseFeatureVariationRecord(src []byte, parentSrc []byte) (FeatureVariation
 	}
 	_ = src[7] // early bound checking
 	offsetConditionSet := int(binary.BigEndian.Uint32(src[0:]))
-	item.featureTableSubstitutionOffset = binary.BigEndian.Uint32(src[4:])
+	offsetSubstitutions := int(binary.BigEndian.Uint32(src[4:]))
 	n += 8
 
 	{
@@ -174,6 +231,21 @@ func ParseFeatureVariationRecord(src []byte, parentSrc []byte) (FeatureVariation
 
 			var err error
 			item.ConditionSet, _, err = ParseConditionSet(parentSrc[offsetConditionSet:])
+			if err != nil {
+				return item, 0, fmt.Errorf("reading FeatureVariationRecord: %s", err)
+			}
+
+		}
+	}
+	{
+
+		if offsetSubstitutions != 0 { // ignore null offset
+			if L := len(parentSrc); L < offsetSubstitutions {
+				return item, 0, fmt.Errorf("reading FeatureVariationRecord: "+"EOF: expected length: %d, got %d", offsetSubstitutions, L)
+			}
+
+			var err error
+			item.Substitutions, _, err = ParseFeatureTableSubstitution(parentSrc[offsetSubstitutions:])
 			if err != nil {
 				return item, 0, fmt.Errorf("reading FeatureVariationRecord: %s", err)
 			}
