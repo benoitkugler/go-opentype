@@ -1,13 +1,11 @@
 package harfbuzz
 
 import (
-	"bytes"
-	"os"
+	"io/ioutil"
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
-	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from harfbuzz/perf
@@ -75,16 +73,13 @@ func BenchmarkShaping(b *testing.B) {
 }
 
 func shapeOne(b *testing.B, textFile, fontFile string, direction Direction, script language.Script) {
-	f, err := testdata.Files.ReadFile(fontFile)
+	ft := openFontFile(b, fontFile)
+
+	font := NewFont(&font.Face{Font: ft})
+
+	textB, err := ioutil.ReadFile(textFile)
 	check(err)
 
-	fonts, err := tt.Load(bytes.NewReader(f))
-	check(err)
-
-	font := NewFont(fonts[0])
-
-	textB, err := os.ReadFile(textFile)
-	check(err)
 	text := []rune(string(textB))
 
 	buf := NewBuffer()

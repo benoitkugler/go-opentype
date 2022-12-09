@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/benoitkugler/textlayout/fonts"
+	"github.com/benoitkugler/go-opentype/api"
 )
 
 // use a reference library to extensively test the shaping process
@@ -19,7 +19,7 @@ import (
 const referenceDir = "<XXX>/harfbuzz"
 
 type shapingInput struct {
-	font     fonts.FaceID
+	font     api.FontID
 	features string
 	text     []rune
 }
@@ -68,8 +68,8 @@ type aggregatedInput struct {
 	features []string // all possibles features
 }
 
-func aggregateInputs(t *testing.T) map[fonts.FaceID]aggregatedInput {
-	out := make(map[fonts.FaceID]aggregatedInput)
+func aggregateInputs(t *testing.T) map[api.FontID]aggregatedInput {
+	out := make(map[api.FontID]aggregatedInput)
 
 	walkShapeTests(t, func(_ *testing.T, driver testOptions, _, _, glyphsExpected string) {
 		if glyphsExpected == "*" {
@@ -96,7 +96,7 @@ func randText(possible []rune, maxSize int) []rune {
 	return out
 }
 
-func fuzzReferenceShaping(possibles map[fonts.FaceID]aggregatedInput, nbTry, maxInputSize int, t *testing.T) {
+func fuzzReferenceShaping(possibles map[api.FontID]aggregatedInput, nbTry, maxInputSize int, t *testing.T) {
 	var (
 		failures  []shapingInput
 		expecteds []string

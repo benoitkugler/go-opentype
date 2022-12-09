@@ -15,10 +15,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/api"
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
+	"github.com/benoitkugler/go-opentype/loader"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
-	"github.com/benoitkugler/textlayout/fonts"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from harfbuzz/util/hb-shape.cc, main-font-text.hh Copyright © 2010, 2011,2012  Google, Inc. Behdad Esfahbod
@@ -87,8 +88,8 @@ func (b *Buffer) serialize(font *Font, opt formatOptions) string {
 type fontOptions struct {
 	font *Font // cached value of getFont()
 
-	fontRef    fonts.FaceID
-	variations []tt.Variation
+	fontRef    api.FontID
+	variations []font.Variation
 
 	subpixelBits         int
 	fontSizeX, fontSizeY int
@@ -119,16 +120,20 @@ func (fo *fontOptions) getFont() *Font {
 	f, err := testdata.Files.ReadFile(fo.fontRef.File)
 	check(err)
 
-	fonts, err := tt.Load(bytes.NewReader(f))
+	fonts, err := loader.NewLoaders(bytes.NewReader(f))
 	check(err)
 
 	if int(fo.fontRef.Index) >= len(fonts) {
 		check(fmt.Errorf("invalid font Index %d for length %d", fo.fontRef.Index, len(fonts)))
 	}
-	face := fonts[fo.fontRef.Index]
+	ft, err := font.NewFont(fonts[fo.fontRef.Index])
+	check(err)
 
 	/* Create the face */
-	fo.font = NewFont(face)
+	face := font.Face{Font: ft, XPpem: fo.xPpem, YPpem: fo.yPpem}
+	face.SetVariations(fo.variations)
+
+	fo.font = NewFont(&face)
 
 	if fo.fontSizeX == fontSizeUpem {
 		fo.fontSizeX = int(fo.font.faceUpem)
@@ -137,25 +142,13 @@ func (fo *fontOptions) getFont() *Font {
 		fo.fontSizeY = int(fo.font.faceUpem)
 	}
 
-	fo.font.XPpem, fo.font.YPpem = fo.xPpem, fo.yPpem
 	fo.font.Ptem = float32(fo.ptem)
 
 	scaleX := scalbnf(float64(fo.fontSizeX), fo.subpixelBits)
 	scaleY := scalbnf(float64(fo.fontSizeY), fo.subpixelBits)
 	fo.font.XScale, fo.font.YScale = scaleX, scaleY
 
-	tt.SetVariations(fo.font.face.(FaceOpentype), fo.variations)
-
 	return fo.font
-}
-
-func (fo *fontOptions) adjustFace(shaper string) *Font {
-	font := *fo.getFont()
-	if shaper == "fallback" { // hide the face OT capacilities
-		font.otTables = nil
-		font.gr = nil
-	}
-	return &font
 }
 
 func scalbnf(x float64, exp int) int32 {
@@ -168,7 +161,7 @@ func (opts *fontOptions) parseVariations(s string) error {
 	s = strings.Trim(s, `"`)
 
 	variations := strings.Split(s, ",")
-	opts.variations = make([]tt.Variation, len(variations))
+	opts.variations = make([]font.Variation, len(variations))
 
 	var err error
 	for i, feature := range variations {
@@ -337,7 +330,7 @@ func (so *shapeOptions) verifyValidGID(buffer *Buffer, font *Font) error {
 	for _, glyph := range buffer.Info {
 		_, ok := font.GlyphExtents(glyph.Glyph)
 		if !ok {
-			return fmt.Errorf("Unknow glyph %d in font %s", glyph.Glyph, font.face.PoscriptName())
+			return fmt.Errorf("Unknow glyph %d in font", glyph.Glyph)
 		}
 	}
 	return nil
@@ -486,7 +479,7 @@ func (opts *shapeOptions) parseDirection(s string) error {
 func (mft testOptions) shape(verify bool) (string, error) {
 	buffer := mft.shaper.populateBuffer(mft.input)
 
-	font := mft.fontOpts.adjustFace(mft.shaper.shaper)
+	font := mft.fontOpts.getFont()
 	if err := mft.shaper.shape(font, buffer, verify); err != nil {
 		return "", err
 	}
@@ -687,11 +680,11 @@ func parseOptions(options string) (testOptions, error) {
 // harfbuzz seems to be OK with an invalid font
 // in pratice, it seems useless to do shaping without
 // font, so we dont support it, meaning we skip this test
-func skipInvalidFontIndex(ft fonts.FaceID) bool {
+func skipInvalidFontIndex(ft api.FontID) bool {
 	f, err := testdata.Files.ReadFile(ft.File)
 	check(err)
 
-	fonts, err := tt.Load(bytes.NewReader(f))
+	fonts, err := loader.NewLoaders(bytes.NewReader(f))
 	check(err)
 
 	if int(ft.Index) >= len(fonts) {
@@ -883,20 +876,22 @@ func TestGraphite(t *testing.T) {
 }
 
 func TestExample(t *testing.T) {
-	// face := openFontFileTT("DejaVuSerif.ttf")
-	face := openFontFileTT("NotoSansArabic.ttf")
+	// ft := openFontFileTT("DejaVuSerif.ttf")
+	ft := openFontFileTT(t, "NotoSansArabic.ttf")
 	buffer := NewBuffer()
 
 	// runes := []rune("This is a line to shape..")
 	runes := []rune{0x0633, 0x064F, 0x0644, 0x064E, 0x0651, 0x0627, 0x0651, 0x0650, 0x0645, 0x062A, 0x06CC}
 	buffer.AddRunes(runes, 0, -1)
+
+	face := &font.Face{Font: ft}
 	font := NewFont(face)
 	buffer.GuessSegmentProperties()
 	buffer.Shape(font, nil)
 
 	for i, pos := range buffer.Pos {
 		info := buffer.Info[i]
-		ext, ok := face.GlyphExtents(info.Glyph, 0, 0)
+		ext, ok := face.GlyphExtents(info.Glyph)
 		if !ok {
 			t.Fatalf("invalid glyph %d", info.Glyph)
 		}

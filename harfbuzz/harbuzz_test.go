@@ -5,10 +5,12 @@ import (
 	"log"
 	"testing"
 
+	tttestdata "github.com/benoitkugler/go-opentype-testdata/data"
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
+	"github.com/benoitkugler/go-opentype/loader"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
-	tttestdata "github.com/benoitkugler/textlayout-testdata/truetype"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 func check(err error) {
@@ -35,26 +37,33 @@ func assertEqualInt32(t *testing.T, got, expected int32) {
 	}
 }
 
-// opens truetype fonts from truetype testdata.
-func openFontFileTT(filename string) *tt.Font {
+// opens truetype fonts from opentype testdata.
+func openFontFileTT(t *testing.T, filename string) *font.Font {
 	f, err := tttestdata.Files.ReadFile(filename)
-	check(err)
+	tu.AssertNoErr(t, err)
 
-	font, err := tt.Parse(bytes.NewReader(f))
-	check(err)
+	fp, err := loader.NewLoader(bytes.NewReader(f))
+	tu.AssertNoErr(t, err)
 
-	return font
+	out, err := font.NewFont(fp)
+	tu.AssertNoErr(t, err)
+
+	return out
 }
 
-// opens truetype fonts from harfbuzz testdata.
-func openFontFile(filename string) *tt.Font {
+// opens truetype fonts from harfbuzz testdata,
+// expecting a single file
+func openFontFile(t testing.TB, filename string) *font.Font {
 	f, err := testdata.Files.ReadFile(filename)
-	check(err)
+	tu.AssertNoErr(t, err)
 
-	font, err := tt.Parse(bytes.NewReader(f))
-	check(err)
+	fp, err := loader.NewLoader(bytes.NewReader(f))
+	tu.AssertNoErr(t, err)
 
-	return font
+	out, err := font.NewFont(fp)
+	tu.AssertNoErr(t, err)
+
+	return out
 }
 
 func TestDirection(t *testing.T) {
@@ -110,16 +119,16 @@ func TestTypesLanguage(t *testing.T) {
 func TestParseVariations(t *testing.T) {
 	datas := [...]struct {
 		input    string
-		expected tt.Variation
+		expected font.Variation
 	}{
-		{" frea=45.78", tt.Variation{Tag: tt.MustNewTag("frea"), Value: 45.78}},
-		{"G45E=45", tt.Variation{Tag: tt.MustNewTag("G45E"), Value: 45}},
-		{"fAAD 45.78", tt.Variation{Tag: tt.MustNewTag("fAAD"), Value: 45.78}},
-		{"fr 45.78", tt.Variation{Tag: tt.MustNewTag("fr  "), Value: 45.78}},
-		{"fr=45.78", tt.Variation{Tag: tt.MustNewTag("fr  "), Value: 45.78}},
-		{"fr=-45.4", tt.Variation{Tag: tt.MustNewTag("fr  "), Value: -45.4}},
-		{"'fr45'=-45.4", tt.Variation{Tag: tt.MustNewTag("fr45"), Value: -45.4}}, // with quotes
-		{`"frZD"=-45.4`, tt.Variation{Tag: tt.MustNewTag("frZD"), Value: -45.4}}, // with quotes
+		{" frea=45.78", font.Variation{Tag: loader.MustNewTag("frea"), Value: 45.78}},
+		{"G45E=45", font.Variation{Tag: loader.MustNewTag("G45E"), Value: 45}},
+		{"fAAD 45.78", font.Variation{Tag: loader.MustNewTag("fAAD"), Value: 45.78}},
+		{"fr 45.78", font.Variation{Tag: loader.MustNewTag("fr  "), Value: 45.78}},
+		{"fr=45.78", font.Variation{Tag: loader.MustNewTag("fr  "), Value: 45.78}},
+		{"fr=-45.4", font.Variation{Tag: loader.MustNewTag("fr  "), Value: -45.4}},
+		{"'fr45'=-45.4", font.Variation{Tag: loader.MustNewTag("fr45"), Value: -45.4}}, // with quotes
+		{`"frZD"=-45.4`, font.Variation{Tag: loader.MustNewTag("frZD"), Value: -45.4}}, // with quotes
 	}
 	for _, data := range datas {
 		out, err := ParseVariation(data.input)
@@ -149,19 +158,19 @@ func TestParseFeature(t *testing.T) {
 		"aalt[3:5]=2",
 	}
 	expecteds := [...]Feature{
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 0, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 0, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("aalt"), Value: 2, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 5, End: FeatureGlobalEnd},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 0, End: 5},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 3, End: 5},
-		{Tag: tt.MustNewTag("kern"), Value: 1, Start: 3, End: 4},
-		{Tag: tt.MustNewTag("aalt"), Value: 2, Start: 3, End: 5},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 0, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 0, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("aalt"), Value: 2, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 5, End: FeatureGlobalEnd},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 0, End: 5},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 3, End: 5},
+		{Tag: loader.MustNewTag("kern"), Value: 1, Start: 3, End: 4},
+		{Tag: loader.MustNewTag("aalt"), Value: 2, Start: 3, End: 5},
 	}
 	for i, input := range inputs {
 		f, err := ParseFeature(input)

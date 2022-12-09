@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/benoitkugler/go-opentype/language"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from harfbuzz/test/api/test-ot-tag.c Copyright © 2011  Google, Inc. Behdad Esfahbod
@@ -19,24 +19,21 @@ func assertEqualTag(t *testing.T, t1, t2 tables.Tag) {
 /* https://docs.microsoft.com/en-us/typography/opentype/spec/scripttags */
 
 func testSimpleTags(t *testing.T, s string, script language.Script) {
-	//    g_test_message ("Testing script %c%c%c%c: tag %s", HB_UNTAG (hb_script_to_iso15924_tag (script)), s);
-	tag := tt.MustNewTag(s)
+	tag := loader.MustNewTag(s)
 
 	tags, _ := NewOTTagsFromScriptAndLanguage(script, "")
 
 	if len(tags) != 0 {
 		assertEqualTag(t, tags[0], tag)
 	} else {
-		assertEqualTag(t, tt.MustNewTag("DFLT"), tag)
+		assertEqualTag(t, loader.MustNewTag("DFLT"), tag)
 	}
 }
 
 func testScriptTagsFromLanguage(t *testing.T, s, langS string, script language.Script) {
-	// t.Logf("Testing script %s: script tag %s, language tag %s", script, s, langS)
-
 	var tag tables.Tag
 	if s != "" {
-		tag = tt.MustNewTag(s)
+		tag = loader.MustNewTag(s)
 	}
 
 	tags, _ := NewOTTagsFromScriptAndLanguage(script, language.NewLanguage(langS))
@@ -47,10 +44,9 @@ func testScriptTagsFromLanguage(t *testing.T, s, langS string, script language.S
 }
 
 func testIndicTags(t *testing.T, s1, s2, s3 string, script language.Script) {
-	//    g_test_message ("Testing script %c%c%c%c: USE tag %s, new tag %s, old tag %s", HB_UNTAG (hb_script_to_iso15924_tag (script)), s1, s2, s3);
-	tag1 := tt.MustNewTag(s1)
-	tag2 := tt.MustNewTag(s2)
-	tag3 := tt.MustNewTag(s3)
+	tag1 := loader.MustNewTag(s1)
+	tag2 := loader.MustNewTag(s2)
+	tag3 := loader.MustNewTag(s3)
 
 	tags, _ := NewOTTagsFromScriptAndLanguage(script, "")
 
@@ -58,17 +54,10 @@ func testIndicTags(t *testing.T, s1, s2, s3 string, script language.Script) {
 	assertEqualTag(t, tags[0], tag1)
 	assertEqualTag(t, tags[1], tag2)
 	assertEqualTag(t, tags[2], tag3)
-
-	// assertEqualInt(t, hb_ot_tag_to_script(tag1), script)
-	// assertEqualInt(t, hb_ot_tag_to_script(tag2), script)
-	// assertEqualInt(t, hb_ot_tag_to_script(tag3), script)
 }
 
 func TestOtTagScriptDegenerate(t *testing.T) {
-	//    hb_tag_t t[2];
-	//    unsigned int count = 2;
-
-	assertEqualTag(t, tt.MustNewTag("DFLT"), tagDefaultScript)
+	assertEqualTag(t, loader.MustNewTag("DFLT"), tagDefaultScript)
 
 	/* HIRAGANA and KATAKANA both map to 'kana' */
 	testSimpleTags(t, "kana", language.Katakana)
@@ -76,12 +65,12 @@ func TestOtTagScriptDegenerate(t *testing.T) {
 	tags, _ := NewOTTagsFromScriptAndLanguage(language.Hiragana, "")
 
 	assertEqualInt(t, len(tags), 1)
-	assertEqualTag(t, tags[0], tt.MustNewTag("kana"))
+	assertEqualTag(t, tags[0], loader.MustNewTag("kana"))
 
 	testSimpleTags(t, "DFLT", 0)
 
 	/* Spaces are replaced */
-	// assertEqualInt(t, hb_ot_tag_to_script(tt.MustNewTag("be  ")), hb_script_from_string("Beee", -1))
+	// assertEqualInt(t, hb_ot_tag_to_script(loader.MustNewTag("be  ")), hb_script_from_string("Beee", -1))
 }
 
 func TestOtTagScriptSimple(t *testing.T) {
@@ -157,74 +146,32 @@ func TestOtTagScriptIndic(t *testing.T) {
 
 func testLanguageTwoWay(t *testing.T, tagS, langS string) {
 	lang := language.NewLanguage(langS)
-	tag := tt.MustNewTag(tagS)
-
-	// fmt.Printf("Testing language %s <-> tag %s\n", langS, tag_s)
+	tag := loader.MustNewTag(tagS)
 
 	_, tags := NewOTTagsFromScriptAndLanguage(0, lang)
 
 	if len(tags) != 0 {
 		assertEqualTag(t, tag, tags[0])
 	} else {
-		assertEqualTag(t, tag, tt.MustNewTag("dflt"))
+		assertEqualTag(t, tag, loader.MustNewTag("dflt"))
 	}
-	// g_assert(lang == hb_ot_tag_to_language(tag))
 }
 
 func testTagFromLanguage(t *testing.T, tagS, langS string) {
 	lang := language.NewLanguage(langS)
-	tag := tt.MustNewTag(tagS)
-
-	// fmt.Printf("Testing language %s -> tag %s\n", langS, tag_s)
+	tag := loader.MustNewTag(tagS)
 
 	_, tags := NewOTTagsFromScriptAndLanguage(0, lang)
 
 	if len(tags) != 0 {
 		assertEqualTag(t, tag, tags[0])
 	} else {
-		assertEqualTag(t, tag, tt.MustNewTag("dflt"))
+		assertEqualTag(t, tag, loader.MustNewTag("dflt"))
 	}
 }
 
-//  static void
-//  test_tag_to_language (tag_s string, langS string)
-//  {
-//    hb_language_t lang = language.NewLanguage (langS, -1);
-//    hb_tag_t tag = tt.MustNewTag (tag_s);
-
-//    g_test_message ("Testing tag %s -> language %s", tag_s, langS);
-
-//    g_assert (lang == hb_ot_tag_to_language (tag));
-//  }
-
-//  static void
-//  test_tags_to_script_and_language (s stringcript_tag_s,
-// 				   const char *lang_tag_s,
-// 				   s stringcript_s,
-// 				   langS string)
-//  {
-//    hb_script_t actual_script[1];
-//    hb_language_t actual_lang[1];
-//    hb_tag_t script_tag = tt.MustNewTag (script_tag_s);
-//    hb_tag_t lang_tag = tt.MustNewTag (lang_tag_s);
-//    hb_ot_tags_to_script_and_language (script_tag, lang_tag, actual_script, actual_lang);
-//    assertEqualInt (t,*actual_script, ==, tt.MustNewTag (script_s));
-//    g_assert_cmpstr (languageToString (*actual_lang), ==, langS);
-//  }
-
-//  static void
-//  test_ot_tags_to_script_and_language (void)
-//  {
-//    test_tags_to_script_and_language ("DFLT", "ENG", "", "en-x-hbsc-44464c54");
-//    test_tags_to_script_and_language ("latn", "ENG", "Latn", "en");
-//    test_tags_to_script_and_language ("deva", "MAR", "Deva", "mr-x-hbsc-64657661");
-//    test_tags_to_script_and_language ("dev2", "MAR", "Deva", "mr-x-hbsc-64657632");
-//    test_tags_to_script_and_language ("dev3", "MAR", "Deva", "mr");
-//    test_tags_to_script_and_language ("qaa", "QTZ0", "Qaaa", "x-hbot-51545a30-hbsc-71616120");
-//  }
-
 func TestOtTagLanguage(t *testing.T) {
-	assertEqualInt(t, int(tt.MustNewTag("dflt")), int(tagDefaultLanguage))
+	assertEqualInt(t, int(loader.MustNewTag("dflt")), int(tagDefaultLanguage))
 	testLanguageTwoWay(t, "dflt", "")
 
 	testLanguageTwoWay(t, "ALT ", "alt")
@@ -444,7 +391,7 @@ func testTags(t *testing.T, script language.Script, langS string, expectedScript
 	assertEqualInt(t, len(languageTags), expectedLanguageCount)
 
 	for i, s := range expected {
-		expectedTag := tt.MustNewTag(s)
+		expectedTag := loader.MustNewTag(s)
 		var actualTag tables.Tag
 		if i < expectedScriptCount {
 			actualTag = scriptTags[i]
