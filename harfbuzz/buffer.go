@@ -3,8 +3,8 @@ package harfbuzz
 import (
 	"math"
 
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 /* ported from harfbuzz/src/hb-buffer.hh and hb-buffer.h

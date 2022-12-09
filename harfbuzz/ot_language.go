@@ -3,8 +3,8 @@ package harfbuzz
 import (
 	"strings"
 
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 type langTag struct {

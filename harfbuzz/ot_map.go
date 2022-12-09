@@ -6,8 +6,8 @@ import (
 	"math/bits"
 	"sort"
 
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/tables"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from harfbuzz/src/hb-ot-map.cc, hb-ot-map.hh Copyright © 2009,2010  Red Hat, Inc. 2010,2011,2013  Google, Inc. Behdad Esfahbod
@@ -52,7 +52,7 @@ type stageInfo struct {
 }
 
 type otMapBuilder struct {
-	tables        *tt.LayoutTables
+	tables        *font.Font
 	props         SegmentProperties
 	stages        [2][]stageInfo
 	featureInfos  []featureInfo
@@ -63,13 +63,7 @@ type otMapBuilder struct {
 	foundScript   [2]bool
 }
 
-//  void hb_ot_map_t::collect_lookups (uint tableIndex, hb_set_t *lookups_out) const
-//  {
-//    for (uint i = 0; i < lookups[tableIndex].length; i++)
-// 	 lookups_out.add (lookups[tableIndex][i].index);
-//  }
-
-func newOtMapBuilder(tables *tt.LayoutTables, props SegmentProperties) otMapBuilder {
+func newOtMapBuilder(tables *font.Font, props SegmentProperties) otMapBuilder {
 	var out otMapBuilder
 
 	out.tables = tables
@@ -79,11 +73,11 @@ func newOtMapBuilder(tables *tt.LayoutTables, props SegmentProperties) otMapBuil
 	* features not available in either table and not waste precious bits for them. */
 	scriptTags, languageTags := NewOTTagsFromScriptAndLanguage(props.Script, props.Language)
 
-	out.scriptIndex[0], out.chosenScript[0], out.foundScript[0] = SelectScript(&tables.GSUB.TableLayout, scriptTags)
-	out.languageIndex[0], _ = SelectLanguage(&tables.GSUB.TableLayout, out.scriptIndex[0], languageTags)
+	out.scriptIndex[0], out.chosenScript[0], out.foundScript[0] = SelectScript(&tables.GSUB.Layout, scriptTags)
+	out.languageIndex[0], _ = SelectLanguage(&tables.GSUB.Layout, out.scriptIndex[0], languageTags)
 
-	out.scriptIndex[1], out.chosenScript[1], out.foundScript[1] = SelectScript(&tables.GPOS.TableLayout, scriptTags)
-	out.languageIndex[1], _ = SelectLanguage(&tables.GPOS.TableLayout, out.scriptIndex[1], languageTags)
+	out.scriptIndex[1], out.chosenScript[1], out.foundScript[1] = SelectScript(&tables.GPOS.Layout, scriptTags)
+	out.languageIndex[1], _ = SelectLanguage(&tables.GPOS.Layout, out.scriptIndex[1], languageTags)
 
 	return out
 }
@@ -138,7 +132,7 @@ func (mb *otMapBuilder) compile(m *otMap, key otShapePlanKey) {
 	)
 
 	gsub, gpos := mb.tables.GSUB, mb.tables.GPOS
-	tables := [2]*tt.TableLayout{&gsub.TableLayout, &gpos.TableLayout}
+	tables := [2]*font.Layout{&gsub.Layout, &gpos.Layout}
 
 	m.chosenScript = mb.chosenScript
 	m.foundScript = mb.foundScript
@@ -417,7 +411,7 @@ func (m *otMap) getStageLookups(tableIndex, stage int) []lookupMap {
 	return m.lookups[tableIndex][start:end]
 }
 
-func (m *otMap) addLookups(table *tt.TableLayout, tableIndex int, featureIndex uint16, variationsIndex int,
+func (m *otMap) addLookups(table *font.Layout, tableIndex int, featureIndex uint16, variationsIndex int,
 	mask GlyphMask, autoZwnj, autoZwj, random bool,
 ) {
 	lookupIndices := getFeatureLookupsWithVar(table, featureIndex, variationsIndex)

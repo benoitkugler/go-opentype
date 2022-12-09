@@ -3,7 +3,7 @@ package harfbuzz
 import (
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	ucd "github.com/benoitkugler/textlayout/unicodedata"
+	ucd "github.com/benoitkugler/go-opentype/unicodedata"
 )
 
 // ported from harfbuzz/src/hb-ot-shape-complex-hangul.cc Copyright © 2013  Google, Inc. Behdad Esfahbod

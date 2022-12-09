@@ -3,9 +3,9 @@ package harfbuzz
 import (
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/tables"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 // ported from harfbuzz/test/api/test-ot-tag.c Copyright © 2011  Google, Inc. Behdad Esfahbod

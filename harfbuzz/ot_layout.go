@@ -1,9 +1,9 @@
 package harfbuzz
 
 import (
+	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	tt "github.com/benoitkugler/textlayout/fonts/truetype"
 )
 
 // ported from src/hb-ot-layout.cc, hb-ot-layout.hh
@@ -114,9 +114,9 @@ func (c *otApplyContext) applyBackward(accel *otLayoutLookupAccelerator) bool {
 // tests whether a face includes any state-machine kerning in the 'kern' table.
 //
 // Does NOT examine the GPOS table.
-func hasMachineKerning(kern tt.TableKernx) bool {
+func hasMachineKerning(kern font.Kernx) bool {
 	for _, subtable := range kern {
-		if _, isType1 := subtable.Data.(tt.Kern1); isType1 {
+		if _, isType1 := subtable.Data.(font.Kern1); isType1 {
 			return true
 		}
 	}
@@ -129,7 +129,7 @@ func hasMachineKerning(kern tt.TableKernx) bool {
 // vertical text) in the 'kern' table.
 //
 // Does NOT examine the GPOS table.
-func hasCrossKerning(kern tt.TableKernx) bool {
+func hasCrossKerning(kern font.Kernx) bool {
 	for _, subtable := range kern {
 		if subtable.IsCrossStream() {
 			return true
@@ -155,7 +155,7 @@ var otTagLatinScript = loader.NewTag('l', 'a', 't', 'n')
 //
 // An additional boolean if returned : it is `true` if one of the requested scripts is selected, or `false` if a fallback
 // script is selected or if no scripts are selected.
-func SelectScript(table *tt.TableLayout, scriptTags []tables.Tag) (int, tables.Tag, bool) {
+func SelectScript(table *font.Layout, scriptTags []tables.Tag) (int, tables.Tag, bool) {
 	for _, tag := range scriptTags {
 		if scriptIndex := table.FindScript(tag); scriptIndex != -1 {
 			return scriptIndex, tag, true
@@ -186,7 +186,7 @@ func SelectScript(table *tt.TableLayout, scriptTags []tables.Tag) (int, tables.T
 // It not found, the `dflt` language tag is searched.
 // Return `true` if the requested language tag is found, `false` otherwise.
 // If `scriptIndex` is `NoScriptIndex` or if no language is found, `DefaultLanguageIndex` is returned.
-func SelectLanguage(table *tt.TableLayout, scriptIndex int, languageTags []tables.Tag) (int, bool) {
+func SelectLanguage(table *font.Layout, scriptIndex int, languageTags []tables.Tag) (int, bool) {
 	if scriptIndex == NoScriptIndex {
 		return DefaultLanguageIndex, false
 	}
@@ -207,7 +207,7 @@ func SelectLanguage(table *tt.TableLayout, scriptIndex int, languageTags []table
 	return DefaultLanguageIndex, false
 }
 
-func findFeature(g *tt.TableLayout, featureTag tables.Tag) uint16 {
+func findFeature(g *font.Layout, featureTag tables.Tag) uint16 {
 	if index, ok := g.FindFeatureIndex(featureTag); ok {
 		return index
 	}
@@ -217,13 +217,13 @@ func findFeature(g *tt.TableLayout, featureTag tables.Tag) uint16 {
 // Fetches the index of a given feature tag in the specified face's GSUB table
 // or GPOS table, underneath the specified script and language.
 // Return `NoFeatureIndex` it the the feature is not found.
-func FindFeatureForLang(table *tt.TableLayout, scriptIndex, languageIndex int, featureTag tables.Tag) uint16 {
+func FindFeatureForLang(table *font.Layout, scriptIndex, languageIndex int, featureTag tables.Tag) uint16 {
 	if scriptIndex == NoScriptIndex {
 		return NoFeatureIndex
 	}
 
 	l := table.Scripts[scriptIndex].GetLangSys(uint16(languageIndex))
-	for _, fIndex := range l.Features {
+	for _, fIndex := range l.FeatureIndices {
 		if featureTag == table.Features[fIndex].Tag {
 			return fIndex
 		}
@@ -234,12 +234,12 @@ func FindFeatureForLang(table *tt.TableLayout, scriptIndex, languageIndex int, f
 
 // Fetches the tag of a requested feature index in the given layout table,
 // underneath the specified script and language. Returns -1 if no feature is requested.
-func getRequiredFeature(g *tt.TableLayout, scriptIndex, languageIndex int) (uint16, tables.Tag) {
+func getRequiredFeature(g *font.Layout, scriptIndex, languageIndex int) (uint16, tables.Tag) {
 	if scriptIndex == NoScriptIndex || languageIndex == DefaultLanguageIndex {
 		return NoFeatureIndex, 0
 	}
 
-	l := g.Scripts[scriptIndex].Languages[languageIndex]
+	l := g.Scripts[scriptIndex].LangSys[languageIndex]
 	if l.RequiredFeatureIndex == 0xFFFF {
 		return NoFeatureIndex, 0
 	}
@@ -250,20 +250,20 @@ func getRequiredFeature(g *tt.TableLayout, scriptIndex, languageIndex int) (uint
 // getFeatureLookupsWithVar fetches a list of all lookups enumerated for the specified feature, in
 // the given table, enabled at the specified variations index.
 // it returns the basic feature if `variationsIndex == noVariationsIndex`
-func getFeatureLookupsWithVar(table *tt.TableLayout, featureIndex uint16, variationsIndex int) []uint16 {
+func getFeatureLookupsWithVar(table *font.Layout, featureIndex uint16, variationsIndex int) []uint16 {
 	if featureIndex == NoFeatureIndex {
 		return nil
 	}
 
 	if variationsIndex == noVariationsIndex { // just fetch the feature
-		return table.Features[featureIndex].LookupIndices
+		return table.Features[featureIndex].LookupListIndices
 	}
 
 	// hook the variations
-	subs := table.FeatureVariations[variationsIndex].FeatureSubstitutions
+	subs := table.FeatureVariations[variationsIndex].Substitutions.Substitutions
 	for _, sub := range subs {
 		if sub.FeatureIndex == featureIndex {
-			return sub.AlternateFeature.LookupIndices
+			return sub.AlternateFeature.LookupListIndices
 		}
 	}
 	return nil

@@ -3,7 +3,7 @@ package harfbuzz
 import (
 	"testing"
 
-	"github.com/benoitkugler/textlayout/language"
+	"github.com/benoitkugler/go-opentype/language"
 )
 
 // ported from harfbuzz/test/api/test-buffer.c Copyright © 2011  Google, Inc. Behdad Esfahbod

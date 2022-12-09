@@ -17,9 +17,9 @@ import (
 
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/api/font"
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 // based on upstream commit 449c4296a11a8b3d3882d4a4d6705281f5ff52e5

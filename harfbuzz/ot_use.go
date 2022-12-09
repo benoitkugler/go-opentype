@@ -5,7 +5,7 @@ import (
 
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	ucd "github.com/benoitkugler/textlayout/unicodedata"
+	ucd "github.com/benoitkugler/go-opentype/unicodedata"
 )
 
 // ported from harfbuzz/src/hb-ot-shape-complex-use.cc Copyright © 2015  Mozilla Foundation. Google, Inc. Jonathan Kew, Behdad Esfahbod

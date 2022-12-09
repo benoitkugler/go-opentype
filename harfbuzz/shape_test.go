@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/language"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
 	"github.com/benoitkugler/textlayout/fonts"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 // ported from harfbuzz/util/hb-shape.cc, main-font-text.hh Copyright © 2010, 2011,2012  Google, Inc. Behdad Esfahbod

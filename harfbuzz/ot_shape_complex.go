@@ -1,9 +1,9 @@
 package harfbuzz
 
 import (
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 type zeroWidthMarks uint8

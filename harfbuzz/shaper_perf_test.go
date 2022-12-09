@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/language"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 // ported from harfbuzz/perf

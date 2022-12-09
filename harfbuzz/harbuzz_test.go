@@ -5,10 +5,10 @@ import (
 	"log"
 	"testing"
 
+	"github.com/benoitkugler/go-opentype/language"
 	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
 	tttestdata "github.com/benoitkugler/textlayout-testdata/truetype"
 	tt "github.com/benoitkugler/textlayout/fonts/truetype"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 func check(err error) {

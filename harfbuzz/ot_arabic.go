@@ -5,10 +5,10 @@ import (
 	"sort"
 
 	"github.com/benoitkugler/go-opentype/api/font"
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
-	ucd "github.com/benoitkugler/textlayout/unicodedata"
+	ucd "github.com/benoitkugler/go-opentype/unicodedata"
 )
 
 // ported from harfbuzz/src/hb-ot-shape-complex-arabic.cc, hb-ot-shape-complex-arabic-fallback.hh Copyright © 2010,2012  Google, Inc. Behdad Esfahbod

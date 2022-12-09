@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"strings"
 
+	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
-	"github.com/benoitkugler/textlayout/language"
 )
 
 // ported from harfbuzz/src/hb-ot-tag.cc Copyright © 2009  Red Hat, Inc. 2011  Google, Inc. Behdad Esfahbod, Roozbeh Pournader
