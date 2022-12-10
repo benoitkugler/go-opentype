@@ -288,7 +288,7 @@ func newPost(pst tables.Post) (post, error) {
 		underlineThickness: float32(pst.UnderlineThickness),
 	}
 	switch names := pst.Names.(type) {
-	case tables.PostNames10, tables.PostNames30:
+	case tables.PostNames10:
 		out.names = postNames10or30{}
 	case tables.PostNames20:
 		var err error
@@ -296,6 +296,8 @@ func newPost(pst tables.Post) (post, error) {
 		if err != nil {
 			return out, err
 		}
+	case tables.PostNames30:
+		// no-op, do not use the post name tables
 	}
 	return out, nil
 }
