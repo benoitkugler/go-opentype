@@ -994,7 +994,10 @@ func (c *otApplyContext) applyLookupContext1(data tables.SequenceContextFormat1,
 
 func (c *otApplyContext) applyLookupContext2(data tables.SequenceContextFormat2, index int, glyphID GID) bool {
 	class, _ := data.ClassDef.Class(gID(glyphID))
-	ruleSet := data.ClassSeqRuleSet[class]
+	var ruleSet tables.SequenceRuleSet
+	if int(class) < len(data.ClassSeqRuleSet) {
+		ruleSet = data.ClassSeqRuleSet[class]
+	}
 	return c.applyRuleSet(ruleSet, matchClass(data.ClassDef))
 }
 
@@ -1026,7 +1029,10 @@ func (c *otApplyContext) applyLookupChainedContext1(data tables.ChainedSequenceC
 
 func (c *otApplyContext) applyLookupChainedContext2(data tables.ChainedSequenceContextFormat2, index int, glyphID GID) bool {
 	class, _ := data.InputClassDef.Class(gID(glyphID))
-	ruleSet := data.ChainedClassSeqRuleSet[class]
+	var ruleSet tables.ChainedClassSequenceRuleSet
+	if int(class) < len(data.ChainedClassSeqRuleSet) {
+		ruleSet = data.ChainedClassSeqRuleSet[class]
+	}
 	return c.applyChainRuleSet(ruleSet, [3]matcherFunc{
 		matchClass(data.BacktrackClassDef), matchClass(data.InputClassDef), matchClass(data.LookaheadClassDef),
 	})
