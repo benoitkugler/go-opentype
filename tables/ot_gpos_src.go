@@ -98,6 +98,7 @@ func (ps *PairSet) parsePairValueRecords(src []byte, fmt1, fmt2 ValueFormat) err
 			return fmt.Errorf("invalid pair set table: %s", err)
 		}
 	}
+	ps.PairValueRecords = out
 	return nil
 }
 
