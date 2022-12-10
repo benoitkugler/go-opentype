@@ -190,3 +190,21 @@ func TestKerx6(t *testing.T) {
 		tu.Assert(t, got == exp.kerning)
 	}
 }
+
+func TestMorxLig(t *testing.T) {
+	b, err := td.Files.ReadFile("toys/tables/morxLigature.bin")
+	tu.AssertNoErr(t, err)
+	mt, _, err := tables.ParseMorx(b, 2590)
+	tu.AssertNoErr(t, err)
+	morx := newMorx(mt)
+	tu.Assert(t, len(morx) == 1)
+	tu.Assert(t, len(morx[0].Subtables) == 16)
+
+	expectedLigActionLength := []int{36, 60, 24, 36, 52, 78, 21, 39, 16, 42, 252, 2090, 1248, 168, 226}
+	for i, st := range morx[0].Subtables[:14] {
+		lig, ok := st.Data.(MorxLigatureSubtable)
+		tu.Assert(t, ok)
+		fmt.Println(len(lig.LigatureAction))
+		tu.Assert(t, expectedLigActionLength[i] == len(lig.LigatureAction))
+	}
+}

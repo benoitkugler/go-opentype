@@ -151,16 +151,29 @@ const (
 // the LigActions length is not specified. Instead, we have to parse uint32 one by one
 // until we reach last action or reach EOF
 func (lig *MorxSubtableLigature) parseLigActions(src []byte, _ int) error {
-	if L := len(src); L < int(lig.ligActionOffset) {
+	// fetch the maximum start index
+	maxIndex := -1
+	for _, entry := range lig.Entries {
+		if entry.Flags&MLPerformAction == 0 {
+			continue
+		}
+		if index := int(entry.AsMorxLigature()); index > maxIndex {
+			maxIndex = index
+		}
+	}
+
+	if L := len(src); L < int(lig.ligActionOffset)+4*int(maxIndex+1) {
 		return fmt.Errorf("EOF: expected length: %d, got %d", lig.ligActionOffset, L)
 	}
+
+	// fetch the action table, up to the last entry
 	src = src[lig.ligActionOffset:]
 	for len(src) >= 4 { // stop gracefully if the last action was not found
 		action := binary.BigEndian.Uint32(src)
 		lig.LigActions = append(lig.LigActions, action)
 		src = src[4:]
 		// dont break before maxIndex
-		if action&MLActionLast != 0 {
+		if len(lig.LigActions) > maxIndex && action&MLActionLast != 0 {
 			break
 		}
 	}
