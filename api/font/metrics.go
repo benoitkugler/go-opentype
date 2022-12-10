@@ -377,15 +377,15 @@ func (f *Font) getExtentsFromCff1(glyph gID) (api.GlyphExtents, bool) {
 }
 
 func (f *Face) GlyphExtents(glyph GID) (api.GlyphExtents, bool) {
-	out, ok := f.getExtentsFromGlyf(gID(glyph))
+	out, ok := f.getExtentsFromSbix(gID(glyph), f.XPpem, f.YPpem)
+	if ok {
+		return out, ok
+	}
+	out, ok = f.getExtentsFromGlyf(gID(glyph))
 	if ok {
 		return out, ok
 	}
 	out, ok = f.getExtentsFromCff1(gID(glyph))
-	if ok {
-		return out, ok
-	}
-	out, ok = f.getExtentsFromSbix(gID(glyph), f.XPpem, f.YPpem)
 	if ok {
 		return out, ok
 	}

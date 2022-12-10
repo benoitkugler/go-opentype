@@ -338,8 +338,9 @@ func (sp *SinglePos) Sanitize() error {
 
 func (pp *PairPos) Sanitize() error {
 	if f1, isFormat1 := pp.Data.(PairPosData1); isFormat1 {
-		if exp, got := f1.coverage.Len(), len(f1.PairSets); exp != got {
-			return fmt.Errorf("GPOS: invalid PairPos1 sets count (%d != %d)", exp, got)
+		// there are fonts with to much PairSets : accept it
+		if exp, got := f1.coverage.Len(), len(f1.PairSets); exp > got {
+			return fmt.Errorf("GPOS: invalid PairPos1 sets count (%d > %d)", exp, got)
 		}
 	} else if f2, isFormat2 := pp.Data.(PairPosData2); isFormat2 {
 		if exp, got := f2.ClassDef1.Extent(), int(f2.class1Count); exp != got {

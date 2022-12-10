@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 )
 
 func Assert(t *testing.T, b bool) {

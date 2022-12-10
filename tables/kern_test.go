@@ -3,7 +3,7 @@ package tables
 import (
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 

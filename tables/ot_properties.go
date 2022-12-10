@@ -1,6 +1,8 @@
 package tables
 
-import "sort"
+import (
+	"sort"
+)
 
 func (c Coverage1) Index(gi GlyphID) (int, bool) {
 	num := len(c.Glyphs)

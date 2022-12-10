@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
@@ -358,4 +358,23 @@ func TestGDEFVarStore(t *testing.T) {
 
 	tu.Assert(t, len(gdef.ItemVarStore.VariationRegionList.VariationRegions) == 15)
 	tu.Assert(t, len(gdef.ItemVarStore.ItemVariationDatas) == 52)
+}
+
+func TestGPOS2_1(t *testing.T) {
+	fp := readFontFile(t, "toys/gpos/gpos2_1_font6.otf")
+
+	gposT, _, err := ParseLayout(readTable(t, fp, "GPOS"))
+	tu.AssertNoErr(t, err)
+
+	tu.Assert(t, len(gposT.LookupList.Lookups) == 1)
+	subtables, err := gposT.LookupList.Lookups[0].AsGPOSLookups()
+	tu.AssertNoErr(t, err)
+	tu.Assert(t, len(subtables) == 1)
+	pairpos, ok := subtables[0].(PairPos)
+	tu.Assert(t, ok)
+	data, ok := pairpos.Data.(PairPosData1)
+	tu.Assert(t, ok)
+	tu.Assert(t, data.ValueFormat1 == 1 && data.ValueFormat2 == 2)
+	tu.Assert(t, len(data.PairSets) == 1)
+	tu.Assert(t, len(data.PairSets[0].PairValueRecords) == 2)
 }

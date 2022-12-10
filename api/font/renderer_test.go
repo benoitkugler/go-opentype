@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 	"github.com/benoitkugler/go-opentype/tables"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )

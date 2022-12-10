@@ -9,7 +9,7 @@ import (
 	"github.com/benoitkugler/go-opentype/tables"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 )
 
 // wrap td.Files.ReadFile

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/opentype"
 	"github.com/benoitkugler/go-opentype/loader"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )
