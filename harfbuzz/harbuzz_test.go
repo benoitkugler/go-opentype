@@ -5,12 +5,12 @@ import (
 	"log"
 	"testing"
 
-	tttestdata "github.com/benoitkugler/go-opentype-testdata/data"
+	td "github.com/benoitkugler/go-opentype-testdata/harfbuzz"
+	otTD "github.com/benoitkugler/go-opentype-testdata/opentype"
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
 	tu "github.com/benoitkugler/go-opentype/testutils"
-	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
 )
 
 func check(err error) {
@@ -39,7 +39,9 @@ func assertEqualInt32(t *testing.T, got, expected int32) {
 
 // opens truetype fonts from opentype testdata.
 func openFontFileTT(t *testing.T, filename string) *font.Font {
-	f, err := tttestdata.Files.ReadFile(filename)
+	t.Helper()
+
+	f, err := otTD.Files.ReadFile(filename)
 	tu.AssertNoErr(t, err)
 
 	fp, err := loader.NewLoader(bytes.NewReader(f))
@@ -54,7 +56,7 @@ func openFontFileTT(t *testing.T, filename string) *font.Font {
 // opens truetype fonts from harfbuzz testdata,
 // expecting a single file
 func openFontFile(t testing.TB, filename string) *font.Font {
-	f, err := testdata.Files.ReadFile(filename)
+	f, err := td.Files.ReadFile(filename)
 	tu.AssertNoErr(t, err)
 
 	fp, err := loader.NewLoader(bytes.NewReader(f))

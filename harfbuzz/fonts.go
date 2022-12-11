@@ -1,8 +1,6 @@
 package harfbuzz
 
 import (
-	"fmt"
-
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/tables"
@@ -269,15 +267,6 @@ func (f *Font) getGlyphContourPointForOrigin(glyph GID, pointIndex uint16, direc
 	}
 
 	return x, y, ok
-}
-
-// Generates gidDDD if glyph has no name.
-func (f *Font) glyphToString(glyph GID) string {
-	if name := f.face.GlyphName(glyph); name != "" {
-		return name
-	}
-
-	return fmt.Sprintf("gid%d", glyph)
 }
 
 // ExtentsForDirection fetches the extents for a font in a text segment of the

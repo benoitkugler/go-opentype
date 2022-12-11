@@ -10,7 +10,7 @@ import (
 func (item *FeatureSettingName) mustParse(src []byte) {
 	_ = src[3] // early bound checking
 	item.Setting = binary.BigEndian.Uint16(src[0:])
-	item.NameIndex = int16(binary.BigEndian.Uint16(src[2:]))
+	item.NameIndex = binary.BigEndian.Uint16(src[2:])
 }
 
 func ParseFeat(src []byte) (Feat, int, error) {
@@ -54,7 +54,7 @@ func ParseFeatureName(src []byte, parentSrc []byte) (FeatureName, int, error) {
 	item.nSettings = binary.BigEndian.Uint16(src[2:])
 	offsetSettingTable := int(binary.BigEndian.Uint32(src[4:]))
 	item.FeatureFlags = binary.BigEndian.Uint16(src[8:])
-	item.NameIndex = int16(binary.BigEndian.Uint16(src[10:]))
+	item.NameIndex = binary.BigEndian.Uint16(src[10:])
 	n += 12
 
 	{

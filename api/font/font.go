@@ -368,11 +368,9 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 		}
 	}
 	raw, err = ld.RawTable(loader.MustNewTag("feat"))
-	if err == nil { // error only if the table is present and invalid
-		out.Feat, _, err = tables.ParseFeat(raw)
-		if err != nil {
-			return nil, err
-		}
+	if err == nil {
+		// accept corrupted 'feat' tables
+		out.Feat, _, _ = tables.ParseFeat(raw)
 	}
 
 	return &out, nil

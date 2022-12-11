@@ -15,11 +15,12 @@ import (
 	"strings"
 	"testing"
 
+	td "github.com/benoitkugler/go-opentype-testdata/harfbuzz"
 	"github.com/benoitkugler/go-opentype/api"
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
 	"github.com/benoitkugler/go-opentype/loader"
-	testdata "github.com/benoitkugler/textlayout-testdata/harfbuzz"
+	"github.com/benoitkugler/go-opentype/testutils"
 )
 
 // ported from harfbuzz/util/hb-shape.cc, main-font-text.hh Copyright © 2010, 2011,2012  Google, Inc. Behdad Esfahbod
@@ -33,6 +34,15 @@ type formatOptions struct {
 	hideClusters   bool
 	showExtents    bool
 	showFlags      bool
+}
+
+// Generates gidDDD if glyph has no name.
+func (f *Font) glyphToString(glyph GID) string {
+	if name := f.face.GlyphName(glyph); name != "" {
+		return name
+	}
+
+	return fmt.Sprintf("gid%d", glyph)
 }
 
 // return a compact representation of the buffer contents
@@ -117,7 +127,7 @@ func (fo *fontOptions) getFont() *Font {
 		check(errors.New("no font file specified"))
 	}
 
-	f, err := testdata.Files.ReadFile(fo.fontRef.File)
+	f, err := td.Files.ReadFile(fo.fontRef.File)
 	check(err)
 
 	fonts, err := loader.NewLoaders(bytes.NewReader(f))
@@ -681,7 +691,7 @@ func parseOptions(options string) (testOptions, error) {
 // in pratice, it seems useless to do shaping without
 // font, so we dont support it, meaning we skip this test
 func skipInvalidFontIndex(ft api.FontID) bool {
-	f, err := testdata.Files.ReadFile(ft.File)
+	f, err := td.Files.ReadFile(ft.File)
 	check(err)
 
 	fonts, err := loader.NewLoaders(bytes.NewReader(f))
@@ -722,7 +732,7 @@ func parseAndRunTest(t *testing.T, dir, line string, action testAction) {
 	splitHash := strings.Split(fontFileHash, "@")
 	fontFile := filepath.Join(dir, splitHash[0])
 	if len(splitHash) >= 2 {
-		ff, err := testdata.Files.ReadFile(fontFile)
+		ff, err := td.Files.ReadFile(fontFile)
 		check(err)
 
 		hash := sha1.Sum(ff)
@@ -753,7 +763,7 @@ func parseAndRunTest(t *testing.T, dir, line string, action testAction) {
 // opens and parses a test file containing
 // the font file, the unicode input and the expected result
 func processHarfbuzzTestFile(t *testing.T, dir, filename string, action testAction) {
-	f, err := testdata.Files.ReadFile(filename)
+	f, err := td.Files.ReadFile(filename)
 	check(err)
 
 	for _, line := range strings.Split(string(f), "\n") {
@@ -762,6 +772,10 @@ func processHarfbuzzTestFile(t *testing.T, dir, filename string, action testActi
 		}
 
 		// special case
+		if strings.Contains(line, "--shaper=fallback") {
+			// we do not support fallback shaper
+			continue
+		}
 		// fails since the FT and Harfbuzz implementations of GlyphVOrigin differ
 		// we prefer to match Harfbuzz implementation, so we replace
 		// these tests with same, using Harbufzz font funcs
@@ -776,7 +790,7 @@ func processHarfbuzzTestFile(t *testing.T, dir, filename string, action testActi
 }
 
 func dirFiles(t *testing.T, dir string) []string {
-	files, err := testdata.Files.ReadDir(dir)
+	files, err := td.Files.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -790,7 +804,7 @@ func dirFiles(t *testing.T, dir string) []string {
 func walkShapeTests(t *testing.T, action testAction) {
 	disabledTests := []string{
 		// requires proprietary fonts from the system (see the file)
-		"harfbuzz_reference/in-house/tests/macos.tests",
+		// "harfbuzz_reference/in-house/tests/macos.tests",
 
 		// already handled in emojis_test.go
 		"harfbuzz_reference/in-house/tests/emoji-clusters.tests",
@@ -856,28 +870,16 @@ func TestShapeExpected(t *testing.T) {
 }
 
 func TestDebug(t *testing.T) {
-	dir := "harfbuzz_reference/aots"
-	testString := `fonts/cmap4_font1.otf;--features="test" --no-clusters --no-glyph-names --no-positions --font-funcs=ot;U+0000,U+0001,U+0010,U+0011,U+0012,U+001E,U+001F,U+00C7,U+00C8,U+00CD,U+00D2,U+00D3,U+FFFF;[0|0|0|40|41|53|0|0|256|261|266|0|0]`
+	dir := "harfbuzz_reference/in-house"
+	testString := `macos/System/Library/Fonts/GeezaPro.ttc@ab26ea45dcaa5e1c5a958e42af10e10d330e7334;--font-funcs ot;U+0627,U+0644,U+0623,U+064E,U+0628,U+0652,U+062C,U+064E,U+062F,U+0650,U+064A,U+064E,U+0651,U+0629,U+0640,U+0627,U+0644,U+0639,U+064E,U+0631,U+064E,U+0628,U+0650,U+064A,U+064E,U+0651,U+0629;[u0629.final.tehMarbuta=26+713|u064e_u0651.shaddaFatha=23@0,-200+0|u064a.medial.yeh=23+656|u0650.kasra=21@80,290+80|u0628.initial.beh=21@-80,0+576|u064e.fatha=19@200,-570+200|u0631.final.reh=19@-200,0+702|u064e.fatha=17@200,-200+200|u0639.medial.ain=17@-200,0+738|u0644.initial.lam=16+515|u0627.final.alef=15+647|u0640.tatweel=14+449|u0629.final.tehMarbuta=13+713|u064e_u0651.shaddaFatha=10@0,-200+0|u064a.initial.yeh=10+656|u0650.kasra=8@80,570+80|u062f.final.dal=8@-80,0+822|u064e.fatha=6@290,-160+290|u062c.medial.jeem=6@-290,0+1069|u0652.sukun=4@0,-200+0|u0628.initial.beh=4+656|u064e.fatha=1@-372,120+-372|u0644_u0623.isolated.lamHamzaOnAlef=1@120,0+1282|u0627.alef=0+647]`
 
 	parseAndRunTest(t, dir, testString, func(t *testing.T, driver testOptions, dir, line, glyphsExpected string) {
 		runShapingTest(t, driver, dir, line, glyphsExpected, true)
 	})
 }
 
-func TestGraphite(t *testing.T) {
-	// expected inputs are computed with the reference harfbuzz binary
-	testsGraphite := []string{
-		`fonts/Simple-Graphite-Font.ttf;;0x0061,0x0062,0x0063;[a=0+462|B=1+676|C=2+694]`,
-		`fonts/Simple-Graphite-Font.ttf;--direction=r;0x0061,0x0062,0x0063;[C=2+694|B=1+676|a=0+462]`,
-	}
-	for _, test := range testsGraphite {
-		parseAndRunTest(t, ".", test, runOneTest)
-	}
-}
-
 func TestExample(t *testing.T) {
-	// ft := openFontFileTT("DejaVuSerif.ttf")
-	ft := openFontFileTT(t, "NotoSansArabic.ttf")
+	ft := openFontFileTT(t, "common/NotoSansArabic.ttf")
 	buffer := NewBuffer()
 
 	// runes := []rune("This is a line to shape..")
@@ -892,9 +894,8 @@ func TestExample(t *testing.T) {
 	for i, pos := range buffer.Pos {
 		info := buffer.Info[i]
 		ext, ok := face.GlyphExtents(info.Glyph)
-		if !ok {
-			t.Fatalf("invalid glyph %d", info.Glyph)
-		}
+		testutils.AssertC(t, ok, fmt.Sprintf("invalid glyph %d", info.Glyph))
+
 		fmt.Println(pos.XAdvance, pos.XOffset, ext.Width, ext.XBearing)
 	}
 }

@@ -61,7 +61,7 @@ func (state *AATStateTable) parseEntries(src []byte) (int, error) {
 
 	// newState is an offset: convert back to index
 	for i, entry := range state.Entries {
-		state.Entries[i].NewState = uint16((int(entry.NewState) - int(state.entryTable)) / int(state.StateSize))
+		state.Entries[i].NewState = uint16((int(entry.NewState) - int(state.stateArray)) / int(state.StateSize))
 	}
 
 	// the own header data stop at the entryTable offset

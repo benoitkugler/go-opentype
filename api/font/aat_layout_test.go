@@ -2,9 +2,11 @@ package font
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/opentype"
+	"github.com/benoitkugler/go-opentype/loader"
 	"github.com/benoitkugler/go-opentype/tables"
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )
@@ -207,4 +209,31 @@ func TestMorxLig(t *testing.T) {
 		fmt.Println(len(lig.LigatureAction))
 		tu.Assert(t, expectedLigActionLength[i] == len(lig.LigatureAction))
 	}
+}
+
+func TestKerx1(t *testing.T) {
+	b, err := td.Files.ReadFile("toys/tables/kern1.bin")
+	tu.AssertNoErr(t, err)
+	kt, _, err := tables.ParseKern(b)
+	tu.AssertNoErr(t, err)
+
+	kerx := newKernxFromKern(kt)
+	tu.Assert(t, len(kerx) == 12)
+
+	expectedEntriesLength := []int{79, 31, 25, 14, 45, 32, 37, 30, 37, 16, 31, 16}
+	for i, st := range kerx {
+		kern1, ok := st.Data.(Kern1)
+		tu.Assert(t, ok)
+		tu.Assert(t, expectedEntriesLength[i] == len(kern1.Machine.entries))
+	}
+}
+
+func TestTmp(t *testing.T) {
+	f, err := os.Open("/home/benoit/go/src/github.com/benoitkugler/go-opentype-testdata/harfbuzz/harfbuzz_reference/macos/System/Library/Fonts/Supplemental/Devanagari Sangam MN.ttc")
+	tu.AssertNoErr(t, err)
+	fonts, err := loader.NewLoaders(f)
+	tu.AssertNoErr(t, err)
+	kerx, err := fonts[0].RawTable(loader.MustNewTag("feat"))
+	tu.AssertNoErr(t, err)
+	os.WriteFile("feat.bin", kerx, os.ModePerm)
 }

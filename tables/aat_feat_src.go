@@ -15,10 +15,10 @@ type FeatureName struct {
 	nSettings    uint16               // The number of records in the setting name array.
 	SettingTable []FeatureSettingName `offsetSize:"Offset32" offsetRelativeTo:"Parent" arrayCount:"ComputedField-nSettings"` // Offset in bytes from the beginning of the 'feat' table to this feature's setting name array. The actual type of record this offset refers to will depend on the exclusivity value, as described below.
 	FeatureFlags uint16               // Single-bit flags associated with the feature type.
-	NameIndex    int16                // The name table index for the feature's name. This index has values greater than 255 and less than 32768.
+	NameIndex    uint16               // The name table index for the feature's name. This index has values greater than 255 and less than 32768.
 }
 
 type FeatureSettingName struct {
 	Setting   uint16 //	The setting.
-	NameIndex int16  //	The name table index for the setting's name. The nameIndex must be greater than 255 and less than 32768.
+	NameIndex uint16 //	The name table index for the setting's name. The nameIndex must be greater than 255 and less than 32768.
 }

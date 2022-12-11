@@ -395,3 +395,12 @@ func TestParseKerx(t *testing.T) {
 		}
 	}
 }
+
+func TestInvalidFeat(t *testing.T) {
+	// this is an invalid feat table, comming from a real font file (huh...)
+	file, err := td.Files.ReadFile("toys/tables/featInvalid.bin")
+	tu.AssertNoErr(t, err)
+
+	_, _, err = ParseFeat(file)
+	tu.Assert(t, err != nil)
+}
