@@ -195,7 +195,7 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 	morx, _, _ := tables.ParseMorx(raw, int(maxp.NumGlyphs))
 	out.Morx = newMorx(morx)
 
-	raw, err = ld.RawTable(loader.MustNewTag("kerx"))
+	raw, _ = ld.RawTable(loader.MustNewTag("kerx"))
 	kerx, _, _ := tables.ParseKerx(raw, int(maxp.NumGlyphs))
 	out.Kerx = newKernxFromKerx(kerx)
 
