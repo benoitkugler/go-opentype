@@ -34,9 +34,8 @@ func TestDebug(t *testing.T) {
 	// when debugging
 	t.Skip()
 
-	dir := "harfbuzz_reference/in-house"
-	testString := `macos/System/Library/Fonts/GeezaPro.ttc@ab26ea45dcaa5e1c5a958e42af10e10d330e7334;--font-funcs ot;U+0627,U+0644,U+0623,U+064E,U+0628,U+0652,U+062C,U+064E,U+062F,U+0650,U+064A,U+064E,U+0651,U+0629,U+0640,U+0627,U+0644,U+0639,U+064E,U+0631,U+064E,U+0628,U+0650,U+064A,U+064E,U+0651,U+0629;[u0629.final.tehMarbuta=26+713|u064e_u0651.shaddaFatha=23@0,-200+0|u064a.medial.yeh=23+656|u0650.kasra=21@80,290+80|u0628.initial.beh=21@-80,0+576|u064e.fatha=19@200,-570+200|u0631.final.reh=19@-200,0+702|u064e.fatha=17@200,-200+200|u0639.medial.ain=17@-200,0+738|u0644.initial.lam=16+515|u0627.final.alef=15+647|u0640.tatweel=14+449|u0629.final.tehMarbuta=13+713|u064e_u0651.shaddaFatha=10@0,-200+0|u064a.initial.yeh=10+656|u0650.kasra=8@80,570+80|u062f.final.dal=8@-80,0+822|u064e.fatha=6@290,-160+290|u062c.medial.jeem=6@-290,0+1069|u0652.sukun=4@0,-200+0|u0628.initial.beh=4+656|u064e.fatha=1@-372,120+-372|u0644_u0623.isolated.lamHamzaOnAlef=1@120,0+1282|u0627.alef=0+647]`
-
+	dir := "harfbuzz_reference/aots/tests"
+	testString := `../fonts/gpos4_lookupflag_f1.otf;--features="test" --no-clusters --no-glyph-names --ned;U+0011,U+0012,U+0011,U+0013,U+0011;[17|18@1500,0|17@3000,0|19@4500,0|17@4500,0]`
 	testD := newTestData(t, dir, testString)
 	runShapingTest(t, testD, true)
 }
@@ -424,8 +423,7 @@ func runShapingTest(t *testing.T, test testData, skipVerify bool) {
 	got := test.input.shape(t, !skipVerify && verify)
 	got = strings.TrimSpace(got)
 
-	fontFile := test.input.fontOpts.fontRef.File
 	if verify {
-		tu.AssertC(t, test.expected == got, fmt.Sprintf("%s expected :\n%s\n got \n%s", fontFile, test.expected, got))
+		tu.AssertC(t, test.expected == got, fmt.Sprintf("%s\n%s\n expected :\n%s\n got \n%s", test.originDir, test.originLine, test.expected, got))
 	}
 }

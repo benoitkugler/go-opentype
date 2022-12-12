@@ -94,6 +94,10 @@ func readTestFile(t testing.TB, filename string) (out []testData) {
 
 // testData represents one line of a .tests file
 type testData struct {
+	// the test line yielding this test
+	originDir  string
+	originLine string
+
 	input    testInput
 	expected string
 }
@@ -113,7 +117,7 @@ func newTestData(t testing.TB, dir string, line string) testData {
 
 	input.text = parseUnicodes(t, unicodes)
 
-	return testData{input: input, expected: expected}
+	return testData{originDir: dir, originLine: line, input: input, expected: expected}
 }
 
 // Step 1 - parse the input test string
