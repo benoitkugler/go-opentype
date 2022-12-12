@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/benoitkugler/go-opentype/api"
-	ps "github.com/benoitkugler/go-opentype/api/cff/interpreter"
+	ps "github.com/benoitkugler/go-opentype/api/font/cff/interpreter"
 	"github.com/benoitkugler/go-opentype/tables"
 )
 
