@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/benoitkugler/go-opentype/language"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 // ported from harfbuzz/test/api/test-buffer.c Copyright © 2011  Google, Inc. Behdad Esfahbod
@@ -38,52 +39,25 @@ func newTestBuffer(kind int) *Buffer {
 func testBufferProperties(b *Buffer, t *testing.T) {
 	/* test default properties */
 
-	assert(t, b.Props.Direction == 0)
-	assert(t, b.Props.Script == 0)
-	assert(t, b.Props.Language == "")
+	tu.Assert(t, b.Props.Direction == 0)
+	tu.Assert(t, b.Props.Script == 0)
+	tu.Assert(t, b.Props.Language == "")
 
 	b.Props.Language = language.NewLanguage("fa")
-	assert(t, b.Props.Language == language.NewLanguage("Fa"))
+	tu.Assert(t, b.Props.Language == language.NewLanguage("Fa"))
 
-	/* test clear_contents clears all these properties: */
+	// test Clear clears all properties
+	b.Props.Direction = RightToLeft
+	b.Props.Script = language.Arabic
+	b.Props.Language = language.NewLanguage("fa")
+	b.Flags = Bot
+	b.Clear()
 
-	//    hb_buffer_clear_contents (b);
-
-	//    assert (t,hb_buffer_get_unicode_funcs (b) == ufuncs);
-	//    assert (t,hb_buffer_get_direction (b) == HB_DIRECTION_INVALID);
-	//    assert (t,hb_buffer_get_script (b) == HB_SCRIPT_INVALID);
-	//    assert (t,hb_buffer_get_language (b) == NULL);
-
-	/* but not these: */
-
-	//    assert (t,hb_buffer_get_flags (b) != HB_BUFFER_FLAGS_DEFAULT);
-	//    assert (t,hb_buffer_get_replacement_codepoint (b) != HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT);
-
-	/* test reset clears all properties */
-
-	//    hb_buffer_set_direction (b, HB_DIRECTION_RTL);
-	//    assert (t,hb_buffer_get_direction (b) == HB_DIRECTION_RTL);
-
-	//    hb_buffer_set_script (b, HB_SCRIPT_ARABIC);
-	//    assert (t,hb_buffer_get_script (b) == HB_SCRIPT_ARABIC);
-
-	//    hb_buffer_set_language (b, hb_language_from_string ("fa", -1));
-	//    assert (t,hb_buffer_get_language (b) == hb_language_from_string ("Fa", -1));
-
-	//    hb_buffer_set_flags (b, HB_BUFFER_FLAG_BOT);
-	//    assert (t,hb_buffer_get_flags (b) == HB_BUFFER_FLAG_BOT);
-
-	//    hb_buffer_set_replacement_codepoint (b, (unsigned int) -1);
-	//    assert (t,hb_buffer_get_replacement_codepoint (b) == (unsigned int) -1);
-
-	//    hb_buffer_reset (b);
-
-	//    assert (t,hb_buffer_get_unicode_funcs (b) == hb_unicode_funcs_get_default ());
-	//    assert (t,hb_buffer_get_direction (b) == HB_DIRECTION_INVALID);
-	//    assert (t,hb_buffer_get_script (b) == HB_SCRIPT_INVALID);
-	//    assert (t,hb_buffer_get_language (b) == NULL);
-	//    assert (t,hb_buffer_get_flags (b) == HB_BUFFER_FLAGS_DEFAULT);
-	//    assert (t,hb_buffer_get_replacement_codepoint (b) == HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT);
+	tu.Assert(t, b.Props.Direction == 0)
+	tu.Assert(t, b.Props.Script == 0)
+	tu.Assert(t, b.Props.Language == "")
+	tu.Assert(t, b.Flags == 0)
+	tu.Assert(t, b.NotFound == 0)
 }
 
 func testBufferContents(b *Buffer, kind int, t *testing.T) {
@@ -94,8 +68,8 @@ func testBufferContents(b *Buffer, kind int, t *testing.T) {
 
 	glyphs := b.Info
 	L := len(glyphs)
-	assertEqualInt(t, L, 5)
-	assertEqualInt(t, len(b.Pos), 5)
+	assertEqualInt(t, 5, L)
+	assertEqualInt(t, 5, len(b.Pos))
 
 	for _, g := range glyphs {
 		assertEqualInt(t, int(g.Mask), 0)
@@ -200,9 +174,9 @@ func TestBuffer(t *testing.T) {
 	for i := 0; i < bufferNumTypes; i++ {
 		buffer := newTestBuffer(i)
 
-		testBufferProperties(buffer, t)
 		testBufferContents(buffer, i, t)
 		testBufferPositions(buffer, t)
+		testBufferProperties(buffer, t) // clear the buffer
 	}
 }
 

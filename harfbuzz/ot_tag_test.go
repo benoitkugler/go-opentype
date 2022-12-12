@@ -382,7 +382,6 @@ func TestOtTagLanguage(t *testing.T) {
 }
 
 func testTags(t *testing.T, script language.Script, langS string, expectedScriptCount, expectedLanguageCount int, expected ...string) {
-	// fmt.Printf("Testing full tags with %s and %s\n", script, langS)
 	lang := language.NewLanguage(langS)
 
 	scriptTags, languageTags := NewOTTagsFromScriptAndLanguage(script, lang)

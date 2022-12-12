@@ -2,7 +2,7 @@ package harfbuzz
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 	"testing"
 
 	td "github.com/benoitkugler/go-opentype-testdata/harfbuzz"
@@ -13,28 +13,14 @@ import (
 	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
-func check(err error) {
-	if err != nil {
-		log.Fatal("unexpected error:", err)
-	}
-}
-
-func assert(t *testing.T, cond bool) {
-	if !cond {
-		t.Fatal("assertion error")
-	}
-}
-
 func assertEqualInt(t *testing.T, expected, got int) {
-	if expected != got {
-		t.Fatalf("expected %d, got %d", expected, got)
-	}
+	t.Helper()
+	tu.AssertC(t, expected == got, fmt.Sprintf("expected %d, got %d", expected, got))
 }
 
 func assertEqualInt32(t *testing.T, got, expected int32) {
-	if expected != got {
-		t.Fatalf("expected %d, got %d", expected, got)
-	}
+	t.Helper()
+	tu.AssertC(t, expected == got, fmt.Sprintf("expected %d, got %d", expected, got))
 }
 
 // opens truetype fonts from opentype testdata.
@@ -69,25 +55,25 @@ func openFontFile(t testing.TB, filename string) *font.Font {
 }
 
 func TestDirection(t *testing.T) {
-	assert(t, LeftToRight.isHorizontal() && !LeftToRight.isVertical())
-	assert(t, RightToLeft.isHorizontal() && !RightToLeft.isVertical())
-	assert(t, !TopToBottom.isHorizontal() && TopToBottom.isVertical())
-	assert(t, !BottomToTop.isHorizontal() && BottomToTop.isVertical())
+	tu.Assert(t, LeftToRight.isHorizontal() && !LeftToRight.isVertical())
+	tu.Assert(t, RightToLeft.isHorizontal() && !RightToLeft.isVertical())
+	tu.Assert(t, !TopToBottom.isHorizontal() && TopToBottom.isVertical())
+	tu.Assert(t, !BottomToTop.isHorizontal() && BottomToTop.isVertical())
 
-	assert(t, LeftToRight.isForward())
-	assert(t, TopToBottom.isForward())
-	assert(t, !RightToLeft.isForward())
-	assert(t, !BottomToTop.isForward())
+	tu.Assert(t, LeftToRight.isForward())
+	tu.Assert(t, TopToBottom.isForward())
+	tu.Assert(t, !RightToLeft.isForward())
+	tu.Assert(t, !BottomToTop.isForward())
 
-	assert(t, !LeftToRight.isBackward())
-	assert(t, !TopToBottom.isBackward())
-	assert(t, RightToLeft.isBackward())
-	assert(t, BottomToTop.isBackward())
+	tu.Assert(t, !LeftToRight.isBackward())
+	tu.Assert(t, !TopToBottom.isBackward())
+	tu.Assert(t, RightToLeft.isBackward())
+	tu.Assert(t, BottomToTop.isBackward())
 
-	assert(t, BottomToTop.Reverse() == TopToBottom)
-	assert(t, TopToBottom.Reverse() == BottomToTop)
-	assert(t, LeftToRight.Reverse() == RightToLeft)
-	assert(t, RightToLeft.Reverse() == LeftToRight)
+	tu.Assert(t, BottomToTop.Reverse() == TopToBottom)
+	tu.Assert(t, TopToBottom.Reverse() == BottomToTop)
+	tu.Assert(t, LeftToRight.Reverse() == RightToLeft)
+	tu.Assert(t, RightToLeft.Reverse() == LeftToRight)
 }
 
 func TestFlag(t *testing.T) {
@@ -102,20 +88,20 @@ func TestTypesLanguage(t *testing.T) {
 	faIr := language.NewLanguage("fa-ir")
 	en := language.NewLanguage("en")
 
-	assert(t, fa != "")
-	assert(t, faIR != "")
-	assert(t, faIR == faIr)
+	tu.Assert(t, fa != "")
+	tu.Assert(t, faIR != "")
+	tu.Assert(t, faIR == faIr)
 
-	assert(t, en != "")
-	assert(t, en != fa)
+	tu.Assert(t, en != "")
+	tu.Assert(t, en != fa)
 
 	/* Test recall */
-	assert(t, en == language.NewLanguage("en"))
-	assert(t, en == language.NewLanguage("eN"))
-	assert(t, en == language.NewLanguage("En"))
+	tu.Assert(t, en == language.NewLanguage("en"))
+	tu.Assert(t, en == language.NewLanguage("eN"))
+	tu.Assert(t, en == language.NewLanguage("En"))
 
-	assert(t, language.NewLanguage("") == "")
-	assert(t, language.NewLanguage("e") != "")
+	tu.Assert(t, language.NewLanguage("") == "")
+	tu.Assert(t, language.NewLanguage("e") != "")
 }
 
 func TestParseVariations(t *testing.T) {
@@ -182,5 +168,27 @@ func TestParseFeature(t *testing.T) {
 		if exp := expecteds[i]; f != exp {
 			t.Fatalf("for <%s>, expected %v, got %v", input, exp, f)
 		}
+	}
+}
+
+func TestExample(t *testing.T) {
+	ft := openFontFileTT(t, "common/NotoSansArabic.ttf")
+	buffer := NewBuffer()
+
+	// runes := []rune("This is a line to shape..")
+	runes := []rune{0x0633, 0x064F, 0x0644, 0x064E, 0x0651, 0x0627, 0x0651, 0x0650, 0x0645, 0x062A, 0x06CC}
+	buffer.AddRunes(runes, 0, -1)
+
+	face := &font.Face{Font: ft}
+	font := NewFont(face)
+	buffer.GuessSegmentProperties()
+	buffer.Shape(font, nil)
+
+	for i, pos := range buffer.Pos {
+		info := buffer.Info[i]
+		ext, ok := face.GlyphExtents(info.Glyph)
+		tu.AssertC(t, ok, fmt.Sprintf("invalid glyph %d", info.Glyph))
+
+		fmt.Println(pos.XAdvance, pos.XOffset, ext.Width, ext.XBearing)
 	}
 }

@@ -1,13 +1,14 @@
 package testutils
 
 import (
+	"embed"
 	"path/filepath"
 	"testing"
 
-	td "github.com/benoitkugler/go-opentype-testdata/opentype"
+	"github.com/benoitkugler/go-opentype-testdata/opentype"
 )
 
-func Assert(t *testing.T, b bool) {
+func Assert(t testing.TB, b bool) {
 	t.Helper()
 	AssertC(t, b, "assertion error")
 }
@@ -19,7 +20,7 @@ func AssertNoErr(t testing.TB, err error) {
 	}
 }
 
-func AssertC(t *testing.T, b bool, context string) {
+func AssertC(t testing.TB, b bool, context string) {
 	t.Helper()
 	if !b {
 		t.Fatal(context)
@@ -27,11 +28,16 @@ func AssertC(t *testing.T, b bool, context string) {
 }
 
 // Filenames return the "absolute" file names of the given directory
-// excluding directories, and not recursing
+// excluding directories, and not recursing.
+// It uses the opentype embed file system.
 func Filenames(t testing.TB, dir string) []string {
+	return FilenamesFS(t, &opentype.Files, dir)
+}
+
+func FilenamesFS(t testing.TB, fs *embed.FS, dir string) []string {
 	t.Helper()
 
-	files, err := td.Files.ReadDir(dir)
+	files, err := fs.ReadDir(dir)
 	AssertNoErr(t, err)
 
 	var out []string

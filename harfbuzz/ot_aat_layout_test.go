@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/benoitkugler/go-opentype/tables"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 // ported from harfbuzz/test/api/test-aat-layout.c Copyright © 2018  Ebrahim Byagowi
@@ -52,8 +53,8 @@ func TestAatGetFeatureTypes(t *testing.T) {
 func TestAatHas(t *testing.T) {
 	morx := openFontFile(t, "fonts/aat-morx.ttf")
 
-	assert(t, len(morx.Morx) != 0)
+	tu.Assert(t, len(morx.Morx) != 0)
 
 	trak := openFontFile(t, "fonts/aat-trak.ttf")
-	assert(t, !trak.Trak.IsEmpty())
+	tu.Assert(t, !trak.Trak.IsEmpty())
 }

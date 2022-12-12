@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/benoitkugler/go-opentype/api/font"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 // Unit tests for glyph advance Widths and extents of TrueType variable fonts
@@ -15,7 +16,7 @@ func TestExtentsTtVar(t *testing.T) {
 	font := NewFont(&font.Face{Font: ft})
 
 	extents, result := font.GlyphExtents(2)
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 10)
 	assertEqualInt32(t, extents.YBearing, 846)
@@ -26,7 +27,7 @@ func TestExtentsTtVar(t *testing.T) {
 	font.SetVarCoordsDesign(coords[:])
 
 	extents, result = font.GlyphExtents(2)
-	assert(t, result)
+	tu.Assert(t, result)
 	assertEqualInt32(t, extents.XBearing, 0)
 	assertEqualInt32(t, extents.YBearing, 874)
 	assertEqualInt32(t, extents.Width, 550)
@@ -92,7 +93,7 @@ func TestAdvanceTtVarAnchor(t *testing.T) {
 	font := NewFont(&font.Face{Font: ft})
 
 	extents, result := font.GlyphExtents(2)
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 56)
 	assertEqualInt32(t, extents.YBearing, 672)
@@ -102,7 +103,7 @@ func TestAdvanceTtVarAnchor(t *testing.T) {
 	coords := []float32{500.0}
 	font.SetVarCoordsDesign(coords)
 	extents, result = font.GlyphExtents(2)
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 50)
 	assertEqualInt32(t, extents.YBearing, 667)
@@ -118,7 +119,7 @@ func TestExtentsTtVarComp(t *testing.T) {
 	font.SetVarCoordsDesign(coords)
 
 	extents, result := font.GlyphExtents(2) /* Ccedilla, cedilla y-scaled by 0.8, with unscaled component offset */
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 19)
 	assertEqualInt32(t, extents.YBearing, 663)
@@ -126,7 +127,7 @@ func TestExtentsTtVarComp(t *testing.T) {
 	assertEqualInt32(t, extents.Height, -894)
 
 	extents, result = font.GlyphExtents(3) /* Cacute, acute y-scaled by 0.8, with unscaled component offset (default) */
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 19)
 	assertEqualInt32(t, extents.YBearing, 909)
@@ -134,7 +135,7 @@ func TestExtentsTtVarComp(t *testing.T) {
 	assertEqualInt32(t, extents.Height, -921)
 
 	extents, result = font.GlyphExtents(4) /* Ccaron, caron y-scaled by 0.8, with scaled component offset */
-	assert(t, result)
+	tu.Assert(t, result)
 
 	assertEqualInt32(t, extents.XBearing, 19)
 	assertEqualInt32(t, extents.YBearing, 866)
@@ -167,7 +168,7 @@ func TestAdvanceTtVarGvarInfer(t *testing.T) {
 	face := &font.Face{Font: ft, Coords: coords}
 	font := NewFont(face)
 	_, ok := font.GlyphExtents(4)
-	assert(t, ok)
+	tu.Assert(t, ok)
 }
 
 func TestLigCarets(t *testing.T) {

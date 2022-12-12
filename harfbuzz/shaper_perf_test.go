@@ -6,6 +6,7 @@ import (
 
 	"github.com/benoitkugler/go-opentype/api/font"
 	"github.com/benoitkugler/go-opentype/language"
+	tu "github.com/benoitkugler/go-opentype/testutils"
 )
 
 // ported from harfbuzz/perf
@@ -78,7 +79,7 @@ func shapeOne(b *testing.B, textFile, fontFile string, direction Direction, scri
 	font := NewFont(&font.Face{Font: ft})
 
 	textB, err := ioutil.ReadFile(textFile)
-	check(err)
+	tu.AssertNoErr(b, err)
 
 	text := []rune(string(textB))
 
