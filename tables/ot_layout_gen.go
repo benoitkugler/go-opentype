@@ -203,11 +203,6 @@ func ParseFeatureVariation(src []byte) (FeatureVariation, int, error) {
 		}
 		n = offset
 	}
-	{
-
-		item.rawData = src[0:]
-		n = len(src)
-	}
 	return item, n, nil
 }
 

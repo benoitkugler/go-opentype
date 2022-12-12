@@ -49,8 +49,6 @@ const (
 	// aatLayoutFeatureTypeOrnamentSetsType = 16
 	// [Character Alternatives](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM09/AppendixF.html#Type17)
 	aatLayoutFeatureTypeCharacterAlternatives = 17
-	// [Design Complexity](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM09/AppendixF.html#Type18)
-	aatLayoutFeatureTypeDesignComplexityType = 18
 	// [Style Options](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM09/AppendixF.html#Type19)
 	aatLayoutFeatureTypeStyleOptions = 19
 	// [Character Shape](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM09/AppendixF.html#Type20)
@@ -439,17 +437,9 @@ var featureMappings = [...]aatFeatureMapping{
 	{loader.NewTag('z', 'e', 'r', 'o'), aatLayoutFeatureTypeTypographicExtras, aatLayoutFeatureSelectorSlashedZeroOn, aatLayoutFeatureSelectorSlashedZeroOff},
 }
 
-// Used when getting or setting AAT feature selectors. Indicates that
-// there is no selector index corresponding to the selector of interest.
-const aatLayoutNoSelectorIndex = 0xFFFF
-
 /* Note: This context is used for kerning, even without AAT, hence the condition. */
 
 /**
- * SECTION:hb-aat-layout
- * @title: hb-aat-layout
- * @short_description: Apple Advanced Typography Layout
- * @include: hb-aat.h
  *
  * Functions for querying AAT Layout features in the font face.
  *
@@ -725,12 +715,12 @@ const (
 	* before going to the new state. This means
 	* that the glyph index doesn't change, even
 	* if the glyph at that index has changed. */
-	mrDontAdvance = 0x4000
+	_ = 0x4000
 	/* If set, make the current glyph the last
 	* glyph to be rearranged. */
 	mrMarkLast = 0x2000
 	/* These bits are reserved and should be set to 0. */
-	mrReserved = 0x1FF0
+	_ = 0x1FF0
 	/* The type of rearrangement specified. */
 	mrVerb = 0x000F
 )
@@ -824,8 +814,8 @@ const (
 	mcSetMark = 0x8000 /* If set, make the current glyph the marked glyph. */
 	/* If set, don't advance to the next glyph before
 	* going to the new state. */
-	mcDontAdvance = 0x4000
-	_             = 0x3FFF /* These bits are reserved and should be set to 0. */
+	_ = 0x4000
+	_ = 0x3FFF /* These bits are reserved and should be set to 0. */
 )
 
 type driverContextContextual struct {
@@ -1048,7 +1038,7 @@ const (
 	// split-vowel-like insertion, either before or
 	// after the current glyph (depending on the state
 	// of the currentInsertBefore flag).
-	miCurrentIsKashidaLike = 0x2000
+	_ = 0x2000
 	// If set, and the markedInsertList is nonzero,
 	// then the specified glyph list will be inserted
 	// as a kashida-like insertion, either before or
@@ -1059,7 +1049,7 @@ const (
 	// split-vowel-like insertion, either before or
 	// after the marked glyph (depending on the state
 	// of the markedInsertBefore flag).
-	miMarkedIsKashidaLike = 0x1000
+	_ = 0x1000
 	// If set, specifies that insertions are to be made
 	// to the left of the current glyph. If clear,
 	// they're made to the right of the current glyph.

@@ -22,7 +22,7 @@ const (
 	// If set, indicates that the lookup table structure
 	// is followed by a MarkFilteringSet field.
 	// The layout engine skips over all mark glyphs not in the mark filtering set indicated.
-	otUseMarkFilteringSet
+	_
 	_ uint16 = 0x00E0 // For future use (Set to zero)
 	// If not zero, skips over all marks of attachment
 	// type different from specified.

@@ -139,7 +139,6 @@ type FeatureVariation struct {
 	majorVersion            uint16                   // Major version of the FeatureVariations table — set to 1.
 	minorVersion            uint16                   // Minor version of the FeatureVariations table — set to 0.
 	FeatureVariationRecords []FeatureVariationRecord `arrayCount:"FirstUint32"` //[featureVariationRecordCount]	Array of feature variation records.
-	rawData                 []byte                   `subsliceStart:"AtStart" arrayCount:"ToEnd"`
 }
 
 type FeatureVariationRecord struct {

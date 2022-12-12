@@ -520,14 +520,6 @@ func (b *Buffer) clearOutput() {
 
 func (b *Buffer) clearContext(side uint) { b.context[side] = b.context[side][:0] }
 
-// clearGlyphFlags removes all the masks and apply the given one.
-func (b *Buffer) clearGlyphFlags(mask GlyphMask) {
-	info := b.Info
-	for i := range info {
-		info[i].Mask = (info[i].Mask & ^glyphFlagDefined) | (mask & glyphFlagDefined)
-	}
-}
-
 // reverses the subslice [start:end] of the buffer contents
 func (b *Buffer) reverseRange(start, end int) {
 	if end-start < 2 {
