@@ -66,8 +66,8 @@ type Font struct {
 }
 
 // NewFont load all the font tables, sanitizing them.
-// An error is returned for invalid tables, or when mandatory one
-// are missing.
+// An error is returned only when required tables 'cmap', 'head', 'maxp' are invalid (or missing).
+// More control on errors is available by using package [tables].
 func NewFont(ld *loader.Loader) (*Font, error) {
 	var (
 		out Font
@@ -101,277 +101,116 @@ func NewFont(ld *loader.Loader) (*Font, error) {
 		return nil, err
 	}
 
-	raw, err = ld.RawTable(loader.MustNewTag("fvar"))
-	if err == nil { // error only if the table is present and invalid
-		fvar, _, err := tables.ParseFvar(raw)
-		if err != nil {
-			return nil, err
-		}
-		out.fvar = newFvar(fvar)
-	}
+	// we considerer all the following tables as optional,
+	// since, in practice, users won't have much control on the
+	// font files they use
+	// ignoring the errors on `RawTable` is OK : it will trigger an error on the next tables.ParseXXX,
+	// which in turn will return a zero value
 
-	raw, err = ld.RawTable(loader.MustNewTag("avar"))
-	if err == nil { // error only if the table is present and invalid
-		out.avar, _, err = tables.ParseAvar(raw)
-		if err != nil {
-			return nil, err
-		}
-	}
+	raw, _ = ld.RawTable(loader.MustNewTag("fvar"))
+	fvar, _, _ := tables.ParseFvar(raw)
+	out.fvar = newFvar(fvar)
+
+	raw, _ = ld.RawTable(loader.MustNewTag("avar"))
+	out.avar, _, _ = tables.ParseAvar(raw)
 
 	out.upem = out.head.Upem()
 
-	raw, err = ld.RawTable(loader.MustNewTag("OS/2"))
-	if err == nil { // error only if the table is present and invalid
-		os2, _, err := tables.ParseOs2(raw)
-		if err != nil {
-			return nil, err
-		}
-		out.os2, err = newOs2(os2)
-		if err != nil {
-			return nil, err
-		}
-	}
+	raw, _ = ld.RawTable(loader.MustNewTag("OS/2"))
+	os2, _, _ := tables.ParseOs2(raw)
+	out.os2, _ = newOs2(os2)
 
-	raw, err = ld.RawTable(loader.MustNewTag("glyf"))
-	if err == nil { // error only if the table is present and invalid
-		locaRaw, err := ld.RawTable(loader.MustNewTag("loca"))
-		if err != nil {
-			return nil, err
-		}
-
-		loca, err := tables.ParseLoca(locaRaw, int(maxp.NumGlyphs), out.head.IndexToLocFormat == 1)
-		if err != nil {
-			return nil, err
-		}
-
-		out.glyf, err = tables.ParseGlyf(raw, loca)
-		if err != nil {
-			return nil, err
-		}
+	raw, _ = ld.RawTable(loader.MustNewTag("glyf"))
+	locaRaw, _ := ld.RawTable(loader.MustNewTag("loca"))
+	loca, err := tables.ParseLoca(locaRaw, int(maxp.NumGlyphs), out.head.IndexToLocFormat == 1)
+	if err == nil { // ParseGlyf panics if len(loca) == 0
+		out.glyf, _ = tables.ParseGlyf(raw, loca)
 	}
 
 	out.bitmap = selectBitmapTable(ld)
 
-	raw, err = ld.RawTable(loader.MustNewTag("sbix"))
-	if err == nil { // error only if the table is present and invalid
-		sbix, _, err := tables.ParseSbix(raw, int(maxp.NumGlyphs))
-		if err != nil {
-			return nil, err
-		}
-		out.sbix = newSbix(sbix)
-	}
+	raw, _ = ld.RawTable(loader.MustNewTag("sbix"))
+	sbix, _, _ := tables.ParseSbix(raw, int(maxp.NumGlyphs))
+	out.sbix = newSbix(sbix)
 
-	raw, err = ld.RawTable(loader.MustNewTag("CFF "))
-	if err == nil { // error only if the table is present and invalid
-		out.cff, err = cff.Parse(raw)
-		if err != nil {
-			return nil, err
-		}
+	out.cff, _ = loadCff(ld, int(maxp.NumGlyphs))
 
-		if N := len(out.cff.Charstrings); N != int(maxp.NumGlyphs) {
-			return nil, fmt.Errorf("invalid number of glyphs in CFF table (%d != %d)", N, maxp.NumGlyphs)
-		}
-	}
+	raw, _ = ld.RawTable(loader.MustNewTag("post"))
+	post, _, _ := tables.ParsePost(raw)
+	out.post, _ = newPost(post)
 
-	raw, err = ld.RawTable(loader.MustNewTag("post"))
-	if err == nil { // error only if the table is present and invalid
-		post, _, err := tables.ParsePost(raw)
-		if err != nil {
-			return nil, err
-		}
+	raw, _ = ld.RawTable(loader.MustNewTag("SVG "))
+	svg, _, _ := tables.ParseSVG(raw)
+	out.svg, _ = newSvg(svg)
 
-		out.post, err = newPost(post)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("SVG "))
-	if err == nil { // error only if the table is present and invalid
-		svg, _, err := tables.ParseSVG(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		out.svg, err = newSvg(svg)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("hhea"))
-	if err == nil { // error only if the table is present and invalid
-		hhea, _, err := tables.ParseHhea(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		out.hhea = &hhea
-
-		raw, err = ld.RawTable(loader.MustNewTag("hmtx"))
-		if err == nil { // error only if the table is present and invalid
-			out.hmtx, _, err = tables.ParseHmtx(raw, int(hhea.NumOfLongMetrics), int(maxp.NumGlyphs)-int(hhea.NumOfLongMetrics))
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("vhea"))
-	if err == nil { // error only if the table is present and invalid
-		vhea, _, err := tables.ParseHhea(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		out.vhea = &vhea
-
-		raw, err = ld.RawTable(loader.MustNewTag("vmtx"))
-		if err == nil { // error only if the table is present and invalid
-			out.vmtx, _, err = tables.ParseHmtx(raw, int(vhea.NumOfLongMetrics), int(maxp.NumGlyphs)-int(vhea.NumOfLongMetrics))
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
+	out.hhea, out.hmtx, _ = loadHmtx(ld, int(maxp.NumGlyphs))
+	out.vhea, out.vmtx, _ = loadVmtx(ld, int(maxp.NumGlyphs))
 
 	if len(out.fvar) != 0 {
-		raw, err = ld.RawTable(loader.MustNewTag("MVAR"))
-		if err == nil { // error only if the table is present and invalid
-			mvar, _, err := tables.ParseMVAR(raw)
-			if err != nil {
-				return nil, err
-			}
+		raw, _ = ld.RawTable(loader.MustNewTag("MVAR"))
+		mvar, _, _ := tables.ParseMVAR(raw)
+		out.mvar = newMvar(mvar)
 
-			out.mvar = newMvar(mvar)
-		}
+		raw, _ = ld.RawTable(loader.MustNewTag("gvar"))
+		gvar, _, _ := tables.ParseGvar(raw)
+		out.gvar, _ = newGvar(gvar, out.glyf)
 
-		raw, err = ld.RawTable(loader.MustNewTag("gvar"))
-		if err == nil { // error only if the table is present and invalid
-			gvar, _, err := tables.ParseGvar(raw)
-			if err != nil {
-				return nil, err
-			}
-
-			out.gvar, err = newGvar(gvar, out.glyf)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		raw, err = ld.RawTable(loader.MustNewTag("HVAR"))
-		if err == nil { // error only if the table is present and invalid
-			hvar, _, err := tables.ParseHVAR(raw)
-			if err != nil {
-				return nil, err
-			}
-
+		raw, _ = ld.RawTable(loader.MustNewTag("HVAR"))
+		hvar, _, err := tables.ParseHVAR(raw)
+		if err == nil {
 			out.hvar = &hvar
 		}
-		raw, err = ld.RawTable(loader.MustNewTag("VVAR"))
-		if err == nil { // error only if the table is present and invalid
-			vvar, _, err := tables.ParseHVAR(raw)
-			if err != nil {
-				return nil, err
-			}
 
+		raw, _ = ld.RawTable(loader.MustNewTag("VVAR"))
+		vvar, _, err := tables.ParseHVAR(raw)
+		if err == nil {
 			out.vvar = &vvar
 		}
 	}
 
-	raw, err = ld.RawTable(loader.MustNewTag("VORG"))
-	if err == nil { // error only if the table is present and invalid
-		vorg, _, err := tables.ParseVORG(raw)
-		if err != nil {
-			return nil, err
-		}
-
+	raw, _ = ld.RawTable(loader.MustNewTag("VORG"))
+	vorg, _, err := tables.ParseVORG(raw)
+	if err == nil {
 		out.vorg = &vorg
 	}
 
 	// layout tables
+	out.GDEF, _ = loadGDEF(ld, len(out.fvar))
 
-	raw, err = ld.RawTable(loader.MustNewTag("GDEF"))
-	if err == nil { // error only if the table is present and invalid
-		out.GDEF, _, err = tables.ParseGDEF(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		err = sanitizeGDEF(out.GDEF, len(out.fvar))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("GSUB"))
-	if err == nil { // error only if the table is present and invalid
-		layout, _, err := tables.ParseLayout(raw)
-		if err != nil {
-			return nil, err
-		}
-		out.GSUB, err = newGSUB(layout)
-		if err != nil {
-			return nil, err
-		}
-	}
-	raw, err = ld.RawTable(loader.MustNewTag("GPOS"))
-	if err == nil { // error only if the table is present and invalid
-		layout, _, err := tables.ParseLayout(raw)
-		if err != nil {
-			return nil, err
-		}
-		out.GPOS, err = newGPOS(layout)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("morx"))
-	if err == nil { // error only if the table is present and invalid
-		morx, _, err := tables.ParseMorx(raw, int(maxp.NumGlyphs))
-		if err != nil {
-			return nil, err
-		}
-		out.Morx = newMorx(morx)
-	}
-	raw, err = ld.RawTable(loader.MustNewTag("kerx"))
-	if err == nil { // error only if the table is present and invalid
-		kerx, _, err := tables.ParseKerx(raw, int(maxp.NumGlyphs))
-		if err != nil {
-			return nil, err
-		}
-		out.Kerx = newKernxFromKerx(kerx)
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("kern"))
-	if err == nil { // error only if the table is present and invalid
-		kern, _, err := tables.ParseKern(raw)
-		if err != nil {
-			return nil, err
-		}
-		out.Kern = newKernxFromKern(kern)
-	}
-
-	raw, err = ld.RawTable(loader.MustNewTag("ankr"))
-	if err == nil { // error only if the table is present and invalid
-		out.Ankr, _, err = tables.ParseAnkr(raw, int(maxp.NumGlyphs))
-		if err != nil {
-			return nil, err
-		}
-	}
-	raw, err = ld.RawTable(loader.MustNewTag("trak"))
-	if err == nil { // error only if the table is present and invalid
-		out.Trak, _, err = tables.ParseTrak(raw)
-		if err != nil {
-			return nil, err
-		}
-	}
-	raw, err = ld.RawTable(loader.MustNewTag("feat"))
+	raw, _ = ld.RawTable(loader.MustNewTag("GSUB"))
+	layout, _, err := tables.ParseLayout(raw)
+	// harfbuzz rely on GSUB.Loookups being nil when the table is absent
 	if err == nil {
-		// accept corrupted 'feat' tables
-		out.Feat, _, _ = tables.ParseFeat(raw)
+		out.GSUB, _ = newGSUB(layout)
 	}
+
+	raw, _ = ld.RawTable(loader.MustNewTag("GPOS"))
+	layout, _, err = tables.ParseLayout(raw)
+	// harfbuzz rely on GSUB.Loookups being nil when the table is absent
+	if err == nil {
+		out.GPOS, _ = newGPOS(layout)
+	}
+
+	raw, _ = ld.RawTable(loader.MustNewTag("morx"))
+	morx, _, _ := tables.ParseMorx(raw, int(maxp.NumGlyphs))
+	out.Morx = newMorx(morx)
+
+	raw, err = ld.RawTable(loader.MustNewTag("kerx"))
+	kerx, _, _ := tables.ParseKerx(raw, int(maxp.NumGlyphs))
+	out.Kerx = newKernxFromKerx(kerx)
+
+	raw, _ = ld.RawTable(loader.MustNewTag("kern"))
+	kern, _, _ := tables.ParseKern(raw)
+	out.Kern = newKernxFromKern(kern)
+
+	raw, _ = ld.RawTable(loader.MustNewTag("ankr"))
+	out.Ankr, _, _ = tables.ParseAnkr(raw, int(maxp.NumGlyphs))
+
+	raw, _ = ld.RawTable(loader.MustNewTag("trak"))
+	out.Trak, _, _ = tables.ParseTrak(raw)
+
+	raw, _ = ld.RawTable(loader.MustNewTag("feat"))
+	out.Feat, _, _ = tables.ParseFeat(raw)
 
 	return &out, nil
 }
@@ -416,6 +255,82 @@ func selectBitmapTable(ld *loader.Loader) bitmap {
 	}
 
 	return nil
+}
+
+// return nil if the table is missing or invalid
+func loadCff(ld *loader.Loader, numGlyphs int) (*cff.Font, error) {
+	raw, err := ld.RawTable(loader.MustNewTag("CFF "))
+	if err != nil {
+		return nil, err
+	}
+	cff, err := cff.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	if N := len(cff.Charstrings); N != numGlyphs {
+		return nil, fmt.Errorf("invalid number of glyphs in CFF table (%d != %d)", N, numGlyphs)
+	}
+	return cff, nil
+}
+
+func loadHmtx(ld *loader.Loader, numGlyphs int) (*tables.Hhea, tables.Hmtx, error) {
+	raw, err := ld.RawTable(loader.MustNewTag("hhea"))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	hhea, _, err := tables.ParseHhea(raw)
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+
+	raw, err = ld.RawTable(loader.MustNewTag("hmtx"))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	hmtx, _, err := tables.ParseHmtx(raw, int(hhea.NumOfLongMetrics), numGlyphs-int(hhea.NumOfLongMetrics))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	return &hhea, hmtx, nil
+}
+
+func loadVmtx(ld *loader.Loader, numGlyphs int) (*tables.Hhea, tables.Hmtx, error) {
+	raw, err := ld.RawTable(loader.MustNewTag("vhea"))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	vhea, _, err := tables.ParseHhea(raw)
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+
+	raw, err = ld.RawTable(loader.MustNewTag("vmtx"))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	vmtx, _, err := tables.ParseHmtx(raw, int(vhea.NumOfLongMetrics), numGlyphs-int(vhea.NumOfLongMetrics))
+	if err != nil {
+		return nil, tables.Hmtx{}, err
+	}
+	return &vhea, vmtx, nil
+}
+
+func loadGDEF(ld *loader.Loader, axisCount int) (tables.GDEF, error) {
+	raw, err := ld.RawTable(loader.MustNewTag("GDEF"))
+	if err != nil {
+		return tables.GDEF{}, err
+	}
+	GDEF, _, err := tables.ParseGDEF(raw)
+	if err != nil {
+		return tables.GDEF{}, err
+	}
+
+	err = sanitizeGDEF(GDEF, axisCount)
+	if err != nil {
+		return tables.GDEF{}, err
+	}
+	return GDEF, nil
 }
 
 // Face is a font with user-provided settings.

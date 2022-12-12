@@ -11,6 +11,9 @@ import (
 type Kernx []KernSubtable
 
 func newKernxFromKerx(kerx tables.Kerx) Kernx {
+	if len(kerx.Tables) == 0 {
+		return nil
+	}
 	out := make(Kernx, len(kerx.Tables))
 	for i, ta := range kerx.Tables {
 		out[i] = newKerxSubtable(ta)
@@ -19,6 +22,9 @@ func newKernxFromKerx(kerx tables.Kerx) Kernx {
 }
 
 func newKernxFromKern(kern tables.Kern) Kernx {
+	if len(kern.Tables) == 0 {
+		return nil
+	}
 	out := make(Kernx, len(kern.Tables))
 	for i, ta := range kern.Tables {
 		out[i] = newKernSubtable(ta)

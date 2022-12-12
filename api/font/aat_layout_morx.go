@@ -5,6 +5,9 @@ import "github.com/benoitkugler/go-opentype/tables"
 type Morx []MorxChain
 
 func newMorx(table tables.Morx) Morx {
+	if len(table.Chains) == 0 {
+		return nil
+	}
 	out := make(Morx, len(table.Chains))
 	for i, c := range table.Chains {
 		out[i] = newMorxChain(c)
