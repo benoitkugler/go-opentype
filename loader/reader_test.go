@@ -38,6 +38,10 @@ func TestCollection(t *testing.T) {
 		for _, font := range fonts {
 			tu.Assert(t, len(font.tables) != 0)
 		}
+
+		// check that NewLoader indeed fail on collections
+		_, err = NewLoader(bytes.NewReader(f))
+		tu.Assert(t, err != nil)
 	}
 
 	// check that it also works for single font files

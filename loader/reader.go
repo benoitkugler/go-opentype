@@ -183,9 +183,10 @@ func parseOneFont(file Resource, offset uint32, relativeOffset bool) (parser *Lo
 		parser, err = parseWOFF(file, offset, relativeOffset)
 	case TrueType, OpenType, PostScript1, AppleTrueType:
 		parser, err = parseOTF(file, offset, relativeOffset)
+	case ttcTag, dfontResourceDataOffset: // no more collections allowed here
+		return nil, errors.New("collections not allowed")
 	default:
-		// no more collections allowed here
-		return nil, fmt.Errorf("unsupported font format %v", bytes)
+		return nil, fmt.Errorf("unknown font format tag %v", bytes)
 	}
 
 	if err != nil {
